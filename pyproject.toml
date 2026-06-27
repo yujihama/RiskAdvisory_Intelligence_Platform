@@ -5,17 +5,34 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "risk-agent-platform"
 version = "0.1.0"
-description = "Backend PoC for a risk advisory intelligence platform"
+description = "Final-architecture backend for a risk advisory intelligence platform"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "a2a-sdk>=1.1.0",
+  "deepagents>=0.6.3",
+  "fastapi>=0.124",
+  "fastmcp>=3.4.2",
+  "httpx>=0.28",
+  "langchain-openai>=1.2",
+  "langfuse>=4.12",
+  "langgraph>=1.0",
+  "neo4j>=6.2",
   "pydantic>=2.8",
   "PyYAML>=6.0",
+  "pymupdf>=1.27",
+  "qdrant-client>=1.18",
+  "tavily-python>=0.7.26",
+  "uvicorn>=0.35",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
+]
+documents = [
+  "docling>=2.0",
+  "unstructured>=0.18",
 ]
 
 [project.scripts]

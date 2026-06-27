@@ -5,7 +5,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.pyc
-data/scenarios/
+data/scenarios/*
+!data/scenarios/*.json
+outputs/
 dist/
 build/
 *.egg-info/

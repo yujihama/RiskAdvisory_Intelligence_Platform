@@ -1,179 +1,182 @@
 # Risk Advisory Intelligence Platform Architecture Diagrams
 
-このファイルは、設計書のターゲット構成と、現時点で実装済みのUIなしローカルPoC構成を分けて示す。
+This document shows the implemented target architecture. The legacy local PoC path remains only for compatibility tests and is not the normal final execution path.
 
-## 1. Target Architecture
+## 1. Target Runtime Architecture
 
 ```mermaid
 flowchart TB
-    user["User / Consultant UI"] --> api["Thin Backend / API Gateway"]
-    api --> orch["Orchestrator DeepAgent"]
+    user["CLI / API Caller"] --> orch["Orchestrator DeepAgent"]
 
     subgraph a2a["A2A Agent Layer"]
         orch
-        src["Source Intelligence Agent"]
-        ctx["Client Context Agent"]
-        tr["Treasury Risk Agent"]
-        la["Legal / Accounting Agent"]
-        pr["Procurement Risk Agent"]
-        exp["Expert-as-Code Agent"]
-        red["Evidence / Red Team Agent"]
-        dec["Decision Synthesis Agent"]
+        src["Source Intelligence DeepAgent"]
+        ctx["Client Context DeepAgent"]
+        treasury["Treasury Risk DeepAgent"]
+        legal["Legal Risk DeepAgent"]
+        accounting["Accounting Risk DeepAgent"]
+        procurement["Procurement Risk DeepAgent"]
+        expert["Expert-as-Code DeepAgent"]
+        redteam["Evidence / Red Team DeepAgent"]
+        decision["Decision Synthesis DeepAgent"]
     end
 
-    orch -- "A2A task" --> src
-    orch -- "A2A task" --> ctx
-    orch -- "A2A task" --> tr
-    orch -- "A2A task" --> la
-    orch -- "A2A task" --> pr
-    orch -- "A2A task" --> exp
-    orch -- "A2A task" --> red
-    orch -- "A2A task" --> dec
+    orch -- "A2A task request" --> ctx
+    orch -- "A2A task request" --> src
+    orch -- "A2A task request" --> treasury
+    orch -- "A2A task request" --> legal
+    orch -- "A2A task request" --> accounting
+    orch -- "A2A task request" --> procurement
+    orch -- "A2A task request" --> expert
+    orch -- "A2A task request" --> redteam
+    orch -- "A2A task request" --> decision
 
-    subgraph mcp["MCP Tool / Connector Layer"]
-        web["mcp-web-search"]
-        parser["mcp-document-parser"]
-        ocr["mcp-llm-ocr"]
+    subgraph mcp["FastMCP Server Layer"]
+        web["mcp-web-search / Tavily"]
+        parser["mcp-document-parser / Docling-first fallback chain"]
+        ocr["mcp-llm-ocr / OpenRouter vision OCR"]
         qdrant_mcp["mcp-qdrant"]
         neo4j_mcp["mcp-neo4j"]
-        fs_mcp["mcp-filesystem"]
+        filesystem["mcp-filesystem"]
         structured["mcp-structured-data"]
         expert_mcp["mcp-expert-knowledge"]
-        evidence_mcp["mcp-evidence-ledger"]
+        ledger["mcp-evidence-ledger"]
     end
 
-    src -- "MCP" --> web
-    ctx -- "MCP" --> parser
-    ctx -- "MCP" --> qdrant_mcp
-    ctx -- "MCP" --> neo4j_mcp
-    tr -- "MCP" --> structured
-    tr -- "MCP" --> qdrant_mcp
-    la -- "MCP" --> parser
-    la -- "MCP" --> ocr
-    pr -- "MCP" --> structured
-    exp -- "MCP" --> expert_mcp
-    red -- "MCP" --> evidence_mcp
-    dec -- "MCP" --> fs_mcp
+    src -- "MCP tool call" --> web
+    src -- "MCP tool call" --> ledger
+    ctx -- "MCP tool call" --> structured
+    ctx -- "MCP tool call" --> neo4j_mcp
+    treasury -- "MCP tool call" --> structured
+    treasury -- "MCP tool call" --> qdrant_mcp
+    legal -- "MCP tool call" --> structured
+    legal -- "MCP tool call" --> parser
+    legal -- "MCP tool call" --> ocr
+    accounting -- "MCP tool call" --> structured
+    procurement -- "MCP tool call" --> structured
+    expert -- "MCP tool call" --> expert_mcp
+    redteam -- "MCP tool call" --> ledger
+    decision -- "MCP tool call" --> ledger
+    decision -- "MCP tool call" --> neo4j_mcp
+    decision -- "MCP tool call" --> filesystem
 
-    subgraph data["Data Layer"]
-        client_data["Client Structured Data / Documents"]
-        files["Files / JSONL Scenario Artifacts"]
+    subgraph stores["Stores and External Services"]
+        tavily["Tavily API"]
+        openrouter["OpenRouter API / model profiles"]
         qdrant["Qdrant Vector Store"]
         neo4j["Neo4j Client Asset Graph"]
-        expert_store["Expert Knowledge Store"]
-        ledger["Evidence / Scenario Delta Ledger"]
+        files["outputs/<scenario_id>/ artifacts"]
+        data["data/clients and data/expert_knowledge"]
+        langfuse["Self-hosted Langfuse"]
     end
 
-    structured --> client_data
-    parser --> client_data
-    fs_mcp --> files
+    web --> tavily
     qdrant_mcp --> qdrant
+    ledger --> qdrant
+    ledger --> neo4j
     neo4j_mcp --> neo4j
-    expert_mcp --> expert_store
-    evidence_mcp --> ledger
-
-    subgraph external["External Services"]
-        openrouter["OpenRouter API"]
-        qwen["Qwen / Other Model Profiles"]
-        sources["Government / News / Sanctions / Market Sources"]
-    end
+    structured --> data
+    expert_mcp --> data
+    expert_mcp --> qdrant
+    filesystem --> files
 
     orch --> openrouter
     src --> openrouter
-    tr --> openrouter
-    la --> openrouter
-    exp --> openrouter
-    red --> openrouter
-    dec --> openrouter
-    openrouter --> qwen
-    web --> sources
+    treasury --> openrouter
+    legal --> openrouter
+    accounting --> openrouter
+    procurement --> openrouter
+    expert --> openrouter
+    redteam --> openrouter
+    decision --> openrouter
 
-    subgraph obs["Observability"]
-        langfuse["Langfuse Traces"]
-    end
-
-    orch --> langfuse
-    src --> langfuse
-    ctx --> langfuse
-    tr --> langfuse
-    la --> langfuse
-    pr --> langfuse
-    exp --> langfuse
-    red --> langfuse
-    dec --> langfuse
+    orch -. "trace_id" .-> langfuse
+    src -. "trace_id" .-> langfuse
+    ctx -. "trace_id" .-> langfuse
+    treasury -. "trace_id" .-> langfuse
+    legal -. "trace_id" .-> langfuse
+    accounting -. "trace_id" .-> langfuse
+    procurement -. "trace_id" .-> langfuse
+    expert -. "trace_id" .-> langfuse
+    redteam -. "trace_id" .-> langfuse
+    decision -. "trace_id" .-> langfuse
 ```
 
-## 2. Current UI-less PoC Architecture
+## 2. Docker Compose Topology
 
 ```mermaid
 flowchart TB
-    cli["CLI: run-scenario"] --> input["Scenario Input JSON"]
-    input --> orch["OrchestratorDeepAgent"]
-
-    subgraph local_a2a["Local A2A Registry"]
-        ctx["ClientContextAgent"]
-        src["SourceIntelligenceAgent"]
-        tr["TreasuryRiskAgent"]
-        la["LegalAccountingAgent"]
-        exp["ExpertEvidenceAgent"]
-        dec["DecisionSynthesisAgent"]
+    subgraph agents["Agent Containers"]
+        o["orchestrator-agent:8100"]
+        s["source-intelligence-agent:8101"]
+        c["client-context-agent:8102"]
+        t["treasury-risk-agent:8103"]
+        l["legal-risk-agent:8104"]
+        a["accounting-risk-agent:8105"]
+        p["procurement-risk-agent:8106"]
+        e["expert-as-code-agent:8107"]
+        r["evidence-redteam-agent:8108"]
+        d["decision-synthesis-agent:8109"]
     end
 
-    orch --> ctx
-    orch --> src
-    orch --> tr
-    orch --> la
-    orch --> exp
-    orch --> dec
-
-    subgraph local_mcp["Local MCP-style Tool Boundaries"]
-        fs["FilesystemMCP"]
-        sd["StructuredDataMCP"]
-        sc["SourceCatalogMCP"]
-        ek["ExpertKnowledgeMCP"]
-        ev["EvidenceLedgerMCP"]
+    subgraph mcps["MCP Containers"]
+        mw["mcp-web-search:8201"]
+        md["mcp-document-parser:8202"]
+        mo["mcp-llm-ocr:8203"]
+        mq["mcp-qdrant:8204"]
+        mn["mcp-neo4j:8205"]
+        mf["mcp-filesystem:8206"]
+        ms["mcp-structured-data:8207"]
+        me["mcp-expert-knowledge:8208"]
+        ml["mcp-evidence-ledger:8209"]
     end
 
-    ctx --> sd
-    src --> sc
-    src --> ev
-    tr --> sd
-    tr --> ev
-    la --> sd
-    la --> ev
-    exp --> ek
-    exp --> ev
-    dec --> fs
-
-    subgraph local_data["Local Data"]
-        csv["CSV client extracts"]
-        dummy_sources["Dummy external source catalog"]
-        rules["Expert rules JSONL"]
-        artifacts["Scenario artifacts"]
+    subgraph backing["Backing Services"]
+        q["qdrant:6333"]
+        n["neo4j:7687"]
+        lf["langfuse:3000 / host 3300"]
+        pg["langfuse-postgres"]
+        ch["langfuse-clickhouse"]
+        rd["langfuse-redis"]
+        minio["langfuse-minio"]
     end
 
-    sd --> csv
-    sc --> dummy_sources
-    ek --> rules
-    fs --> artifacts
-    ev --> artifacts
+    o --> s
+    o --> c
+    o --> t
+    o --> l
+    o --> a
+    o --> p
+    o --> e
+    o --> r
+    o --> d
 
-    subgraph outputs["Scenario Outputs"]
-        graph["Client Asset Graph JSON"]
-        evidence["Evidence Ledger JSONL"]
-        trace["Trace JSONL"]
-        queue["Decision Queue JSON"]
-        brief["Final Brief Markdown"]
-    end
+    s --> mw
+    s --> ml
+    c --> ms
+    c --> mn
+    t --> ms
+    t --> mq
+    l --> ms
+    l --> md
+    l --> mo
+    a --> ms
+    p --> ms
+    e --> me
+    r --> ml
+    d --> ml
+    d --> mn
+    d --> mf
 
-    artifacts --> graph
-    artifacts --> evidence
-    artifacts --> trace
-    artifacts --> queue
-    artifacts --> brief
-
-    smoke["CLI: llm-smoke"] --> adapter["OpenRouterClient"]
-    adapter --> openrouter["OpenRouter / qwen/qwen3.6-flash"]
+    mq --> q
+    me --> q
+    ml --> q
+    mn --> n
+    ml --> n
+    lf --> pg
+    lf --> ch
+    lf --> rd
+    lf --> minio
 ```
 
 ## 3. Scenario Execution Flow
@@ -181,53 +184,59 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     participant CLI as CLI
-    participant O as Orchestrator
+    participant O as Orchestrator DeepAgent
     participant C as Client Context
     participant S as Source Intelligence
     participant T as Treasury
-    participant L as Legal / Accounting
-    participant E as Expert / Evidence
+    participant L as Legal
+    participant A as Accounting
+    participant P as Procurement
+    participant E as Expert-as-Code
+    participant R as Evidence / Red Team
     participant D as Decision Synthesis
-    participant F as Files / JSONL
+    participant M as MCP Servers
+    participant LF as Langfuse
 
-    CLI->>O: Load RiskEvent JSON
-    O->>F: Reset scenario artifact directory
-    O->>F: Write plan.md and agent_cards.json
-    O->>C: Stage 1 Context Build
-    C->>F: Write Client Asset Graph
-    C-->>O: Context summary, assumptions, unknowns
-    O->>S: Stage 2 Evidence Collection
-    S->>F: Append evidence_table.jsonl
+    CLI->>O: Submit RiskEvent
+    O->>LF: trace event
+    O->>C: A2A Stage 1 Context Build
+    C->>M: structured-data and neo4j tools
+    C-->>O: Client graph finding
+    O->>S: A2A Stage 2 Evidence Collection
+    S->>M: web-search and evidence-ledger tools
     S-->>O: Evidence IDs
-    O->>T: Stage 3 Treasury Analysis
-    T-->>O: Liquidity-at-risk and payment disruption finding
-    O->>L: Stage 3 Legal / Accounting Analysis
-    L-->>O: Contract, sanctions, disclosure finding
-    O->>E: Stage 4-5 Expert-as-Code and Red Team
-    E-->>O: Review triggers, guardrails, additional questions
-    O->>D: Stage 6 Decision Synthesis
-    D->>F: Write decision_queue.json and final_brief.md
-    D-->>O: Final decision finding
-    O->>F: Write scenario_result.json and trace.jsonl
-    O-->>CLI: Artifact directory and final brief path
+    O->>T: A2A Stage 3 Treasury Analysis
+    O->>L: A2A Stage 3 Legal Analysis
+    O->>A: A2A Stage 3 Accounting Analysis
+    O->>P: A2A Stage 3 Procurement Analysis
+    T->>M: structured-data and qdrant tools
+    L->>M: structured-data, document-parser, and llm-ocr tools
+    A->>M: structured-data tools
+    P->>M: structured-data tools
+    O->>E: A2A Stage 4 Expert-as-Code
+    E->>M: expert-knowledge and qdrant tools
+    O->>R: A2A Stage 5 Challenge
+    R->>M: evidence-ledger tools
+    O->>D: A2A Stage 6 Decision Synthesis
+    D->>M: evidence-ledger, neo4j, and filesystem tools
+    D-->>O: Decision-first output finding
+    O-->>CLI: Final status and output directory
 ```
 
-## 4. Artifact Map
+## 4. Output Artifact Map
 
 ```mermaid
 flowchart LR
-    scenario["data/scenarios/{scenario_id}"] --> plan["plan.md"]
-    scenario --> cards["agent_cards.json"]
-    scenario --> context["context_summary.md"]
-    scenario --> graph_dir["graph_imports/"]
-    graph_dir --> graph["client_asset_graph.json"]
-    scenario --> evidence["evidence_table.jsonl"]
-    scenario --> treasury["treasury_analysis.md"]
-    scenario --> legal["legal_accounting_analysis.md"]
-    scenario --> expert["expert_review.md"]
-    scenario --> decisions["decision_queue.json"]
-    scenario --> brief["final_brief.md"]
-    scenario --> trace["trace.jsonl"]
-    scenario --> result["scenario_result.json"]
-```
+    scenario["outputs/<scenario_id>/"] --> brief["final_brief.md"]
+    scenario --> queue["decision_queue.json"]
+    scenario --> evidence["evidence_summary.json"]
+    scenario --> red["red_team_review.md"]
+    scenario --> unknowns["assumptions_and_unknowns.json"]
+    scenario --> trace_meta["trace_metadata.json"]
+    traces["outputs/_traces/"] --> trace_jsonl["<trace_id>.jsonl"]
 
+    queue --> neo4j["Neo4j Decision node and MITIGATES relation"]
+    evidence --> qdrant["Qdrant evidence_chunks collection"]
+    evidence --> neo4j_evidence["Neo4j Evidence node and SUPPORTS relation"]
+    trace_meta --> langfuse["Langfuse trace/event stream"]
+```

@@ -1,10 +1,197 @@
+x-runtime-env: &runtime-env
+  QDRANT_URL: http://qdrant:6333
+  NEO4J_URI: bolt://neo4j:7687
+  NEO4J_USER: neo4j
+  NEO4J_PASSWORD: password
+  LANGFUSE_HOST: http://langfuse:3000
+  LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-lf_pk_risk_advisory_local}
+  LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-lf_sk_risk_advisory_local}
+  SOURCE_INTELLIGENCE_AGENT_URL: http://source-intelligence-agent:8101
+  CLIENT_CONTEXT_AGENT_URL: http://client-context-agent:8102
+  TREASURY_RISK_AGENT_URL: http://treasury-risk-agent:8103
+  LEGAL_RISK_AGENT_URL: http://legal-risk-agent:8104
+  ACCOUNTING_RISK_AGENT_URL: http://accounting-risk-agent:8105
+  PROCUREMENT_RISK_AGENT_URL: http://procurement-risk-agent:8106
+  EXPERT_AS_CODE_AGENT_URL: http://expert-as-code-agent:8107
+  EVIDENCE_REDTEAM_AGENT_URL: http://evidence-redteam-agent:8108
+  DECISION_SYNTHESIS_AGENT_URL: http://decision-synthesis-agent:8109
+  MCP_WEB_SEARCH_URL: http://mcp-web-search:8201/mcp
+  MCP_DOCUMENT_PARSER_URL: http://mcp-document-parser:8202/mcp
+  MCP_LLM_OCR_URL: http://mcp-llm-ocr:8203/mcp
+  MCP_QDRANT_URL: http://mcp-qdrant:8204/mcp
+  MCP_NEO4J_URL: http://mcp-neo4j:8205/mcp
+  MCP_FILESYSTEM_URL: http://mcp-filesystem:8206/mcp
+  MCP_STRUCTURED_DATA_URL: http://mcp-structured-data:8207/mcp
+  MCP_EXPERT_KNOWLEDGE_URL: http://mcp-expert-knowledge:8208/mcp
+  MCP_EVIDENCE_LEDGER_URL: http://mcp-evidence-ledger:8209/mcp
+
 services:
-  risk-platform:
+  orchestrator-agent:
     build: .
     env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "orchestrator-agent", "--port", "8100"]
+    ports:
+      - "8100:8100"
+    depends_on:
+      - source-intelligence-agent
+      - client-context-agent
+      - treasury-risk-agent
+      - legal-risk-agent
+      - accounting-risk-agent
+      - procurement-risk-agent
+      - expert-as-code-agent
+      - evidence-redteam-agent
+      - decision-synthesis-agent
+
+  source-intelligence-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "source-intelligence-agent", "--port", "8101"]
+    ports: ["8101:8101"]
+    depends_on: [mcp-web-search, mcp-evidence-ledger, mcp-qdrant]
+
+  client-context-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "client-context-agent", "--port", "8102"]
+    ports: ["8102:8102"]
+    depends_on: [mcp-structured-data, mcp-neo4j]
+
+  treasury-risk-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "treasury-risk-agent", "--port", "8103"]
+    ports: ["8103:8103"]
+    depends_on: [mcp-structured-data, mcp-qdrant]
+
+  legal-risk-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "legal-risk-agent", "--port", "8104"]
+    ports: ["8104:8104"]
+    depends_on: [mcp-structured-data]
+
+  accounting-risk-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "accounting-risk-agent", "--port", "8105"]
+    ports: ["8105:8105"]
+    depends_on: [mcp-structured-data]
+
+  procurement-risk-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "procurement-risk-agent", "--port", "8106"]
+    ports: ["8106:8106"]
+    depends_on: [mcp-structured-data]
+
+  expert-as-code-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "expert-as-code-agent", "--port", "8107"]
+    ports: ["8107:8107"]
+    depends_on: [mcp-expert-knowledge, mcp-qdrant]
+
+  evidence-redteam-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "evidence-redteam-agent", "--port", "8108"]
+    ports: ["8108:8108"]
+    depends_on: [mcp-evidence-ledger]
+
+  decision-synthesis-agent:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.agent_server", "--agent", "decision-synthesis-agent", "--port", "8109"]
+    ports: ["8109:8109"]
+    depends_on: [mcp-filesystem, mcp-evidence-ledger]
+    volumes:
+      - ./outputs:/app/outputs
+
+  mcp-web-search:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-web-search", "--port", "8201"]
+    ports: ["8201:8201"]
+
+  mcp-document-parser:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-document-parser", "--port", "8202"]
+    ports: ["8202:8202"]
+
+  mcp-llm-ocr:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-llm-ocr", "--port", "8203"]
+    ports: ["8203:8203"]
+
+  mcp-qdrant:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-qdrant", "--port", "8204"]
+    ports: ["8204:8204"]
+    depends_on: [qdrant]
+
+  mcp-neo4j:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-neo4j", "--port", "8205"]
+    ports: ["8205:8205"]
+    depends_on: [neo4j]
+
+  mcp-filesystem:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-filesystem", "--port", "8206"]
+    ports: ["8206:8206"]
+    volumes:
+      - ./outputs:/app/outputs
+
+  mcp-structured-data:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-structured-data", "--port", "8207"]
+    ports: ["8207:8207"]
     volumes:
       - ./data:/app/data
-    command: ["python", "-m", "risk_agent_platform.cli", "run-scenario", "--input", "data/sample_inputs/geopolitical_sanctions_risk.json"]
+
+  mcp-expert-knowledge:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-expert-knowledge", "--port", "8208"]
+    ports: ["8208:8208"]
+    depends_on: [qdrant]
+    volumes:
+      - ./data:/app/data
+
+  mcp-evidence-ledger:
+    build: .
+    env_file: .env
+    environment: *runtime-env
+    command: ["python", "-m", "risk_agent_platform.mcp_servers.run", "--server", "mcp-evidence-ledger", "--port", "8209"]
+    ports: ["8209:8209"]
+    depends_on: [qdrant, neo4j]
+    volumes:
+      - ./data:/app/data
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -24,7 +211,127 @@ services:
       - neo4j_data:/data
       - neo4j_logs:/logs
 
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    restart: unless-stopped
+    depends_on:
+      langfuse-postgres:
+        condition: service_started
+      langfuse-clickhouse:
+        condition: service_started
+      langfuse-redis:
+        condition: service_started
+      langfuse-minio-init:
+        condition: service_completed_successfully
+    environment: &langfuse-env
+      DATABASE_URL: postgresql://postgres:postgres@langfuse-postgres:5432/postgres
+      SALT: local-dev-salt-change-me
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      REDIS_CONNECTION_STRING: redis://langfuse-redis:6379
+      S3_ENDPOINT: http://langfuse-minio:9000
+      S3_ACCESS_KEY_ID: minio
+      S3_SECRET_ACCESS_KEY: miniosecret
+      S3_BUCKET_NAME: langfuse
+      S3_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
+      LANGFUSE_S3_BATCH_EXPORT_BUCKET: langfuse
+      LANGFUSE_S3_BATCH_EXPORT_REGION: auto
+      LANGFUSE_S3_BATCH_EXPORT_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_BATCH_EXPORT_SECRET_ACCESS_KEY: miniosecret
+      LANGFUSE_S3_BATCH_EXPORT_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_BATCH_EXPORT_PREFIX: exports/
+      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-risk-advisory-local-org}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-Risk Advisory Local}
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-risk-advisory-local-project}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-Risk Advisory Intelligence Platform}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-lf_pk_risk_advisory_local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:-lf_sk_risk_advisory_local}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-admin@example.com}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-Local Admin}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-local-admin-password-change-me}
+
+  langfuse:
+    image: langfuse/langfuse:3
+    restart: unless-stopped
+    depends_on: [langfuse-worker]
+    ports:
+      - "3300:3000"
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_URL: http://localhost:3300
+      NEXTAUTH_SECRET: local-dev-nextauth-secret-change-me
+
+  langfuse-postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+
+  langfuse-redis:
+    image: redis:7
+    restart: unless-stopped
+
+  langfuse-minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: miniosecret
+    volumes:
+      - langfuse_minio_data:/data
+
+  langfuse-minio-init:
+    image: minio/mc:latest
+    depends_on: [langfuse-minio]
+    restart: "no"
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://langfuse-minio:9000 minio miniosecret; do sleep 1; done;
+      mc mb -p local/langfuse || true;
+      mc anonymous set none local/langfuse || true;
+      "
+
 volumes:
   qdrant_data:
   neo4j_data:
   neo4j_logs:
+  langfuse_postgres_data:
+  langfuse_clickhouse_data:
+  langfuse_minio_data:
