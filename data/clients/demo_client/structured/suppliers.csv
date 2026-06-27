@@ -1,0 +1,4 @@
+supplier_id,name,country,criticality,product_id,product_name,site_id,inventory_days,alternative_available
+SUP-001,Northern Rare Materials,Noveria,high,PRD-CHIP,Power module,SITE-JP-01,18,false
+SUP-002,Harbor Logistics,Freedonia,medium,PRD-LOG,Inbound logistics,SITE-JP-01,45,true
+SUP-003,Pacific Assembly,Japan,high,PRD-ASM,Final assembly,SITE-JP-02,30,true

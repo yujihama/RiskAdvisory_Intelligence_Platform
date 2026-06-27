@@ -1,0 +1,3 @@
+site_id,name,country,business_unit,criticality
+SITE-JP-01,Kanto Component Plant,Japan,Electronics,high
+SITE-JP-02,Kyushu Assembly Plant,Japan,Electronics,medium

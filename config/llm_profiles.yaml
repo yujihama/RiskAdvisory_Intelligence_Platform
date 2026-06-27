@@ -1,0 +1,30 @@
+llm_profiles:
+  orchestrator:
+    provider: openrouter
+    model_env: OPENROUTER_MODEL
+    default_model: qwen/qwen3.6-flash
+    temperature: 0.2
+    max_tokens: 4000
+  domain_reasoning:
+    provider: openrouter
+    model_env: OPENROUTER_MODEL
+    default_model: qwen/qwen3.6-flash
+    temperature: 0.2
+    max_tokens: 4000
+  fast_extraction:
+    provider: openrouter
+    model_env: OPENROUTER_MODEL
+    default_model: qwen/qwen3.6-flash
+    temperature: 0.0
+    max_tokens: 2000
+  red_team:
+    provider: openrouter
+    model_env: OPENROUTER_MODEL
+    default_model: qwen/qwen3.6-flash
+    temperature: 0.4
+    max_tokens: 3000
+
+fallbacks:
+  domain_reasoning:
+    - qwen/qwen3.6-flash
+    - qwen/qwen3-32b

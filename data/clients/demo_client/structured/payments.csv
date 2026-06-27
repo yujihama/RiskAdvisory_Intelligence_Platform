@@ -1,0 +1,4 @@
+payment_id,supplier_id,due_date,amount,currency,bank_country,bank_name,status
+PAY-1001,SUP-001,2026-07-05,1250000,USD,Noveria,Noveria National Bank,pending
+PAY-1002,SUP-001,2026-07-20,780000,USD,,Unknown correspondent bank,pending
+PAY-1003,SUP-002,2026-07-08,220000,JPY,Japan,Tokyo Trust Bank,pending
