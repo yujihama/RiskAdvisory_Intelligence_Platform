@@ -17,8 +17,8 @@ class EvidenceRepository:
 
     def register(self, evidence: EvidenceItem, *, index_qdrant: bool = True, index_neo4j: bool = True) -> EvidenceItem:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(evidence.model_dump(mode="json"), ensure_ascii=False) + "\n")
+        existing = [item for item in self._read_all() if item.evidence_id != evidence.evidence_id]
+        self._write_all([*existing, evidence])
         if index_qdrant:
             QdrantStore(self.settings).upsert_texts(
                 "evidence_chunks",
@@ -33,6 +33,10 @@ class EvidenceRepository:
                             "asset_id": None,
                             "evidence_id": evidence.evidence_id,
                             "document_id": None,
+                            "source_url": evidence.source_url,
+                            "source_title": evidence.source_title,
+                            "source_domain": evidence.source_domain,
+                            "reliability": evidence.reliability,
                             "confidence": evidence.confidence,
                             "tags": evidence.supports,
                         },
@@ -74,10 +78,10 @@ class EvidenceRepository:
         return evidence
 
     def list_by_scenario(self, scenario_id: str) -> list[EvidenceItem]:
-        return [item for item in self._read_all() if item.scenario_id == scenario_id]
+        return [item for item in self._read_latest_by_id() if item.scenario_id == scenario_id]
 
     def get(self, evidence_id: str) -> EvidenceItem | None:
-        return next((item for item in self._read_all() if item.evidence_id == evidence_id), None)
+        return next((item for item in self._read_latest_by_id() if item.evidence_id == evidence_id), None)
 
     def search(self, query: str, scenario_id: str | None = None, top_k: int = 5) -> list[dict[str, Any]]:
         filters = {"scenario_id": scenario_id} if scenario_id else {}
@@ -91,3 +95,14 @@ class EvidenceRepository:
             if line.strip():
                 items.append(EvidenceItem.model_validate_json(line))
         return items
+
+    def _read_latest_by_id(self) -> list[EvidenceItem]:
+        by_id: dict[str, EvidenceItem] = {}
+        for item in self._read_all():
+            by_id[item.evidence_id] = item
+        return list(by_id.values())
+
+    def _write_all(self, items: list[EvidenceItem]) -> None:
+        with self.path.open("w", encoding="utf-8") as handle:
+            for item in items:
+                handle.write(json.dumps(item.model_dump(mode="json"), ensure_ascii=False) + "\n")

@@ -1,0 +1,4 @@
+payment_id,supplier_id,due_date,amount,currency,bank_country,bank_name,status
+PAY-LIVE-1001,SUP-LIVE-001,2026-07-05,1250000,USD,Russia,Regional Correspondent Bank,pending
+PAY-LIVE-1002,SUP-LIVE-001,2026-07-20,780000,USD,,Unknown correspondent bank,pending
+PAY-LIVE-1003,SUP-LIVE-002,2026-07-08,220000,JPY,Japan,Tokyo Trust Bank,pending

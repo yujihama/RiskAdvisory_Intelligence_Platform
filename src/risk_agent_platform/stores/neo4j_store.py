@@ -91,12 +91,13 @@ class Neo4jStore:
         return {"source_id": source_id, "target_id": target_id, "relation_type": record["type"] if record else relation_type}
 
     def find_related_assets(self, asset_id: str, depth: int = 2) -> list[dict[str, Any]]:
+        depth = _safe_relationship_depth(depth, maximum=5)
         query = (
-            "MATCH p=(n {id: $asset_id})-[*1..$depth]-(m) "
+            f"MATCH p=(n {{id: $asset_id}})-[*1..{depth}]-(m) "
             "RETURN m.id AS id, labels(m) AS labels, properties(m) AS properties LIMIT 50"
         )
         with self.driver.session() as session:
-            return [dict(record) for record in session.run(query, asset_id=asset_id, depth=depth)]
+            return [dict(record) for record in session.run(query, asset_id=asset_id)]
 
     def find_affected_assets(self, scenario_id: str) -> list[dict[str, Any]]:
         query = (
@@ -107,12 +108,13 @@ class Neo4jStore:
             return [dict(record) for record in session.run(query, scenario_id=scenario_id)]
 
     def find_risk_paths(self, scenario_id: str, max_depth: int = 4) -> list[dict[str, Any]]:
+        max_depth = _safe_relationship_depth(max_depth, maximum=6)
         query = (
-            "MATCH p=(:RiskScenario {id: $scenario_id})-[*1..$max_depth]->(m) "
+            f"MATCH p=(:RiskScenario {{id: $scenario_id}})-[*1..{max_depth}]->(m) "
             "RETURN [node IN nodes(p) | node.id] AS node_ids, [rel IN relationships(p) | type(rel)] AS rels LIMIT 50"
         )
         with self.driver.session() as session:
-            return [dict(record) for record in session.run(query, scenario_id=scenario_id, max_depth=max_depth)]
+            return [dict(record) for record in session.run(query, scenario_id=scenario_id)]
 
 
 def _validate_label(label: str) -> str:
@@ -133,3 +135,11 @@ def _with_confidence_defaults(properties: dict[str, Any]) -> dict[str, Any]:
     props.setdefault("source_type", "client_data")
     props.setdefault("requires_validation", False)
     return props
+
+
+def _safe_relationship_depth(value: int, *, maximum: int) -> int:
+    try:
+        depth = int(value)
+    except (TypeError, ValueError):
+        depth = 1
+    return max(1, min(depth, maximum))

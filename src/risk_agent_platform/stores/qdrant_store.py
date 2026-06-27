@@ -53,7 +53,7 @@ class QdrantStore:
                     "created_at": payload.get("created_at") or datetime.now(timezone.utc).isoformat(),
                 }
             )
-            point_id = str(uuid5(NAMESPACE_URL, f"{collection}:{payload}:{text[:200]}"))
+            point_id = _point_id(collection, payload, text)
             points.append(PointStruct(id=point_id, vector=deterministic_embedding(text), payload=payload))
         if points:
             self.client.upsert(collection_name=collection, points=points)
@@ -105,3 +105,12 @@ def _build_filter(filters: dict[str, Any]) -> Filter | None:
     if not conditions:
         return None
     return Filter(must=conditions)
+
+
+def _point_id(collection: str, payload: dict[str, Any], text: str) -> str:
+    for key in ("evidence_id", "knowledge_id", "case_id", "document_id", "asset_id"):
+        value = payload.get(key)
+        if value:
+            chunk = payload.get("chunk_id") or payload.get("page_number") or ""
+            return str(uuid5(NAMESPACE_URL, f"{collection}:{key}:{value}:{chunk}"))
+    return str(uuid5(NAMESPACE_URL, f"{collection}:{payload}:{text[:200]}"))

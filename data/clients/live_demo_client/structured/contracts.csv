@@ -1,0 +1,3 @@
+contract_id,supplier_id,governing_law,force_majeure_clause,sanctions_clause,notice_days,termination_right
+CTR-LIVE-9001,SUP-LIVE-001,England,true,true,7,true
+CTR-LIVE-9002,SUP-LIVE-002,Japan,true,false,14,false

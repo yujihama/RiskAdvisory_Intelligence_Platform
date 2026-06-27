@@ -1,12 +1,14 @@
 from datetime import date
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from risk_agent_platform.config import Settings
+from risk_agent_platform.evidence_repository import EvidenceRepository
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
-from risk_agent_platform.schemas import RiskEvent
+from risk_agent_platform.schemas import EvidenceItem, RiskEvent
 
 
 def _event() -> RiskEvent:
@@ -68,3 +70,25 @@ def test_expert_pack_exposes_case_question_and_cta_files():
     assert cases and cases[0]["case_id"].startswith("case_")
     assert questions and questions[0]["question_id"].startswith("q_")
     assert notes and notes[0]["note_id"].startswith("cta_")
+
+
+def test_evidence_repository_upserts_by_evidence_id(tmp_path):
+    settings = replace(Settings.load(Path.cwd()), project_root=tmp_path, data_dir=tmp_path / "data")
+    repo = EvidenceRepository(settings)
+    first = EvidenceItem(
+        evidence_id="ev-001",
+        scenario_id="scenario-test",
+        client_id="client-test",
+        source_type="web",
+        source_ref="https://example.test/one",
+        summary="Older summary",
+    )
+    latest = first.model_copy(update={"summary": "Latest summary", "source_ref": "https://example.test/two"})
+
+    repo.register(first, index_qdrant=False, index_neo4j=False)
+    repo.register(latest, index_qdrant=False, index_neo4j=False)
+
+    evidence = repo.list_by_scenario("scenario-test")
+    assert len(evidence) == 1
+    assert evidence[0].summary == "Latest summary"
+    assert len(repo.path.read_text(encoding="utf-8").splitlines()) == 1

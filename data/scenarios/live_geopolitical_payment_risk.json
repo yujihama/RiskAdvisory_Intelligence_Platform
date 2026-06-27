@@ -1,0 +1,12 @@
+{
+  "scenario_id": "scenario_live_2026_001",
+  "client_id": "live_demo_client",
+  "title": "Potential sanctions escalation affecting critical supplier payments",
+  "risk_type": "geopolitical_sanctions",
+  "countries": ["Russia"],
+  "risk_themes": ["sanctions", "payment_disruption", "supplier_resilience"],
+  "affected_categories": ["critical_components", "cross_border_payments"],
+  "description": "A sanctions escalation signal may affect suppliers, payment banks, and contract performance for critical components sourced from a high-risk jurisdiction.",
+  "event_date": "2026-06-27",
+  "urgency": "high"
+}

@@ -139,6 +139,15 @@ Docker services:
 python -m risk_agent_platform.run_scenario --scenario data\scenarios\sample_geopolitical_payment_risk.json
 ```
 
+Live Tavily/OpenRouter scenario with the included `live_demo_client` fixture:
+
+```powershell
+$env:LANGFUSE_HOST='http://localhost:3300'
+$env:LANGFUSE_PUBLIC_KEY='lf_pk_risk_advisory_local'
+$env:LANGFUSE_SECRET_KEY='lf_sk_risk_advisory_local'
+python -m risk_agent_platform.run_scenario --scenario data\scenarios\live_geopolitical_payment_risk.json --embedded-services
+```
+
 Expected outputs:
 
 - `outputs/<scenario_id>/final_brief.md`
@@ -183,11 +192,13 @@ python -m risk_agent_platform.run_scenario --scenario data\scenarios\sample_geop
 
 `pytest` includes a dummy-data final architecture E2E with mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and final output artifact generation.
 
+The live final E2E has also been verified with real Tavily search, OpenRouter DeepAgent calls, Qdrant evidence indexing, Neo4j graph registration/path reads, and Langfuse trace readback. The latest verified live trace is `724f0fa5-8e4c-4db7-a19b-2664bf6e901d`.
+
 Without `TAVILY_API_KEY`, the final CLI fails explicitly at Source Intelligence and does not use `dummy_sources.json` as a fallback.
 
 See [docs/acceptance_checklist.md](docs/acceptance_checklist.md) for the requirement-by-requirement status.
 
 ## Known Constraints
 
-- Live Tavily E2E requires `TAVILY_API_KEY`.
+- Live Tavily E2E requires `TAVILY_API_KEY` and the Langfuse environment variables above if Langfuse trace export is required.
 - Authentication, RBAC, policy engine, ECS deployment, CI/CD, high availability, and real Ariba/SAP API connectivity are intentionally out of scope for this implementation phase.

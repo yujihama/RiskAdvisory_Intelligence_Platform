@@ -14,7 +14,7 @@ Evidence:
 - `src/risk_agent_platform/deepagent_runtime.py`
 - `src/risk_agent_platform/final_agents.py`
 - `python -m compileall src tests`
-- `pytest` -> `9 passed`
+- `pytest` -> `10 passed`
 
 ## A2A
 
@@ -50,12 +50,14 @@ Verified command summary:
 - [x] Evidence registration writes JSONL, indexes Qdrant, and registers Evidence/Scenario relations in Neo4j.
 - [x] `dummy_sources.json` is fixture-only and is not used by the final path.
 - [x] Missing `TAVILY_API_KEY` fails explicitly without silent dummy fallback.
-- [ ] Live Tavily E2E verified with a real `TAVILY_API_KEY`.
+- [x] Live Tavily E2E verified with a real `TAVILY_API_KEY`.
 
-Current blocker:
+Verified live run:
 
-- `TAVILY_API_KEY` is not configured locally.
-- Verified failure mode: `python -m risk_agent_platform.run_scenario --scenario data\scenarios\sample_geopolitical_payment_risk.json --embedded-services` fails at Source Intelligence with `TAVILY_API_KEY is required; dummy_sources.json is fixture-only and is not used in the normal path`.
+- `python -m risk_agent_platform.run_scenario --scenario data\scenarios\live_geopolitical_payment_risk.json --embedded-services`
+- Final status: `completed`
+- Final trace id: `724f0fa5-8e4c-4db7-a19b-2664bf6e901d`
+- Evidence domains: `skilldynamics.com`, `www.cmtradelaw.com`, `www.consilium.europa.eu`, `www.steptoe.com`, `home.treasury.gov`
 
 ## OpenRouter
 
@@ -85,6 +87,12 @@ Verified collections:
 - `expert_knowledge`
 - `scenario_cards`
 
+Live scenario verification:
+
+- Qdrant `evidence_chunks` search with `scenario_id=scenario_live_2026_001` returned 5 evidence points.
+- Evidence payloads retain `source_domain`, `source_url`, `source_title`, and stable `evidence_id` metadata.
+- Evidence point IDs are stable by `evidence_id`, so rerunning the same scenario does not multiply duplicate evidence search hits.
+
 ## Neo4j
 
 - [x] Neo4j is called through `mcp-neo4j`.
@@ -96,6 +104,8 @@ Evidence:
 
 - HTTP MCP smoke inserted `RiskScenario` node `http_mcp_check`.
 - Dummy final E2E queried affected assets from Neo4j.
+- Live final E2E registered `scenario_live_2026_001`, linked 3 affected suppliers, and returned 3 risk paths.
+- Neo4j variable-depth graph reads were verified through `find_affected_assets`, `find_related_assets`, and `find_risk_paths`.
 
 ## Langfuse
 
@@ -106,6 +116,7 @@ Evidence:
 - [x] SDK `auth_check()` returned `True` with the local initialized keys.
 - [x] `TraceRecorder` sends A2A/MCP/LLM events to Langfuse using a Langfuse-compatible trace id.
 - [x] Local JSONL trace is written under `outputs/_traces`.
+- [x] Live final E2E trace was read back through the Langfuse public API.
 
 Verified commands:
 
@@ -113,6 +124,8 @@ Verified commands:
 - `curl.exe -I --max-time 20 http://localhost:3300` -> `HTTP/1.1 200 OK`
 - `Langfuse(...).auth_check()` -> `True`
 - Langfuse-enabled dummy final E2E test passed.
+- Live trace API readback: `trace_id=724f0fa58e4c4db7a19b2664bf6e901d`, `project_id=risk-advisory-local-project`, `observation_count=144`.
+- Local trace `outputs/_traces/724f0fa5-8e4c-4db7-a19b-2664bf6e901d.jsonl` includes A2A, MCP, and OpenRouter events with `langfuse_enabled=true` and no `langfuse_event_error`.
 
 ## Expert-as-Code
 
@@ -146,4 +159,13 @@ Evidence:
 - [x] `pytest` includes a final architecture embedded E2E using dummy client data, mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and output artifact generation.
 - [x] Langfuse-enabled dummy final E2E passed.
 - [x] Final CLI fails explicitly when Tavily is missing.
-- [ ] Full live E2E with real Tavily search is not yet verified because `TAVILY_API_KEY` is not configured.
+- [x] Full live E2E with real Tavily search, Qdrant, Neo4j, Langfuse, OpenRouter, and output artifacts is verified.
+
+Final live E2E evidence:
+
+- Command: `python -m risk_agent_platform.run_scenario --scenario data\scenarios\live_geopolitical_payment_risk.json --embedded-services`
+- Required outputs written under `outputs/scenario_live_2026_001/`: `final_brief.md`, `decision_queue.json`, `evidence_summary.json`, `red_team_review.md`, `assumptions_and_unknowns.json`, `trace_metadata.json`.
+- `evidence_summary.json` contains 5 Tavily-backed evidence records.
+- `decision_queue.json` contains `scenario_live_2026_001_decision_001` linked to all 5 evidence IDs.
+- Qdrant returned 5 live evidence hits after scenario-scoped cleanup and stable evidence upsert.
+- Neo4j returned affected suppliers `SUP-LIVE-001`, `SUP-LIVE-002`, and `SUP-LIVE-003`.
