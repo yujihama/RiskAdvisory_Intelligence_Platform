@@ -5,10 +5,14 @@ from pathlib import Path
 import pytest
 
 from risk_agent_platform.config import Settings
+from risk_agent_platform.a2a_sdk_adapter import sdk_agent_card_dict
+from risk_agent_platform.embeddings import create_embedding_provider
 from risk_agent_platform.evidence_repository import EvidenceRepository
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
-from risk_agent_platform.schemas import EvidenceItem, RiskEvent
+from risk_agent_platform.schemas import AgentCard, EvidenceItem, RiskEvent
+from risk_agent_platform.source_reliability import score_source
+from risk_agent_platform.vector import VECTOR_SIZE
 
 
 def _event() -> RiskEvent:
@@ -39,6 +43,54 @@ def test_query_sanitizer_removes_client_specific_terms():
     assert "Kanto Component Plant" not in result.sanitized
     assert "near-term supplier payment exposure" in result.sanitized
     assert "material exposure amount" in result.sanitized
+
+
+def test_query_sanitizer_uses_title_and_explicit_confidential_terms():
+    event = _event().model_copy(update={"title": "Alpha Supplier payment review"})
+
+    result = sanitize_query("Alpha Supplier Beta Site sanctions", event, confidential_terms=["Beta Site"])
+
+    assert "Alpha Supplier" not in result.sanitized
+    assert "Beta Site" not in result.sanitized
+    assert result.redactions
+
+
+def test_a2a_sdk_agent_card_adapter_emits_sdk_shape():
+    card = AgentCard(
+        name="source-intelligence-agent",
+        description="Collects external evidence.",
+        skills=["tavily_search"],
+        modes=["source_intelligence"],
+    )
+
+    sdk_card = sdk_agent_card_dict(card, base_url="http://localhost:8101")
+
+    assert sdk_card["protocolVersion"] == "0.3.0"
+    assert sdk_card["preferredTransport"] == "HTTP+JSON"
+    assert sdk_card["url"] == "http://localhost:8101/a2a"
+    assert sdk_card["skills"][0]["id"] == "tavily_search"
+    assert sdk_card["capabilities"]["stateTransitionHistory"] is True
+
+
+def test_source_reliability_scores_domain_classes():
+    event = _event()
+
+    official = score_source({"url": "https://home.treasury.gov/news", "title": "Noveria sanctions"}, event)
+    blog = score_source({"url": "https://example.blog/post", "title": "Opinion"}, event)
+
+    assert official["reliability"] == "high"
+    assert official["client_relevance"] in {"medium", "high"}
+    assert blog["reliability"] == "low"
+
+
+def test_embedding_provider_can_use_deterministic_mode(monkeypatch):
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "deterministic")
+    provider = create_embedding_provider(Settings.load(Path.cwd()))
+
+    vector = provider.embed("sanctions payment exposure")
+
+    assert provider.name == "deterministic"
+    assert len(vector) == VECTOR_SIZE
 
 
 def test_document_parser_uses_real_fastmcp_boundary(tmp_path):

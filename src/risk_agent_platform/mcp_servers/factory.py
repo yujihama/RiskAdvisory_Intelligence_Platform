@@ -20,6 +20,7 @@ from risk_agent_platform.evidence_repository import EvidenceRepository
 from risk_agent_platform.model_profiles import ModelProfileRouter
 from risk_agent_platform.query_sanitizer import build_risk_signal_query, sanitize_query
 from risk_agent_platform.schemas import EvidenceItem, RiskEvent
+from risk_agent_platform.source_reliability import score_source
 from risk_agent_platform.stores.neo4j_store import Neo4jStore
 from risk_agent_platform.stores.qdrant_store import QDRANT_COLLECTIONS, QdrantStore
 
@@ -46,15 +47,24 @@ def create_web_search_server(settings: Settings) -> FastMCP:
     mcp = FastMCP("mcp-web-search")
 
     @mcp.tool
-    def search_risk_signals(risk_event: dict[str, Any], max_results: int = 5) -> dict[str, Any]:
+    def search_risk_signals(
+        risk_event: dict[str, Any],
+        max_results: int = 5,
+        confidential_terms: list[str] | None = None,
+    ) -> dict[str, Any]:
         event = RiskEvent.model_validate(risk_event)
-        query = build_risk_signal_query(event)
+        query = build_risk_signal_query(event, confidential_terms=confidential_terms)
         return _tavily_search(settings, query.sanitized, query.query_hash, max_results=max_results)
 
     @mcp.tool
-    def search_authoritative_sources(query: str, risk_event: dict[str, Any], max_results: int = 5) -> dict[str, Any]:
+    def search_authoritative_sources(
+        query: str,
+        risk_event: dict[str, Any],
+        max_results: int = 5,
+        confidential_terms: list[str] | None = None,
+    ) -> dict[str, Any]:
         event = RiskEvent.model_validate(risk_event)
-        sanitized = sanitize_query(query, event)
+        sanitized = sanitize_query(query, event, confidential_terms=confidential_terms)
         return _tavily_search(settings, sanitized.sanitized, sanitized.query_hash, max_results=max_results)
 
     @mcp.tool
@@ -65,14 +75,19 @@ def create_web_search_server(settings: Settings) -> FastMCP:
         return {"url": url, "result": client.extract(urls=[url])}
 
     @mcp.tool
-    def search_and_register_evidence(risk_event: dict[str, Any], max_results: int = 5) -> dict[str, Any]:
+    def search_and_register_evidence(
+        risk_event: dict[str, Any],
+        max_results: int = 5,
+        confidential_terms: list[str] | None = None,
+    ) -> dict[str, Any]:
         event = RiskEvent.model_validate(risk_event)
-        search_result = search_risk_signals(risk_event, max_results=max_results)
+        search_result = search_risk_signals(risk_event, max_results=max_results, confidential_terms=confidential_terms)
         repo = EvidenceRepository(settings)
         registered: list[dict[str, Any]] = []
         for idx, result in enumerate(search_result["results"], start=1):
             url = str(result.get("url") or "")
             domain = urlparse(url).netloc
+            source_score = score_source(result, event)
             evidence = EvidenceItem(
                 evidence_id=f"{event.scenario_id}_tavily_{idx:03d}",
                 scenario_id=event.scenario_id,
@@ -81,15 +96,15 @@ def create_web_search_server(settings: Settings) -> FastMCP:
                 source_ref=url or f"tavily:{idx}",
                 source_url=url or None,
                 source_title=str(result.get("title") or ""),
-                source_domain=domain or None,
+                source_domain=str(source_score.get("source_domain") or domain or "") or None,
                 search_query_hash=str(search_result["query_hash"]),
                 summary=str(result.get("content") or result.get("raw_content") or "")[:1200],
                 raw_snippet=str(result.get("content") or "")[:2000],
                 supports=[event.risk_type, *event.risk_themes],
-                reliability="medium",
-                client_relevance="medium",
+                reliability=source_score["reliability"],
+                client_relevance=source_score["client_relevance"],
                 used_by_agents=["source-intelligence-agent"],
-                confidence="medium",
+                confidence=source_score["confidence"],
                 extraction_method="tavily_search",
             )
             repo.register(evidence, index_qdrant=True)

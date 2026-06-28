@@ -1,20 +1,20 @@
 # Risk Advisory Intelligence Platform
 
-This repository implements the final target architecture described in `docs/`, not just the earlier local PoC skeleton.
+This repository implements a working slice of the target architecture described in `docs/`, beyond the earlier local PoC skeleton. Some target-architecture items are intentionally still partial and are listed under Known Constraints.
 
 The normal execution path is:
 
 ```text
 CLI / API
   -> Orchestrator DeepAgent
-  -> A2A HTTP task requests
+  -> A2A SDK-shaped Agent Cards + A2A-compatible HTTP task requests
   -> Domain DeepAgents
-  -> FastMCP tool calls
+  -> FastMCP tool calls, including a partial DeepAgent tool-integration path
   -> Tavily / Qdrant / Neo4j / Files / Evidence Ledger / Expert Knowledge
   -> Decision Queue + Executive Brief + Evidence Summary
 ```
 
-The earlier local PoC classes remain for compatibility tests, but the final path is `python -m risk_agent_platform.run_scenario` or `risk-agent-platform run-final-scenario`.
+The earlier local PoC classes remain for compatibility tests, but the current target path is `python -m risk_agent_platform.run_scenario` or `risk-agent-platform run-final-scenario`.
 
 ## Architecture Diagrams
 
@@ -38,8 +38,11 @@ The following A2A agents are implemented as DeepAgent-backed services:
 Each service exposes:
 
 - `/.well-known/agent-card.json`
+- `/.well-known/agent-card.internal.json`
 - `/a2a`
 - `/healthz`
+
+`/.well-known/agent-card.json` is emitted through the installed `a2a-sdk` v0.3 `AgentCard` model. The `/a2a` task endpoint remains an A2A-compatible HTTP boundary using the project `AgentTaskRequest` / `AgentTaskResult` schemas, rather than a full SDK server transport.
 
 ## MCP Servers
 
@@ -56,6 +59,8 @@ FastMCP servers are implemented for:
 - `mcp-evidence-ledger`
 
 Agents call tools through `MCPGateway`, which uses FastMCP `Client`.
+
+The Source Intelligence Agent also demonstrates partial DeepAgent tool integration: its Tavily evidence registration MCP call is wrapped as a DeepAgent tool named `register_external_risk_evidence`. The remaining agents still keep MCP orchestration in Python `analyze()` methods for auditability and deterministic control.
 
 ## Required Environment Variables
 
@@ -89,6 +94,17 @@ NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
 ```
+
+Embeddings:
+
+```env
+EMBEDDING_PROVIDER=openrouter
+EMBEDDING_MODEL=openai/text-embedding-3-small
+EMBEDDING_BASE_URL=https://openrouter.ai/api/v1
+EMBEDDING_FALLBACK_TO_DETERMINISTIC=true
+```
+
+Qdrant now uses an `EmbeddingProvider` interface. The default attempts OpenRouter-compatible real embeddings and normalizes vectors to the current 384-dimensional Qdrant collections. Deterministic embeddings remain available for tests and local reproducibility with `EMBEDDING_PROVIDER=deterministic`; if the real embedding endpoint is unavailable and fallback is enabled, deterministic fallback is used.
 
 Langfuse:
 
@@ -160,9 +176,11 @@ Expected outputs:
 
 ## Evidence Ledger
 
-Tavily results are sanitized, normalized into `EvidenceItem`, stored in JSONL, indexed into Qdrant, and linked to scenarios/assets/decisions through Neo4j MCP tools.
+Tavily results are sanitized, assigned an initial source reliability score, normalized into `EvidenceItem`, stored in JSONL, indexed into Qdrant, and linked to scenarios/assets/decisions through Neo4j MCP tools.
 
 `dummy_sources.json` is fixture-only. The final path does not silently fall back to dummy sources. If `TAVILY_API_KEY` is absent, the final path fails explicitly.
+
+Initial source reliability scoring is domain-based: government, regulator, international organization, and official disclosure sources are scored `high`; general news or research sources are `medium`; blog-like sources are `low`.
 
 ## Expert-as-Code
 
@@ -192,7 +210,7 @@ python -m risk_agent_platform.run_scenario --scenario data\scenarios\sample_geop
 
 `pytest` includes a dummy-data final architecture E2E with mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and final output artifact generation.
 
-The live final E2E has also been verified with real Tavily search, OpenRouter DeepAgent calls, Qdrant evidence indexing, Neo4j graph registration/path reads, and Langfuse trace readback. The latest verified live trace is `724f0fa5-8e4c-4db7-a19b-2664bf6e901d`.
+The live E2E path has also been verified with real Tavily search, OpenRouter DeepAgent calls, Qdrant evidence indexing, Neo4j graph registration/path reads, and Langfuse trace readback. The latest verified live trace is `724f0fa5-8e4c-4db7-a19b-2664bf6e901d`.
 
 Without `TAVILY_API_KEY`, the final CLI fails explicitly at Source Intelligence and does not use `dummy_sources.json` as a fallback.
 
@@ -201,4 +219,8 @@ See [docs/acceptance_checklist.md](docs/acceptance_checklist.md) for the require
 ## Known Constraints
 
 - Live Tavily E2E requires `TAVILY_API_KEY` and the Langfuse environment variables above if Langfuse trace export is required.
+- DeepAgent tool integration is partial: Source Intelligence has a DeepAgent-wrapped MCP tool example, while most domain agents still orchestrate MCP calls in Python for stability and auditability.
+- A2A is currently an A2A SDK-shaped Agent Card plus A2A-compatible HTTP task boundary; the task transport is not yet a full a2a-sdk server/client implementation.
+- Qdrant has an `EmbeddingProvider` abstraction and attempts real OpenRouter-compatible embeddings by default, but deterministic embeddings remain the default fallback and the explicit test mode.
+- Source reliability scoring is initial/simple and domain-based; it does not yet perform full source provenance, recency, corroboration, or contradiction analysis.
 - Authentication, RBAC, policy engine, ECS deployment, CI/CD, high availability, and real Ariba/SAP API connectivity are intentionally out of scope for this implementation phase.

@@ -18,6 +18,7 @@ from risk_agent_platform.stores.qdrant_store import QdrantStore
 def test_final_embedded_e2e_with_mocked_tavily_and_dummy_client_data(tmp_path, monkeypatch):
     root = Path.cwd()
     monkeypatch.setenv("TAVILY_API_KEY", "test-tavily-key")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "deterministic")
     monkeypatch.setattr(
         "risk_agent_platform.deepagent_runtime.DeepAgentRunner.synthesize",
         lambda self, prompt, max_chars=600: f"{self.agent_name} synthesized",

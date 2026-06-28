@@ -82,6 +82,26 @@ class StoreSettings:
 
 
 @dataclass(frozen=True)
+class EmbeddingSettings:
+    provider: str
+    model: str
+    base_url: str
+    timeout_seconds: int
+    fallback_to_deterministic: bool
+
+    @classmethod
+    def from_env(cls) -> "EmbeddingSettings":
+        return cls(
+            provider=os.getenv("EMBEDDING_PROVIDER", "openrouter"),
+            model=os.getenv("EMBEDDING_MODEL", "openai/text-embedding-3-small"),
+            base_url=os.getenv("EMBEDDING_BASE_URL") or os.getenv("OPENROUTER_BASE_URL", DEFAULT_OPENROUTER_BASE_URL),
+            timeout_seconds=int(os.getenv("EMBEDDING_TIMEOUT_SECONDS", "30")),
+            fallback_to_deterministic=os.getenv("EMBEDDING_FALLBACK_TO_DETERMINISTIC", "true").lower()
+            not in {"0", "false", "no"},
+        )
+
+
+@dataclass(frozen=True)
 class LangfuseSettings:
     host: str | None
     public_key: str | None
@@ -140,6 +160,7 @@ class Settings:
     data_dir: Path
     openrouter: OpenRouterSettings
     stores: StoreSettings
+    embeddings: EmbeddingSettings
     external_apis: ExternalApiSettings
     langfuse: LangfuseSettings
     service_urls: dict[str, str]
@@ -154,6 +175,7 @@ class Settings:
             data_dir=root / "data",
             openrouter=OpenRouterSettings.from_env(),
             stores=StoreSettings.from_env(),
+            embeddings=EmbeddingSettings.from_env(),
             external_apis=ExternalApiSettings.from_env(),
             langfuse=LangfuseSettings.from_env(),
             service_urls=service_urls_from_env(),

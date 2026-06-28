@@ -41,11 +41,11 @@ def sanitize_query(query: str, event: RiskEvent, confidential_terms: list[str] |
     return SanitizedQuery(original=query, sanitized=sanitized, query_hash=digest, redactions=redactions)
 
 
-def build_risk_signal_query(event: RiskEvent) -> SanitizedQuery:
+def build_risk_signal_query(event: RiskEvent, confidential_terms: list[str] | None = None) -> SanitizedQuery:
     country = ", ".join(event.countries) if event.countries else "affected country"
     themes = " ".join(event.risk_themes or [event.risk_type])
     query = f"{country} {themes} critical supplier payment disruption regulatory official source"
-    return sanitize_query(query, event)
+    return sanitize_query(query, event, confidential_terms=confidential_terms)
 
 
 def _replacement_for(term: str) -> str:
@@ -74,6 +74,7 @@ def _normalize_domain_terms(query: str) -> str:
 def _event_sensitive_terms(event: RiskEvent) -> list[str]:
     terms = [event.client_id, event.scenario_id]
     terms.extend(event.affected_categories)
+    terms.extend(_sensitive_phrases(event.title))
     terms.extend(_sensitive_phrases(event.description))
     return [term for term in terms if term]
 

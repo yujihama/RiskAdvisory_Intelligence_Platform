@@ -11,4 +11,4 @@ COPY data/expert_knowledge ./data/expert_knowledge
 
 RUN python -m pip install --no-cache-dir -e .
 
-CMD ["python", "-m", "risk_agent_platform.cli", "run-scenario", "--input", "data/sample_inputs/geopolitical_sanctions_risk.json"]
+CMD ["python", "-m", "risk_agent_platform.run_scenario", "--help"]

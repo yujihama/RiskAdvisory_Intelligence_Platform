@@ -9,7 +9,8 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams
 
 from risk_agent_platform.config import Settings
-from risk_agent_platform.vector import VECTOR_SIZE, deterministic_embedding
+from risk_agent_platform.embeddings import create_embedding_provider
+from risk_agent_platform.vector import VECTOR_SIZE
 
 
 QDRANT_COLLECTIONS = [
@@ -30,6 +31,7 @@ class QdrantStore:
             api_key=settings.stores.qdrant_api_key,
             timeout=10,
         )
+        self.embedding_provider = create_embedding_provider(settings)
 
     def ensure_collections(self) -> list[str]:
         existing = {collection.name for collection in self.client.get_collections().collections}
@@ -54,7 +56,13 @@ class QdrantStore:
                 }
             )
             point_id = _point_id(collection, payload, text)
-            points.append(PointStruct(id=point_id, vector=deterministic_embedding(text), payload=payload))
+            vector = self.embedding_provider.embed(text)
+            payload["embedding_provider"] = payload.get("embedding_provider") or getattr(
+                self.embedding_provider,
+                "last_provider_name",
+                self.embedding_provider.name,
+            )
+            points.append(PointStruct(id=point_id, vector=vector, payload=payload))
         if points:
             self.client.upsert(collection_name=collection, points=points)
         return {"collection": collection, "upserted": len(points)}
@@ -65,7 +73,7 @@ class QdrantStore:
         try:
             result = self.client.query_points(
                 collection_name=collection,
-                query=deterministic_embedding(query),
+                query=self.embedding_provider.embed(query),
                 query_filter=q_filter,
                 limit=top_k,
                 with_payload=True,

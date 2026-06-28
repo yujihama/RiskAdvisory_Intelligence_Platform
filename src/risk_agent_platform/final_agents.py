@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+
+from langchain_core.tools import tool
 
 from risk_agent_platform.a2a_http import A2AHttpClient, A2AService, create_a2a_app
 from risk_agent_platform.config import Settings
@@ -31,7 +34,11 @@ class DomainDeepAgentService(A2AService):
     def __init__(self, settings: Settings, *, embedded_mcp: bool = False) -> None:
         self.settings = settings
         self.mcp = MCPGateway(settings, embedded=embedded_mcp)
-        self.runner = DeepAgentRunner(settings, self.name, self.system_prompt())
+        self._last_deepagent_tool_result: dict[str, Any] | None = None
+        self.runner = DeepAgentRunner(settings, self.name, self.system_prompt(), tools=self.deepagent_tools())
+
+    def deepagent_tools(self) -> list[Any]:
+        return []
 
     def card(self) -> AgentCard:
         return AgentCard(
@@ -88,11 +95,56 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
     skills = ["tavily_search", "evidence_registration", "source_quality"]
     modes = ["source_intelligence"]
 
+    def deepagent_tools(self) -> list[Any]:
+        @tool("register_external_risk_evidence")
+        def register_external_risk_evidence(risk_event_json: str, confidential_terms_json: str = "[]") -> str:
+            """Search Tavily through MCP, register evidence, and return a compact audit summary."""
+            risk_event = json.loads(risk_event_json)
+            confidential_terms = json.loads(confidential_terms_json or "[]")
+            result = self.mcp.call(
+                "mcp-web-search",
+                "search_and_register_evidence",
+                {
+                    "risk_event": risk_event,
+                    "max_results": 5,
+                    "confidential_terms": confidential_terms,
+                },
+            )
+            self._last_deepagent_tool_result = result
+            return json.dumps(
+                {
+                    "query": result.get("query"),
+                    "query_hash": result.get("query_hash"),
+                    "evidence_ids": [item.get("evidence_id") for item in result.get("evidence", [])],
+                    "evidence_count": len(result.get("evidence", [])),
+                },
+                ensure_ascii=False,
+            )
+
+        return [register_external_risk_evidence]
+
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
-        result = self.mcp.call("mcp-web-search", "search_and_register_evidence", {"risk_event": event.model_dump(mode="json"), "max_results": 5})
+        confidential_terms = _confidential_terms_from_findings(task.inputs.get("findings", []))
+        self._last_deepagent_tool_result = None
+        synthesis = self.synthesize(
+            "Call the register_external_risk_evidence tool exactly once for this risk_event_json, "
+            "then summarize the source intelligence in one sentence.\n"
+            f"risk_event_json={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
+            f"confidential_terms_json={json.dumps(confidential_terms, ensure_ascii=False)}"
+        )
+        result = self._last_deepagent_tool_result
+        if result is None:
+            result = self.mcp.call(
+                "mcp-web-search",
+                "search_and_register_evidence",
+                {
+                    "risk_event": event.model_dump(mode="json"),
+                    "max_results": 5,
+                    "confidential_terms": confidential_terms,
+                },
+            )
         evidence = result.get("evidence", [])
-        synthesis = self.synthesize(f"Summarize source intelligence for this risk event in one sentence: {event.title}")
         return AgentFinding(
             agent_name=self.name,
             mode="source_intelligence",
@@ -102,7 +154,12 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
             recommended_actions=["Review authoritative sources and retain query hash for audit."],
             review_required=False,
             rationale="Tavily results are sanitized, normalized to EvidenceItem, stored in Evidence Ledger, and indexed in Qdrant.",
-            metadata={"query": result.get("query"), "query_hash": result.get("query_hash")},
+            metadata={
+                "query": result.get("query"),
+                "query_hash": result.get("query_hash"),
+                "deepagent_tool_invoked": self._last_deepagent_tool_result is not None,
+                "confidential_terms_count": len(confidential_terms),
+            },
         )
 
 
@@ -116,6 +173,10 @@ class ClientContextDeepAgent(DomainDeepAgentService):
         event = self.event(task)
         datasets = self.mcp.call("mcp-structured-data", "list_datasets", {"client_id": event.client_id})
         suppliers = self.mcp.call("mcp-structured-data", "sample_rows", {"client_id": event.client_id, "dataset": "suppliers", "limit": 100})
+        sites = self.mcp.call("mcp-structured-data", "sample_rows", {"client_id": event.client_id, "dataset": "sites", "limit": 100}) if "sites" in datasets else []
+        contracts = self.mcp.call("mcp-structured-data", "sample_rows", {"client_id": event.client_id, "dataset": "contracts", "limit": 100}) if "contracts" in datasets else []
+        customers = self.mcp.call("mcp-structured-data", "sample_rows", {"client_id": event.client_id, "dataset": "customers", "limit": 100}) if "customers" in datasets else []
+        confidential_terms = _confidential_terms_from_rows([*suppliers, *sites, *contracts, *customers])
         self.mcp.call("mcp-neo4j", "upsert_asset", {"label": "Client", "asset_id": event.client_id, "properties": {"name": event.client_id}})
         self.mcp.call("mcp-neo4j", "upsert_asset", {"label": "RiskScenario", "asset_id": event.scenario_id, "properties": event.model_dump(mode="json")})
         affected = []
@@ -134,7 +195,11 @@ class ClientContextDeepAgent(DomainDeepAgentService):
             recommended_actions=["Validate supplier criticality and sub-tier dependencies."],
             review_required=True,
             rationale="Client context is source-backed from structured data and relationship-backed in Neo4j.",
-            metadata={"datasets": datasets, "affected_supplier_ids": affected},
+            metadata={
+                "datasets": datasets,
+                "affected_supplier_ids": affected,
+                "confidential_terms": confidential_terms,
+            },
         )
 
 
@@ -522,6 +587,47 @@ def _knowledge_ids_from_findings(findings: list[dict[str, Any]]) -> list[str]:
                 if value and value not in ids:
                     ids.append(str(value))
     return ids
+
+
+def _confidential_terms_from_findings(findings: list[dict[str, Any]]) -> list[str]:
+    terms: list[str] = []
+    for finding in findings:
+        metadata = finding.get("metadata") or {}
+        for term in metadata.get("confidential_terms") or []:
+            _append_unique_term(terms, term)
+    return terms
+
+
+def _confidential_terms_from_rows(rows: list[dict[str, Any]]) -> list[str]:
+    terms: list[str] = []
+    sensitive_keys = {
+        "name",
+        "supplier_name",
+        "customer_name",
+        "site_name",
+        "contract_name",
+        "contract_id",
+        "supplier_id",
+        "customer_id",
+        "site_id",
+        "payment_id",
+        "bank_name",
+        "product_name",
+    }
+    for row in rows:
+        for key, value in row.items():
+            if key in sensitive_keys or key.endswith("_id") or key.endswith("_name"):
+                _append_unique_term(terms, value)
+    return terms
+
+
+def _append_unique_term(terms: list[str], value: Any) -> None:
+    text = str(value or "").strip()
+    if len(text) < 3:
+        return
+    if text.lower() in {item.lower() for item in terms}:
+        return
+    terms.append(text)
 
 
 def new_root_task(event: RiskEvent) -> AgentTask:

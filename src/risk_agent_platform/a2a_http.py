@@ -5,8 +5,9 @@ from collections.abc import Mapping
 from typing import Any
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
+from risk_agent_platform.a2a_sdk_adapter import sdk_agent_card_dict
 from risk_agent_platform.config import Settings
 from risk_agent_platform.schemas import AgentCard, AgentTaskRequest, AgentTaskResult
 from risk_agent_platform.tracing import TraceRecorder
@@ -26,7 +27,11 @@ def create_a2a_app(service: A2AService) -> FastAPI:
     app = FastAPI(title=service.name)
 
     @app.get("/.well-known/agent-card.json")
-    def agent_card() -> dict[str, Any]:
+    def agent_card(request: Request) -> dict[str, Any]:
+        return sdk_agent_card_dict(service.card(), base_url=str(request.base_url).rstrip("/"))
+
+    @app.get("/.well-known/agent-card.internal.json")
+    def internal_agent_card() -> dict[str, Any]:
         return service.card().model_dump(mode="json")
 
     @app.get("/healthz")
