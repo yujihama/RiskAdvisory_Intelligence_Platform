@@ -1,0 +1,597 @@
+{
+  "summary": {
+    "case_count": 4,
+    "passed": true,
+    "average_recall": 1.0,
+    "average_question_match": 1.0,
+    "average_question_semantic_match": 1.0,
+    "average_missing_data_category_match": 1.0,
+    "average_reason_quality": 1.0,
+    "average_expert_rubric_coverage": 1.0,
+    "forbidden_top_violation_count": 0,
+    "failed_case_ids": [],
+    "min_recall": 0.75,
+    "min_question_match": 0.25,
+    "min_missing_data_match": 0.5,
+    "min_reason_quality": 0.75,
+    "min_rubric_coverage": 0.5
+  },
+  "cases": [
+    {
+      "case_id": "rdc_treasury_iran_payment_001",
+      "passed": true,
+      "recall": 1.0,
+      "expected_selected_risk_types": [
+        "payment_disruption"
+      ],
+      "selected_risk_types": [
+        "payment_disruption",
+        "payment_disruption",
+        "payment_disruption",
+        "payment_disruption",
+        "payment_disruption"
+      ],
+      "selected_candidate_titles": [
+        "Correspondent bank de-risking contracts available payment channels",
+        "Enhanced sanctions screening delays on cross-border wire transfers",
+        "SWIFT disconnection blocks standard payment routing to Iran-linked counterparties",
+        "Secondary sanctions enforcement risk for treasury payment operations",
+        "Payment rerouting through alternative currencies creates FX and liquidity timing gaps"
+      ],
+      "selected_candidate_rationales": [
+        "BFI research (March 2026) documents how financial sanctions reshape correspondent banking networks, with banks systematically exiting relationships that carry sanctions exposure. Treasury departments in manufacturing firms face direct impact as payment channels narrow, particularly for time-sensitive supplier payments.",
+        "OFAC enforcement actions (e.g., Harman International $1.45M settlement) signal heightened regulatory expectations for sanctions screening. Banks are responding with broader screening nets that capture more transactions for manual review, creating settlement delays that Treasury must manage against supplier payment obligations.",
+        "SWIFT disconnection is the most severe payment infrastructure disruption, removing the foundational messaging layer for international payments. Treasury must identify which supplier payments are affected and determine whether alternative routing exists or whether obligations must be renegotiated.",
+        "US Treasury has designated Nobitex (Iran's largest crypto exchange) and continues expanding sanctions designations. OFAC settlements like the Harman International case demonstrate enforcement against manufacturing companies. Treasury must ensure payment screening covers not just direct Iran nexus but indirect exposure through intermediary banks, suppliers, and logistics providers.",
+        "BFI research documents the shift toward yuan-based correspondent banking as an alternative to sanctioned USD/EUR channels. Treasury must manage the FX, cost, and timing implications of rerouting payments through unfamiliar currency corridors, including potential settlement delays of 2-5 additional days and unhedged currency exposure."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "Treasury",
+          "payment_disruption",
+          "cross-border payments",
+          "manufacturing",
+          "scope_text:primary",
+          "scope_text:treasury",
+          "treasury",
+          "SCOPE-DEPT-TREASURY-001:primary",
+          "SCOPE-DEPT-TREASURY-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Treasury",
+          "payment_disruption",
+          "cross-border payments",
+          "scope_text:primary",
+          "SCOPE-DEPT-TREASURY-001:primary",
+          "SCOPE-DEPT-TREASURY-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Treasury",
+          "payment_disruption",
+          "payment infrastructure",
+          "scope_text:primary",
+          "scope_text:treasury",
+          "treasury",
+          "SCOPE-DEPT-TREASURY-001:primary",
+          "SCOPE-DEPT-TREASURY-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Treasury",
+          "legal_compliance",
+          "sanctions risk",
+          "manufacturing",
+          "scope_text:primary",
+          "scope_text:treasury",
+          "treasury",
+          "SCOPE-DEPT-TREASURY-001:primary",
+          "SCOPE-DEPT-TREASURY-001:term"
+        ],
+        [
+          "Treasury",
+          "payment_disruption",
+          "liquidity management",
+          "FX risk",
+          "scope_text:primary",
+          "scope_text:treasury",
+          "treasury",
+          "SCOPE-DEPT-TREASURY-001:primary",
+          "SCOPE-DEPT-TREASURY-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ]
+      ],
+      "expected_hits": [
+        "payment_disruption"
+      ],
+      "top_risk_types": [
+        "payment_disruption",
+        "payment_disruption",
+        "payment_disruption"
+      ],
+      "should_not_prioritize": [
+        "accounting_disclosure"
+      ],
+      "forbidden_in_top": [],
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
+      "expected_questions": [
+        "Which pending payments are near term and routed through affected bank countries?",
+        "Which alternate payment routes are available without increasing sanctions risk?"
+      ],
+      "actual_questions": [
+        "Which pending payments are near term and routed through affected bank countries?",
+        "Which alternate payment routes are available without increasing sanctions risk?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Near-term payment route availability and sanctions-screening ownership are not yet validated."
+      ],
+      "expected_missing_data_categories": [
+        "payment_route",
+        "sanctions_screening"
+      ],
+      "actual_missing_data_categories": [
+        "evidence_gap",
+        "executive_ownership",
+        "materiality_reporting",
+        "payment_route",
+        "sanctions_screening"
+      ],
+      "missing_data_category_hits": [
+        "payment_route",
+        "sanctions_screening"
+      ],
+      "missing_data_category_match": 1.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-DEPT-TREASURY-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-DEPT-TREASURY-001",
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-DEPT-TREASURY-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "coverage_augmented_candidate_count": 0,
+      "raw_candidate_count": 5,
+      "rejected_risk_types": [],
+      "rejected_reasons": [],
+      "rejected_count": 0
+    },
+    {
+      "case_id": "rdc_legal_sanctions_contract_001",
+      "passed": true,
+      "recall": 1.0,
+      "expected_selected_risk_types": [
+        "legal_compliance"
+      ],
+      "selected_risk_types": [
+        "legal_compliance",
+        "legal_compliance",
+        "legal_compliance",
+        "legal_compliance",
+        "legal_compliance"
+      ],
+      "selected_candidate_titles": [
+        "Sanctions clause deficiency in Japan-governed contract limits exit rights",
+        "Counterparty re-screening obligation against expanded OFAC SDN and BIS Entity lists",
+        "Export control classification review for dual-use manufactured goods under expanded BIS rules",
+        "Secondary sanctions exposure through non-U.S. supplier and subsidiary transactions",
+        "USD payment blocking and OFAC blocking obligations for Iran-nexus transactions"
+      ],
+      "selected_candidate_rationales": [
+        "Client contract data shows one of two contracts has no sanctions clause and no termination right. The April 2024 BIS/OFAC expansion of Iran-related designations increases the probability that a counterparty could become a restricted party mid-performance, and the Legal department must assess whether existing force majeure language can substitute for a dedicated sanctions clause.",
+        "Client has 3 suppliers (2 high-criticality) and 2 active contracts. The expanded Iran sanctions designations require prompt re-screening. One high-criticality supplier in Noveria has no alternative source, meaning a positive match would create both a compliance breach and an operational crisis. The Legal department owns the screening protocol and must coordinate with procurement.",
+        "The client operates in manufacturing, an industry flagged in the expanded BIS controls. The April 2024 rules added new items to the Commerce Control List targeting Iran's military-industrial base. Legal must determine whether manufactured goods or sub-components supplied to or from Iran-adjacent jurisdictions require new BIS licenses, and whether existing license exceptions remain valid.",
+        "Client suppliers span multiple jurisdictions (Noveria, Freedonia, Japan). The expanded Iran sanctions package includes secondary sanctions provisions targeting non-U.S. entities facilitating Iran's military programs. A material USD payment ($1-5M) is pending to a Noveria-based supplier. Legal must evaluate whether any supplier in the chain has Iran nexus that could trigger secondary sanctions, particularly given uncertainties around the full scope of newly designated entities.",
+        "Client has 3 pending payments, all near-term due, including one material USD payment ($1-5M) to Noveria due within 0-7 days. If any payment counterparty or beneficiary has an Iran nexus identified in the expanded SDN list, the payment could be blocked by the correspondent bank. Legal must advise on OFAC blocking report obligations (31 CFR 501.603), interest accrual on blocked funds, and whether specific license applications are needed to release or redirect payments."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "Legal department contract review",
+          "sanctions clause gap",
+          "Japan governing law without termination right",
+          "scope_text:primary",
+          "scope_text:legal",
+          "Legal",
+          "legal",
+          "SCOPE-DEPT-LEGAL-001:primary",
+          "SCOPE-DEPT-LEGAL-001:term",
+          "contracts:theme_match"
+        ],
+        [
+          "Legal department compliance obligations",
+          "counterparty due diligence",
+          "sanctions screening",
+          "scope_text:primary",
+          "scope_text:legal",
+          "Legal",
+          "legal",
+          "SCOPE-DEPT-LEGAL-001:primary",
+          "SCOPE-DEPT-LEGAL-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Legal department export compliance",
+          "manufacturing industry dual-use risk",
+          "BIS regulatory obligations",
+          "scope_text:primary",
+          "scope_text:legal",
+          "Legal",
+          "legal",
+          "SCOPE-DEPT-LEGAL-001:primary",
+          "SCOPE-DEPT-LEGAL-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Legal department sanctions advisory",
+          "extraterritorial compliance",
+          "supplier and subsidiary oversight",
+          "scope_text:primary",
+          "scope_text:legal",
+          "Legal",
+          "legal",
+          "SCOPE-DEPT-LEGAL-001:primary",
+          "SCOPE-DEPT-LEGAL-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Legal department OFAC compliance",
+          "payment screening obligations",
+          "blocked funds reporting",
+          "scope_text:primary",
+          "scope_text:legal",
+          "Legal",
+          "legal",
+          "SCOPE-DEPT-LEGAL-001:primary",
+          "SCOPE-DEPT-LEGAL-001:term"
+        ]
+      ],
+      "expected_hits": [
+        "legal_compliance"
+      ],
+      "top_risk_types": [
+        "legal_compliance",
+        "legal_compliance",
+        "legal_compliance"
+      ],
+      "should_not_prioritize": [
+        "payment_disruption"
+      ],
+      "forbidden_in_top": [],
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
+      "expected_questions": [
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?"
+      ],
+      "actual_questions": [
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Counterparty restricted-party status and contract notice obligations require legal validation."
+      ],
+      "expected_missing_data_categories": [
+        "contract_terms",
+        "sanctions_screening"
+      ],
+      "actual_missing_data_categories": [
+        "contract_terms",
+        "evidence_gap",
+        "executive_ownership",
+        "materiality_reporting",
+        "sanctions_screening"
+      ],
+      "missing_data_category_hits": [
+        "contract_terms",
+        "sanctions_screening"
+      ],
+      "missing_data_category_match": 1.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-DEPT-LEGAL-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-DEPT-LEGAL-001",
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-DEPT-LEGAL-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "coverage_augmented_candidate_count": 0,
+      "raw_candidate_count": 5,
+      "rejected_risk_types": [],
+      "rejected_reasons": [],
+      "rejected_count": 0
+    },
+    {
+      "case_id": "rdc_accounting_disclosure_001",
+      "passed": true,
+      "recall": 1.0,
+      "expected_selected_risk_types": [
+        "accounting_disclosure"
+      ],
+      "selected_risk_types": [
+        "accounting_disclosure",
+        "accounting_disclosure",
+        "accounting_disclosure",
+        "accounting_disclosure",
+        "accounting_disclosure"
+      ],
+      "selected_candidate_titles": [
+        "Long-lived asset and goodwill impairment indicator triggered by Iran-linked geopolitical disruption",
+        "Subsequent event classification uncertainty between adjusting and non-adjusting events",
+        "Provision and contingent liability recognition from sanctions-triggered contract terminations",
+        "Inventory write-down and trade receivables expected credit loss adjustment",
+        "Going concern and liquidity disclosure adequacy under payment channel disruption"
+      ],
+      "selected_candidate_rationales": [
+        "OFAC E.O. 13902 targets Iranian manufacturing, mining, construction, and textiles sectors with secondary sanctions. Client operates in manufacturing with high-criticality Japan-based electronics sites and suppliers with 8-30 day inventory coverage and no alternatives. Impairment indicator assessment is a core accounting close obligation under IAS 36 / ASC 360.",
+        "Event date is null in the request, indicating timing uncertainty relative to period-end. Client has near-term payment obligations (0-7 day bucket, 1m-5m material amount) and contracts with sanctions clauses that may have been triggered before or after period-end. IAS 10 / ASC 855 requires careful classification.",
+        "Client contract data shows force majeure clauses, sanctions clauses, and termination rights across governing law jurisdictions (England, Japan). OFAC secondary sanctions on Iranian manufacturing sector create plausible trigger events. Provision vs. contingent liability classification directly affects reported earnings and balance sheet.",
+        "Client has high-criticality suppliers with no alternatives and inventory coverage as low as 8-30 days. Near-term payments in USD and JPY are pending. Manufacturing industry exposure to Iranian sanctioned sectors (mining, textiles for raw materials) creates inventory and receivables valuation risk under IAS 2 / ASC 330 and IFRS 9 / ASC 326.",
+        "Client has 3 near-term due payments including a material 1m-5m USD obligation due within 0-7 days. Secondary sanctions and correspondent banking de-risking from Iran geopolitical disruption create plausible payment channel failure. Going concern assessment is a mandatory accounting close requirement under IAS 1 / ASC 205-40."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "accounting",
+          "reporting close",
+          "impairment indicators",
+          "scope_text:primary",
+          "scope_text:accounting",
+          "Accounting",
+          "SCOPE-DEPT-ACCOUNTING-001:primary",
+          "SCOPE-DEPT-ACCOUNTING-001:term"
+        ],
+        [
+          "accounting",
+          "subsequent event analysis",
+          "reporting close",
+          "scope_text:primary",
+          "scope_text:accounting",
+          "Accounting",
+          "SCOPE-DEPT-ACCOUNTING-001:primary",
+          "SCOPE-DEPT-ACCOUNTING-001:term"
+        ],
+        [
+          "accounting",
+          "provisions",
+          "disclosure evidence",
+          "scope_text:primary",
+          "scope_text:accounting",
+          "Accounting",
+          "SCOPE-DEPT-ACCOUNTING-001:primary",
+          "SCOPE-DEPT-ACCOUNTING-001:term"
+        ],
+        [
+          "accounting",
+          "impairment indicators",
+          "reporting close",
+          "scope_text:primary",
+          "scope_text:accounting",
+          "Accounting",
+          "SCOPE-DEPT-ACCOUNTING-001:primary",
+          "SCOPE-DEPT-ACCOUNTING-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "accounting",
+          "reporting close",
+          "disclosure evidence",
+          "scope_text:primary",
+          "scope_text:accounting",
+          "Accounting",
+          "SCOPE-DEPT-ACCOUNTING-001:primary",
+          "SCOPE-DEPT-ACCOUNTING-001:term"
+        ]
+      ],
+      "expected_hits": [
+        "accounting_disclosure"
+      ],
+      "top_risk_types": [
+        "accounting_disclosure",
+        "accounting_disclosure",
+        "accounting_disclosure"
+      ],
+      "should_not_prioritize": [
+        "supplier_resilience"
+      ],
+      "forbidden_in_top": [],
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
+      "expected_questions": [
+        "Which exposures could become material for impairment, provision, or disclosure?",
+        "What evidence package is required for auditor review?"
+      ],
+      "actual_questions": [
+        "Which exposures could become material for impairment, provision, or disclosure?",
+        "What evidence package is required for auditor review?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Materiality and auditor evidence sufficiency require accounting validation."
+      ],
+      "expected_missing_data_categories": [
+        "materiality_reporting",
+        "evidence_gap"
+      ],
+      "actual_missing_data_categories": [
+        "evidence_gap",
+        "materiality_reporting"
+      ],
+      "missing_data_category_hits": [
+        "evidence_gap",
+        "materiality_reporting"
+      ],
+      "missing_data_category_match": 1.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-DEPT-ACCOUNTING-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-DEPT-ACCOUNTING-001",
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-DEPT-ACCOUNTING-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "coverage_augmented_candidate_count": 0,
+      "raw_candidate_count": 5,
+      "rejected_risk_types": [],
+      "rejected_reasons": [],
+      "rejected_count": 0
+    },
+    {
+      "case_id": "rdc_executive_manufacturing_portfolio_001",
+      "passed": true,
+      "recall": 1.0,
+      "expected_selected_risk_types": [
+        "supplier_resilience",
+        "payment_disruption",
+        "legal_compliance",
+        "executive_resilience"
+      ],
+      "selected_risk_types": [
+        "supplier_resilience",
+        "executive_resilience",
+        "legal_compliance",
+        "legal_compliance",
+        "payment_disruption"
+      ],
+      "selected_candidate_titles": [
+        "Sole-source Iran supplier cutoff with no alternative and thin inventory buffer",
+        "Executive decision paralysis from simultaneous competing risk vectors requiring coordinated trade-offs",
+        "Secondary sanctions enforcement risk across contracts with sanctions clauses",
+        "Strait of Hormuz shipping lane disruption cascading to UAE transshipment and Japan site energy inputs",
+        "SWIFT payment channel disruption blocking material USD payment to Iran counterparty"
+      ],
+      "selected_candidate_rationales": [
+        "Executive management must decide whether to authorize emergency dual-sourcing investment, accept production downtime, or invoke force majeure on downstream customer contracts. The absence of an alternative supplier and the short inventory window compress the decision timeline to days, not weeks.",
+        "This is the core executive resilience risk: the absence of a pre-established decision framework for simultaneous, conflicting crises. The executive committee must rapidly establish a cross-functional war room, define decision authority delegation, sequence actions (legal assessment before payment execution before supplier communication), and prepare stakeholder messaging — all while the 0-7 day payment deadline and 8-30 day inventory clock are running.",
+        "General counsel and the executive committee must assess whether to proactively suspend Iran-linked contract performance, notify counterparties under sanctions clauses, or await further regulatory clarity. Premature suspension may forfeit contractual rights; delayed action may expose the firm to enforcement penalties and reputational damage. This is a distinct legal risk from supply or payment disruption.",
+        "The COO and executive team must weigh the cost of pre-positioning inventory, rerouting logistics through alternative corridors, or accepting margin compression from elevated energy and freight costs. The 31-90 day inventory buffers at Japan sites provide some runway but the medium-term reconfiguration horizon (3-12 months) requires early executive commitment to capital allocation.",
+        "The CFO and treasury function face an immediate executive decision: attempt payment before channels close, seek alternative routing through a third-country intermediary (which may itself violate sanctions), or withhold payment and manage default consequences. The 0-7 day maturity leaves virtually no time for structural workarounds."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "executive",
+          "management",
+          "SCOPE-IND-MANUFACTURING-001:primary",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "executive",
+          "management",
+          "scope_text:primary",
+          "scope_text:executive",
+          "scope_text:management",
+          "Executive",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "executive",
+          "management",
+          "company",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "executive",
+          "management",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "executive",
+          "management"
+        ]
+      ],
+      "expected_hits": [
+        "supplier_resilience",
+        "payment_disruption",
+        "legal_compliance",
+        "executive_resilience"
+      ],
+      "top_risk_types": [
+        "supplier_resilience",
+        "executive_resilience",
+        "legal_compliance"
+      ],
+      "should_not_prioritize": [],
+      "forbidden_in_top": [],
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
+      "expected_questions": [
+        "Which selected risks require executive cross-functional decision ownership?",
+        "Which evidence gaps block immediate mitigation decisions?"
+      ],
+      "actual_questions": [
+        "Which pending payments are near term and routed through affected bank countries?",
+        "Which alternate payment routes are available without increasing sanctions risk?",
+        "Which critical suppliers have low inventory runway or no qualified alternative source?",
+        "Which logistics lanes or sites need immediate continuity validation?",
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?",
+        "Which selected risks require executive cross-functional decision ownership?",
+        "Which evidence gaps block immediate mitigation decisions?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Near-term payment route availability and sanctions-screening ownership are not yet validated.",
+        "Counterparty restricted-party status and contract notice obligations require legal validation."
+      ],
+      "expected_missing_data_categories": [
+        "supplier_continuity",
+        "payment_route",
+        "executive_ownership",
+        "evidence_gap"
+      ],
+      "actual_missing_data_categories": [
+        "contract_terms",
+        "evidence_gap",
+        "executive_ownership",
+        "materiality_reporting",
+        "payment_route",
+        "sanctions_screening",
+        "supplier_continuity"
+      ],
+      "missing_data_category_hits": [
+        "evidence_gap",
+        "executive_ownership",
+        "payment_route",
+        "supplier_continuity"
+      ],
+      "missing_data_category_match": 1.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "coverage_augmented_candidate_count": 0,
+      "raw_candidate_count": 5,
+      "rejected_risk_types": [],
+      "rejected_reasons": [],
+      "rejected_count": 0
+    }
+  ],
+  "thresholds": {
+    "top_n": 3,
+    "min_recall": 0.75,
+    "min_question_match": 0.25,
+    "min_missing_data_match": 0.5,
+    "min_reason_quality": 0.75,
+    "min_rubric_coverage": 0.5
+  }
+}

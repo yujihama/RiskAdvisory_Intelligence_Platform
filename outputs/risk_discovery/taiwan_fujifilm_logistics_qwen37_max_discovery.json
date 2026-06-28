@@ -1,0 +1,701 @@
+{
+  "request": {
+    "event_title": "Taiwan contingency",
+    "event_description": "A Taiwan Strait contingency may disrupt sea freight, air freight, ports, customs clearance, 3PL providers, critical component transport delays, alternate routes, customer shipments, export controls, and international payments.",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_text": "Fujifilm logistics, including sea freight, air freight, ports, customs clearance, 3PL, critical component transport delays, and alternate routes.",
+      "scope_type": "company",
+      "scope_name": null,
+      "department": null,
+      "region": null,
+      "site_id": null,
+      "metadata": {}
+    },
+    "countries": [
+      "Taiwan"
+    ],
+    "event_date": null,
+    "max_risks": 5
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "Taiwan Strait sea freight lane closure forces costly rerouting of ocean shipments",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "sea freight disruption",
+        "shipping lane closure",
+        "rerouting costs"
+      ],
+      "affected_categories": [
+        "sea freight",
+        "ports",
+        "logistics"
+      ],
+      "description": "A Taiwan Strait contingency (quarantine, blockade, or kinetic escalation) could close or severely restrict one of the world's busiest shipping lanes. Vessels carrying components and finished goods between East Asia (Japan, South Korea, Taiwan, China) and western destinations would face mandatory rerouting through alternate corridors such as the Bashi Channel or around the Philippines, adding 5-10 days of transit time and significant fuel surcharges. Container availability and port congestion at alternate hubs would compound delays.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "sea freight",
+        "ports",
+        "alternate routes",
+        "critical component transport delays",
+        "scope_text:primary",
+        "scope_text:logistics",
+        "scope_text:logistic",
+        "scope_text:sea freight",
+        "scope_text:freight",
+        "scope_text:port",
+        "logistics",
+        "logistic",
+        "freight",
+        "port"
+      ],
+      "rationale": "The Taiwan Strait is the primary maritime corridor for East Asian trade. Fujifilm's Japan-based manufacturing sites (Healthcare, Electronics, Imaging) depend on sea freight for inbound components and outbound shipments. Closure would directly impact delivery timelines and logistics costs across multiple business units.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-002",
+      "title": "Airspace restrictions over Taiwan disrupt time-sensitive air cargo for critical components",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "air freight disruption",
+        "airspace closure",
+        "time-sensitive shipments"
+      ],
+      "affected_categories": [
+        "air freight",
+        "critical component transport",
+        "logistics"
+      ],
+      "description": "Military escalation or NOTAM-driven airspace closures over and around Taiwan would eliminate direct air cargo routes through Taipei FIR (Flight Information Region). Air freight of high-value, time-sensitive components (semiconductors, optical sensors, medical imaging parts) would be rerouted through congested alternate air corridors over Southeast Asia or Japan, increasing transit times by 1-3 days and air freight rates due to capacity constraints on remaining open routes.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "air freight",
+        "critical component transport delays",
+        "alternate routes",
+        "scope_text:primary",
+        "scope_text:logistics",
+        "scope_text:logistic",
+        "scope_text:transport",
+        "scope_text:air freight",
+        "scope_text:freight",
+        "logistics",
+        "logistic",
+        "transport",
+        "freight",
+        "port",
+        "route",
+        "routes"
+      ],
+      "rationale": "Fujifilm's Healthcare and Electronics business units rely on air freight for urgent, high-value component shipments from Taiwan-based semiconductor and precision electronics suppliers. Airspace closure would disproportionately affect just-in-time deliveries where sea freight is too slow.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-003",
+      "title": "Escalating export controls on dual-use goods delay customs clearance and require new licensing",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "export controls",
+        "customs clearance delays",
+        "dual-use goods licensing"
+      ],
+      "affected_categories": [
+        "customs clearance",
+        "regulatory compliance",
+        "logistics"
+      ],
+      "description": "A Taiwan contingency would likely trigger rapid expansion of US, EU, and allied export controls on semiconductors, dual-use electronic components, and related equipment. Goods currently shipping under license exemptions or general authorizations could require individual export licenses, causing customs clearance delays of weeks to months. Re-export compliance obligations under EAR would extend to goods transiting through third countries. Taiwan itself is considering stricter controls on AI chip exports to China.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "customs clearance",
+        "critical component transport delays",
+        "scope_text:logistics",
+        "scope_text:logistic",
+        "scope_text:port",
+        "scope_text:ports",
+        "scope_text:customs",
+        "logistics",
+        "logistic",
+        "port",
+        "ports",
+        "customs"
+      ],
+      "rationale": "Fujifilm ships and sources dual-use electronic and optical components that may fall under expanded control lists. New licensing requirements would delay customs clearance at origin and destination ports, creating compliance obligations across the logistics chain that are distinct from physical supply disruption.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-004",
+      "title": "3PL provider capacity loss in Taiwan corridor with insufficient alternate route throughput",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "3PL disruption",
+        "logistics intermediary failure",
+        "alternate route capacity constraints"
+      ],
+      "affected_categories": [
+        "3PL",
+        "alternate routes",
+        "logistics"
+      ],
+      "description": "Third-party logistics providers operating warehousing, consolidation, and last-mile services through Taiwan could suspend operations or lose capacity due to port closures, workforce displacement, or insurance withdrawal. Simultaneously, demand for alternate routing through Southeast Asian logistics hubs (Vietnam, Thailand, Malaysia) would surge, overwhelming available 3PL capacity, warehouse space, and ground transport in those corridors. The combined effect would strand shipments and create bottlenecks at transfer points.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "3PL",
+        "alternate routes",
+        "sea freight",
+        "logistics",
+        "scope_text:primary",
+        "scope_text:logistics",
+        "scope_text:logistic",
+        "scope_text:transport",
+        "scope_text:port",
+        "scope_text:3pl",
+        "logistic",
+        "transport",
+        "port",
+        "3pl",
+        "route",
+        "routes"
+      ],
+      "rationale": "Fujifilm's logistics network depends on 3PL providers for consolidation, customs brokerage, and distribution in the Taiwan corridor. Loss of 3PL capacity is a distinct disruption mechanism from direct shipping lane closure — it affects the intermediary layer that manages multi-modal transfers, documentation, and warehousing.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-005",
+      "title": "Cross-border payment disruption to Taiwan-domiciled suppliers and logistics counterparties",
+      "risk_type": "payment_disruption",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "payment channel disruption",
+        "sanctions financial exposure",
+        "cross-border settlement delays"
+      ],
+      "affected_categories": [
+        "international payments",
+        "supplier payments",
+        "financial operations"
+      ],
+      "description": "A Taiwan contingency could trigger sanctions regimes, SWIFT access restrictions, or correspondent banking disruptions that delay or block cross-border payments to Taiwan-based suppliers, freight forwarders, and 3PL providers. Currency volatility in TWD and regional currencies would compound settlement uncertainty. Even absent direct sanctions, risk-averse banks may impose enhanced due diligence on Taiwan-related transactions, adding days to payment processing and potentially halting goods in transit that require pre-payment or letter-of-credit confirmation.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "logistics",
+        "critical component transport delays",
+        "scope_text:logistics",
+        "scope_text:logistic",
+        "scope_text:freight",
+        "scope_text:3pl",
+        "logistic",
+        "freight",
+        "3pl"
+      ],
+      "rationale": "Fujifilm's logistics operations require timely payments to Taiwan-based suppliers and service providers. Payment disruption is a distinct risk mechanism from physical logistics disruption — goods may be physically available but unable to ship if payment confirmation is blocked or delayed by financial channel restrictions.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_fujifilm_dummy_taiwan_contingency_9f47c55b_disc_001",
+    "client_id": "fujifilm_dummy",
+    "title": "Taiwan Strait sea freight lane closure forces costly rerouting of ocean shipments",
+    "risk_type": "supplier_resilience",
+    "countries": [
+      "Taiwan"
+    ],
+    "risk_themes": [
+      "sea freight disruption",
+      "shipping lane closure",
+      "rerouting costs"
+    ],
+    "affected_categories": [
+      "sea freight",
+      "ports",
+      "logistics"
+    ],
+    "description": "A Taiwan Strait contingency (quarantine, blockade, or kinetic escalation) could close or severely restrict one of the world's busiest shipping lanes. Vessels carrying components and finished goods between East Asia (Japan, South Korea, Taiwan, China) and western destinations would face mandatory rerouting through alternate corridors such as the Bashi Channel or around the Philippines, adding 5-10 days of transit time and significant fuel surcharges. Container availability and port congestion at alternate hubs would compound delays.",
+    "event_date": "2026-06-28",
+    "urgency": "high"
+  },
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_taiwan_contingency_9f47c55b_disc_001",
+      "client_id": "fujifilm_dummy",
+      "title": "Taiwan Strait sea freight lane closure forces costly rerouting of ocean shipments",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "sea freight disruption",
+        "shipping lane closure",
+        "rerouting costs"
+      ],
+      "affected_categories": [
+        "sea freight",
+        "ports",
+        "logistics"
+      ],
+      "description": "A Taiwan Strait contingency (quarantine, blockade, or kinetic escalation) could close or severely restrict one of the world's busiest shipping lanes. Vessels carrying components and finished goods between East Asia (Japan, South Korea, Taiwan, China) and western destinations would face mandatory rerouting through alternate corridors such as the Bashi Channel or around the Philippines, adding 5-10 days of transit time and significant fuel surcharges. Container availability and port congestion at alternate hubs would compound delays.",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_taiwan_contingency_9f47c55b_disc_002",
+      "client_id": "fujifilm_dummy",
+      "title": "Airspace restrictions over Taiwan disrupt time-sensitive air cargo for critical components",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "air freight disruption",
+        "airspace closure",
+        "time-sensitive shipments"
+      ],
+      "affected_categories": [
+        "air freight",
+        "critical component transport",
+        "logistics"
+      ],
+      "description": "Military escalation or NOTAM-driven airspace closures over and around Taiwan would eliminate direct air cargo routes through Taipei FIR (Flight Information Region). Air freight of high-value, time-sensitive components (semiconductors, optical sensors, medical imaging parts) would be rerouted through congested alternate air corridors over Southeast Asia or Japan, increasing transit times by 1-3 days and air freight rates due to capacity constraints on remaining open routes.",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_taiwan_contingency_9f47c55b_disc_003",
+      "client_id": "fujifilm_dummy",
+      "title": "Escalating export controls on dual-use goods delay customs clearance and require new licensing",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "export controls",
+        "customs clearance delays",
+        "dual-use goods licensing"
+      ],
+      "affected_categories": [
+        "customs clearance",
+        "regulatory compliance",
+        "logistics"
+      ],
+      "description": "A Taiwan contingency would likely trigger rapid expansion of US, EU, and allied export controls on semiconductors, dual-use electronic components, and related equipment. Goods currently shipping under license exemptions or general authorizations could require individual export licenses, causing customs clearance delays of weeks to months. Re-export compliance obligations under EAR would extend to goods transiting through third countries. Taiwan itself is considering stricter controls on AI chip exports to China.",
+      "event_date": "2026-06-28",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_taiwan_contingency_9f47c55b_disc_004",
+      "client_id": "fujifilm_dummy",
+      "title": "3PL provider capacity loss in Taiwan corridor with insufficient alternate route throughput",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "3PL disruption",
+        "logistics intermediary failure",
+        "alternate route capacity constraints"
+      ],
+      "affected_categories": [
+        "3PL",
+        "alternate routes",
+        "logistics"
+      ],
+      "description": "Third-party logistics providers operating warehousing, consolidation, and last-mile services through Taiwan could suspend operations or lose capacity due to port closures, workforce displacement, or insurance withdrawal. Simultaneously, demand for alternate routing through Southeast Asian logistics hubs (Vietnam, Thailand, Malaysia) would surge, overwhelming available 3PL capacity, warehouse space, and ground transport in those corridors. The combined effect would strand shipments and create bottlenecks at transfer points.",
+      "event_date": "2026-06-28",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_taiwan_contingency_9f47c55b_disc_005",
+      "client_id": "fujifilm_dummy",
+      "title": "Cross-border payment disruption to Taiwan-domiciled suppliers and logistics counterparties",
+      "risk_type": "payment_disruption",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "payment channel disruption",
+        "sanctions financial exposure",
+        "cross-border settlement delays"
+      ],
+      "affected_categories": [
+        "international payments",
+        "supplier payments",
+        "financial operations"
+      ],
+      "description": "A Taiwan contingency could trigger sanctions regimes, SWIFT access restrictions, or correspondent banking disruptions that delay or block cross-border payments to Taiwan-based suppliers, freight forwarders, and 3PL providers. Currency volatility in TWD and regional currencies would compound settlement uncertainty. Even absent direct sanctions, risk-averse banks may impose enhanced due diligence on Taiwan-related transactions, adding days to payment processing and potentially halting goods in transit that require pre-payment or letter-of-credit confirmation.",
+      "event_date": "2026-06-28",
+      "urgency": "medium"
+    }
+  ],
+  "generated_at": "2026-06-28T13:46:17.441723Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 5,
+        "countries": [
+          "Japan",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      },
+      "regions": {
+        "dataset": "regions",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "segments": {
+        "dataset": "segments",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "payments": {
+        "dataset": "payments",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [
+          "EUR",
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 5,
+        "amount_buckets": {
+          "1m_5m": 2,
+          "gte_50m": 1,
+          "250k_1m": 2
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 5,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      }
+    },
+    "scope_interpretation": {
+      "scope_text": "Fujifilm logistics, including sea freight, air freight, ports, customs clearance, 3PL, critical component transport delays, and alternate routes.",
+      "matched_domains": [
+        "logistics"
+      ],
+      "matched_terms": [
+        "logistics",
+        "logistic",
+        "transport",
+        "sea freight",
+        "air freight",
+        "freight",
+        "port",
+        "ports",
+        "customs",
+        "3pl",
+        "route",
+        "routes"
+      ],
+      "primary_risk_types": [
+        "supplier_resilience"
+      ],
+      "source": "scope_text"
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 5,
+    "coverage_augmented_candidate_count": 0,
+    "web_search_count": 3,
+    "web_extraction_count": 3,
+    "web_searches": [
+      {
+        "query": "Taiwan Strait crisis impact international payments SWIFT sanctions financial disruption Asia Pacific",
+        "query_hash": "dd4f8837c0179816",
+        "result_count": 3,
+        "results": [
+          {
+            "title": "Economic impact of yet another Taiwan Strait crisis - LinkedIn",
+            "url": "https://www.linkedin.com/pulse/economic-impact-yet-another-taiwan-strait-crisis-garcia-herrero-%E8%89%BE%E8%A5%BF%E4%BA%9E",
+            "content": "Any further escalation can have very negative consequences for Taiwan, Asia, and the world. It includes supply chain disruptions and renewed"
+          },
+          {
+            "title": "Economic impact of latest Taiwan Strait crisis - EuroAsia and the World",
+            "url": "https://aliciagarciaherrero.substack.com/p/economic-impact-of-latest-taiwan",
+            "content": "Any further escalation could have very negative consequences for Taiwan, Asia, and the world. That includes supply-chain disruptions and renewed"
+          },
+          {
+            "title": "Disruptions to Trade in the Taiwan Strait Would Severely Impact ...",
+            "url": "https://www.csis.org/analysis/disruptions-trade-taiwan-strait-would-severely-impact-chinas-economy",
+            "content": "## Footer. ## About CSIS submenu. ## About CSIS. ## About Menu. # Disruptions to Trade in the Taiwan Strait Would Severely Impact China's Economy. #### A major Taiwan contingency, such as quarantine, blockade, or invasion, could significantly disrupt the flow of trade through the Taiwan Strait—one of the world’s bus..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "query": "Taiwan Strait contingency sea freight air freight port disruption shipping lanes 2024 2025",
+        "query_hash": "be47635709ae6638",
+        "result_count": 3,
+        "results": [
+          {
+            "title": "Ocean Shipping Freight Market Update: December 2024",
+            "url": "https://www.chrobinson.com/en-us/resources/insights-and-advisories/north-america-freight-insights/dec-2024-freight-market-update/key-freight-service-updates/ocean",
+            "content": "## Potential East and Gulf Coast port strike on January 15, 2025. More details about the potential East and Gulf Coast port strike on January 15, 2025, are available in the Intermodal and North American Ports section. As environmental regulations become more stringent, certain regions, like East Asia and especially ..."
+          },
+          {
+            "title": "Taiwan Tensions Raise Risks in One of Busiest Shipping Lanes",
+            "url": "https://www.supplychainbrain.com/articles/35419-taiwan-tensions-raise-risks-in-one-of-busiest-shipping-lanes",
+            "content": "The standoff between the U.S. and China over Taiwan has thrown a spotlight on growing risks to one of the world’s busiest shipping lanes — even a minor disruption could ripple through supply chains. The Taiwan Strait is the primary route for ships passing from China, Japan, South Korea and Taiwan to points west, car..."
+          },
+          {
+            "title": "Disruptions to Trade in the Taiwan Strait Would Severely Impact ...",
+            "url": "https://www.csis.org/analysis/disruptions-trade-taiwan-strait-would-severely-impact-chinas-economy",
+            "content": "## Footer. ## About CSIS submenu. ## About CSIS. ## About Menu. # Disruptions to Trade in the Taiwan Strait Would Severely Impact China's Economy. #### A major Taiwan contingency, such as quarantine, blockade, or invasion, could significantly disrupt the flow of trade through the Taiwan Strait—one of the world’s bus..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "query": "Taiwan contingency export controls semiconductor supply chain customs clearance client-specific entity disruption",
+        "query_hash": "d6f91e1e8e64c9ad",
+        "result_count": 3,
+        "results": [
+          {
+            "title": "Taiwan’s cross-border semiconductor controls: Export, security and investment regulations",
+            "url": "https://law.asia/taiwan-semiconductor-export-controls",
+            "content": "# Taiwan’s cross-border semiconductor controls: Export, security and investment regulations. As semiconductors increasingly underpin national security, industrial competitiveness and technological sovereignty, Taiwan has progressively strengthened its legal mechanisms governing the cross-border movement of critical ..."
+          },
+          {
+            "title": "Semiconductor Export Controls in 2026: Dual-Use Risk, Re-export, Sanctions Exposure, and Compliance Strategy | Friling Law - JDSupra",
+            "url": "https://www.jdsupra.com/legalnews/semiconductor-export-controls-in-2026-3333817",
+            "content": "# Semiconductor Export Controls in 2026: Dual-Use Risk, Re-export, Sanctions Exposure, and Compliance Strategy. Semiconductors are among the most strategically sensitive products in global trade. In 2026, exporting semiconductors is no longer a routine commercial matter: it is a legal, geopolitical, and compliance i..."
+          },
+          {
+            "title": "Analysis: What New Chip Rules Could Mean for Taiwan Firms | TaiwanPlus News",
+            "url": "https://www.youtube.com/watch?v=Mljt81_T3Zo",
+            "content": "Analysis: What New Chip Rules Could Mean for Taiwan Firms | TaiwanPlus News TaiwanPlus News 142000 subscribers 8 likes 188 views 11 Jun 2026 Taiwan is reportedly considering stricter export controls on AI chips destined for China, a move that could bring its policies closer to the US. TaiwanPlus speaks to Domingo Ya..."
+          }
+        ],
+        "status": "ok"
+      }
+    ],
+    "web_extractions": [
+      {
+        "url": "https://www.csis.org/analysis/disruptions-trade-taiwan-strait-would-severely-impact-chinas-economy",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "Disruptions to Trade in the Taiwan Strait Would Severely Impact ...",
+            "url": "https://www.csis.org/analysis/disruptions-trade-taiwan-strait-would-severely-impact-chinas-economy",
+            "content": "## Departments submenu ## Regions submenu ## Topics submenu ## Primary Menu ## About CSIS ## About CSIS submenu ## About Menu ## About CSIS submenu ### [Energy Shots | The Jones Act Meets the Hormuz Crisis: War, Energy, and Protectionism](/events/energy-shots-jones-act-meets-hormuz-crisis-war-energy-and-protectionis..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "url": "https://www.jdsupra.com/legalnews/semiconductor-export-controls-in-2026-3333817",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "Semiconductor Export Controls in 2026: Dual-Use Risk, Re-export ...",
+            "url": "https://www.jdsupra.com/legalnews/semiconductor-export-controls-in-2026-3333817",
+            "content": "![JD Supra](/img/logo/logo-jdsupra-opt.svg) # Semiconductor Export Controls in 2026: Dual-Use Risk, Re-export, Sanctions Exposure, and Compliance Strategy ![Friling Law](https://jdsupra-static.s3.amazonaws.com/client-headers/Friling/Friling-header.jpg) ![Friling Law](https://jdsupra-static.s3.amazonaws.com/client-he..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "url": "https://www.supplychainbrain.com/articles/35419-taiwan-tensions-raise-risks-in-one-of-busiest-shipping-lanes",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "Taiwan Tensions Raise Risks in One of Busiest Shipping Lanes",
+            "url": "https://www.supplychainbrain.com/articles/35419-taiwan-tensions-raise-risks-in-one-of-busiest-shipping-lanes",
+            "content": "# Taiwan Tensions Raise Risks in One of Busiest Shipping Lanes ![Ningbo Container Port](https://www.supplychainbrain.com/ext/resources/0-images/article-images/2021/0827_NingboContainerPort.webp?t=1659442112&width=1080) The standoff between the U.S. and China over Taiwan has thrown a spotlight on growing risks to one..."
+          }
+        ],
+        "status": "ok"
+      }
+    ],
+    "event_facts": {
+      "affected_geographies": [
+        "Taiwan",
+        "Taiwan Strait",
+        "East Asia",
+        "China",
+        "Japan",
+        "South Korea",
+        "Asia-Pacific shipping lanes"
+      ],
+      "affected_industries": [
+        "semiconductors",
+        "electronics",
+        "healthcare devices",
+        "imaging equipment",
+        "optical components",
+        "advanced manufacturing"
+      ],
+      "infrastructure_chokepoints": [
+        "Taiwan Strait shipping lane (one of world's busiest)",
+        "Kaohsiung Port",
+        "Keelung Port",
+        "Taoyuan International Airport",
+        "East Asia air cargo corridors"
+      ],
+      "critical_goods_or_services": [
+        "semiconductors",
+        "dual-use electronic components",
+        "optical sensors",
+        "medical imaging components",
+        "precision electronics",
+        "photochemical materials"
+      ],
+      "regulatory_or_sanctions_signals": [
+        "US-China export controls on semiconductors and dual-use goods",
+        "Taiwan considering stricter export controls on AI chips to China",
+        "re-export compliance risks under EAR",
+        "potential sanctions escalation affecting cross-border trade licensing"
+      ],
+      "financial_or_payment_signals": [
+        "potential SWIFT/payment channel disruption in escalation scenario",
+        "cross-border payment delays for Taiwan-domiciled counterparties",
+        "currency volatility in Asia-Pacific trade corridors"
+      ],
+      "supply_chain_tier_risks": [
+        "Tier-1 semiconductor suppliers in Taiwan",
+        "Tier-2 optical and electronic component manufacturers",
+        "3PL providers operating through Taiwan Strait",
+        "customs brokers handling dual-use goods clearance"
+      ],
+      "time_horizons": [
+        "near-term: airspace and shipping lane restrictions within days of escalation",
+        "medium-term: export control licensing changes over weeks to months",
+        "longer-term: structural rerouting of Asia-Pacific logistics networks"
+      ],
+      "source_refs": [
+        "https://www.supplychainbrain.com/articles/35419-taiwan-tensions-raise-risks-in-one-of-busiest-shipping-lanes",
+        "https://www.csis.org/analysis/disruptions-trade-taiwan-strait-would-severely-impact-chinas-economy",
+        "https://www.jdsupra.com/legalnews/semiconductor-export-controls-in-2026-3333817"
+      ],
+      "uncertainties": [
+        "exact trigger scenario (quarantine vs blockade vs kinetic conflict)",
+        "duration and severity of shipping lane restrictions",
+        "scope and timing of new export control regulations",
+        "extent of financial sanctions and payment channel disruptions",
+        "availability and capacity of alternate routing through Southeast Asia"
+      ]
+    },
+    "event_facts_source": "agent_recorded",
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which pending payments are near term and routed through affected bank countries?",
+      "Which alternate payment routes are available without increasing sanctions risk?",
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?",
+      "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+      "Which counterparties require beneficial ownership or restricted party review?",
+      "Which selected risks require executive cross-functional decision ownership?",
+      "Which evidence gaps block immediate mitigation decisions?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring.",
+      "Near-term payment route availability and sanctions-screening ownership are not yet validated.",
+      "Counterparty restricted-party status and contract notice obligations require legal validation."
+    ],
+    "scope_relevance_rule_count": 10
+  }
+}

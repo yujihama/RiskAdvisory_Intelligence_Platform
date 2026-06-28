@@ -206,6 +206,8 @@ class RiskDiscoveryDeepAgent:
             "product category, regulation, or payment mechanism instead. "
             "Record event_facts before candidates when web tools are used, and use those facts to expand "
             "second-order supply, logistics, regulatory, and payment scenarios. "
+            "Generate distinct scenario mechanisms even when they share the same risk_type; do not merge logistics, "
+            "3PL, customs, critical components, supplier tiers, routing, regulatory, or payment pathways into one item. "
             "If scope_text is provided, treat that free-form natural-language scope as the primary scope signal; "
             "do not require department or scope_name to classify the scope. "
             "Cover the scope-primary risk types implied by the Expert-as-Code scope relevance rules. "
@@ -391,6 +393,8 @@ class RiskDiscoveryDeepAgent:
             f"{DISCOVERY_EVENT_FACT_KEYS} before candidates when web tools are used. "
             "Avoid client-specific names in web queries; search by event, geography, industry, infrastructure, "
             "product category, regulation, or payment mechanism. "
+            "Generate about request.max_risks distinct risk scenarios. Multiple candidates may share the same "
+            "risk_type if their disruption mechanism, affected asset, time horizon, or decision owner differs. "
             "If request.scope.scope_text is present, interpret that free-form natural-language scope directly; "
             "do not require department or scope_name values to infer relevant business concerns. "
             "Cover the scope-primary risk types from applicable scope relevance rules. "
@@ -402,7 +406,7 @@ class RiskDiscoveryDeepAgent:
             "\"scope_matches\": [], \"rationale\": \"...\"}]}.\n"
             f"scope_interpretation={json.dumps(scope_interpretation, ensure_ascii=False)}\n"
             f"request={json.dumps(request.model_dump(mode='json'), ensure_ascii=False)}",
-            max_chars=1200,
+            max_chars=3000,
         )
         self._ensure_context(request)
         if not _has_event_facts(self._state.get("event_facts")) and (
@@ -549,7 +553,6 @@ class RiskDiscoveryDeepAgent:
             for candidate in sorted_candidates
             if candidate.candidate_id not in selected_ids
         ]
-        selected, rejected = _diversify_selected_candidates(selected, rejected, request, self._state, threshold)
         return selected, rejected
 
 
@@ -867,37 +870,6 @@ def _coverage_candidate_spec(
     }
 
 
-def _diversify_selected_candidates(
-    selected: list[DiscoveredRisk],
-    rejected: list[RejectedRiskCandidate],
-    request: RiskDiscoveryRequest,
-    state: dict[str, Any],
-    threshold: int,
-) -> tuple[list[DiscoveredRisk], list[RejectedRiskCandidate]]:
-    primary_types = {
-        risk_type
-        for rule in _coverage_scope_rules(state, request)
-        for risk_type in _canonical_primary_risk_types(rule)
-    }
-    scope_interpretation = state.get("scope_interpretation") if isinstance(state.get("scope_interpretation"), dict) else {}
-    primary_types.update(str(item) for item in scope_interpretation.get("primary_risk_types") or [])
-    if not primary_types:
-        return selected, rejected
-    seen: set[str] = set()
-    diversified: list[DiscoveredRisk] = []
-    demoted: list[DiscoveredRisk] = []
-    for candidate in selected:
-        if candidate.risk_type in seen:
-            demoted.append(candidate)
-            continue
-        seen.add(candidate.risk_type)
-        diversified.append(candidate)
-    if not demoted:
-        return selected, rejected
-    diversified_rejected = [_diversity_rejection(candidate, threshold) for candidate in demoted]
-    return diversified, [*rejected, *diversified_rejected]
-
-
 def _discovery_context_event(request: RiskDiscoveryRequest, state: dict[str, Any]) -> dict[str, Any]:
     scope_interpretation = state.get("scope_interpretation") if isinstance(state.get("scope_interpretation"), dict) else {}
     matched_domains = [str(item) for item in scope_interpretation.get("matched_domains") or []]
@@ -907,12 +879,12 @@ def _discovery_context_event(request: RiskDiscoveryRequest, state: dict[str, Any
     return RiskEvent(
         scenario_id="discovery_event_context",
         client_id=request.scope.client_id,
-        title=request.event_title,
+        title="External event context",
         risk_type="event_context",
         countries=request.countries or _country_hints(request.event_title, request.event_description),
         risk_themes=themes,
         affected_categories=categories,
-        description=request.event_description or request.event_title,
+        description="Public event context search for risk scenario discovery.",
         event_date=request.event_date or date.today(),
         urgency="medium",
     ).model_dump(mode="json")
@@ -1146,21 +1118,6 @@ def _is_generic_scope_term(term: str) -> bool:
 def _truncate_text(text: str, limit: int) -> str:
     normalized = " ".join(text.split())
     return normalized if len(normalized) <= limit else f"{normalized[: limit - 3]}..."
-
-
-def _diversity_rejection(candidate: DiscoveredRisk, threshold: int) -> RejectedRiskCandidate:
-    return RejectedRiskCandidate(
-        candidate_id=candidate.candidate_id,
-        title=candidate.title,
-        risk_type=candidate.risk_type,
-        relevance_score=candidate.relevance_score,
-        reason=(
-            "Moved below threshold by scope diversity pass: duplicate selected risk_type "
-            f"`{candidate.risk_type}` was demoted so scope-primary coverage can remain visible. "
-            f"Original relevance score was {candidate.relevance_score}; selection threshold was {threshold}."
-        ),
-        scope_matches=candidate.scope_matches,
-    )
 
 
 def _canonical_risk_type(

@@ -147,7 +147,7 @@ def _request_from_case(case: dict[str, Any]) -> RiskDiscoveryRequest:
         event_title=data["event_title"],
         event_description=data.get("event_description", ""),
         countries=[str(item) for item in data.get("countries", [])],
-        max_risks=int(data.get("max_risks", 3)),
+        max_risks=int(data.get("max_risks", 5)),
         scope=RiskDiscoveryScope(
             client_id=scope["client_id"],
             scope_text=scope.get("scope_text"),

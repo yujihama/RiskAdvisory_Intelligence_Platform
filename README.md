@@ -84,6 +84,7 @@ DEFAULT_MODEL=qwen/qwen3.6-flash
 FAST_MODEL=qwen/qwen3.6-flash
 REASONING_MODEL=qwen/qwen3.6-flash
 LONG_CONTEXT_MODEL=qwen/qwen3.6-flash
+RISK_DISCOVERY_MODEL=qwen/qwen3.7-max
 OCR_MODEL=qwen/qwen2.5-vl-72b-instruct
 REDTEAM_MODEL=qwen/qwen3.6-flash
 EXPERT_SYNTHESIS_MODEL=qwen/qwen3.6-flash
@@ -184,6 +185,8 @@ risk-agent-platform discover-risks `
 
 During Discovery, the DeepAgent may call `discovery_search_event_context` and `discovery_extract_event_source` through the existing `mcp-web-search` Tavily MCP. These calls are bounded to 3 searches and 3 URL extractions, avoid client-specific query terms, and are summarized into `metadata.event_facts`, `metadata.web_searches`, and `metadata.web_extractions` so candidate recall can use real external event context before downstream evidence collection begins.
 
+Risk Discovery uses the `risk_discovery` model profile, which defaults to `qwen/qwen3.7-max` and can be overridden with `RISK_DISCOVERY_MODEL`.
+
 The default `--analysis-mode auto` keeps broad company or executive runs on all selected risks, but for a natural-language `--scope-text` it analyzes the selected RiskEvents whose `risk_type` matches the interpreted scope-primary risk types. This avoids requiring a mid-run human choice such as manually switching to `top` for narrow functional scopes.
 
 Discovery followed by scenario analysis for all selected candidates:
@@ -202,7 +205,7 @@ risk-agent-platform discover-risks `
   --embedded-services
 ```
 
-`--analysis-mode all-selected` is the default. Use `--analysis-mode top` for the previous one-risk behavior, or `--analysis-mode top-n --top-n 2` to cap the number of selected risks analyzed. `--max-risks` is guidance to the DeepAgent for candidate generation, not the final selected count. Final selected candidates are determined by the scope relevance threshold, so more than `--max-risks` can be selected. The number of analyzed risks is controlled by `--analysis-mode` and `--top-n`. If Discovery uses template fallback candidates, `--run-analysis` is blocked unless `--allow-fallback-analysis` is explicitly supplied. When multiple risks are analyzed, `outputs/risk_discovery/<top_scenario_id>_portfolio_summary.json` and `.md` integrate the selected/rejected candidates, Discovery metadata, per-scenario status, Decisions, Evidence counts, review-required scenarios, priority Decisions, consolidated similar Decisions, owner/deadline grouping, and potential owner/deadline conflicts.
+`--analysis-mode all-selected` is the default. Use `--analysis-mode top` for the previous one-risk behavior, or `--analysis-mode top-n --top-n 2` to cap the number of selected risks analyzed. `--max-risks` defaults to 5 and is guidance to the DeepAgent for candidate generation, not the final selected count. Final selected candidates are determined by the scope relevance threshold, so more than `--max-risks` can be selected. The number of analyzed risks is controlled by `--analysis-mode` and `--top-n`. Same-risk-type scenarios are preserved when their disruption mechanism differs, so logistics, 3PL, customs, critical components, routing, regulatory, or payment pathways can remain separate even if they share a canonical `risk_type`. If Discovery uses template fallback candidates, `--run-analysis` is blocked unless `--allow-fallback-analysis` is explicitly supplied. When multiple risks are analyzed, `outputs/risk_discovery/<top_scenario_id>_portfolio_summary.json` and `.md` integrate the selected/rejected candidates, Discovery metadata, per-scenario status, Decisions, Evidence counts, review-required scenarios, priority Decisions, consolidated similar Decisions, owner/deadline grouping, and potential owner/deadline conflicts.
 
 Discovery quality evaluation:
 

@@ -12,8 +12,9 @@ from risk_agent_platform.embeddings import create_embedding_provider
 from risk_agent_platform.evidence_repository import EvidenceRepository
 from risk_agent_platform.final_agents import _analysis_plan_from_text, _decision_for_event, _deterministic_analysis_plan
 from risk_agent_platform.mcp_gateway import MCPGateway
+from risk_agent_platform.model_profiles import ModelProfileRouter
 from risk_agent_platform.query_sanitizer import sanitize_query
-from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent, _candidate_to_event
+from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent, _candidate_to_event, _discovery_context_event
 import risk_agent_platform.run_discovery as run_discovery
 import risk_agent_platform.run_discovery_evaluation as run_discovery_evaluation
 from risk_agent_platform.schemas import (
@@ -190,6 +191,28 @@ def test_query_sanitizer_uses_title_and_explicit_confidential_terms():
     assert "Alpha Supplier" not in result.sanitized
     assert "Beta Site" not in result.sanitized
     assert result.redactions
+
+
+def test_discovery_web_context_preserves_public_event_geography():
+    request = RiskDiscoveryRequest(
+        event_title="Taiwan contingency",
+        event_description="A Taiwan Strait contingency may disrupt logistics.",
+        countries=["Taiwan"],
+        scope=RiskDiscoveryScope(client_id="fujifilm_dummy", scope_text="Fujifilm logistics"),
+    )
+    event_payload = _discovery_context_event(
+        request,
+        {"scope_interpretation": {"matched_domains": ["logistics"], "primary_risk_types": ["supplier_resilience"]}},
+    )
+
+    result = sanitize_query(
+        "Taiwan contingency Fujifilm logistics shipping disruption",
+        RiskEvent.model_validate(event_payload),
+        confidential_terms=["fujifilm_dummy", "Fujifilm"],
+    )
+
+    assert "Taiwan" in result.sanitized
+    assert "Fujifilm" not in result.sanitized
 
 
 def test_a2a_sdk_agent_card_adapter_emits_sdk_shape():
@@ -398,6 +421,17 @@ def test_deepagent_tool_policy_keeps_raw_structured_tools_out_of_llm_slots():
     assert "find_risk_paths" in agent_llm_tools("evidence-redteam-agent", "mcp-neo4j")
 
 
+def test_risk_discovery_profile_defaults_to_qwen37_max(monkeypatch):
+    monkeypatch.delenv("RISK_DISCOVERY_MODEL", raising=False)
+    router = ModelProfileRouter(Path.cwd() / "config" / "model_profiles.yaml")
+
+    profile = router.select_for_agent("risk-discovery-agent")
+
+    assert profile.name == "risk_discovery"
+    assert profile.model == "qwen/qwen3.7-max"
+    assert profile.max_tokens == 8192
+
+
 def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_path, monkeypatch):
     monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _NoStructuredCandidateRunner)
     root = Path.cwd()
@@ -558,6 +592,64 @@ def test_risk_discovery_uses_natural_language_scope_without_department_mapping(t
     assert result.selected_candidates[0].risk_type == "supplier_resilience"
     assert result.selected_candidates[0].scope_matches[0] == "SCOPE-TEXT-PRIMARY:coverage_primary"
     assert "executive_resilience" not in {candidate.risk_type for candidate in result.selected_candidates}
+
+
+def test_risk_discovery_preserves_distinct_same_type_scenarios(tmp_path, monkeypatch):
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _RecordingCandidateRunner)
+    _RecordingCandidateRunner.candidates = [
+        {
+            "candidate_id": "DISC-SEA",
+            "title": "Taiwan Strait sea freight route disruption",
+            "risk_type": "supplier_resilience",
+            "risk_themes": ["supplier_resilience", "logistics", "sea_freight"],
+            "affected_categories": ["sea_transport", "port_operations"],
+            "description": "Sea freight and port logistics may stop or reroute through congested alternate lanes.",
+            "urgency": "high",
+            "scope_matches": ["logistics"],
+            "rationale": "Sea freight is a distinct logistics disruption mechanism.",
+        },
+        {
+            "candidate_id": "DISC-3PL",
+            "title": "3PL and customs clearance disruption",
+            "risk_type": "supplier_resilience",
+            "risk_themes": ["supplier_resilience", "3pl", "customs"],
+            "affected_categories": ["3pl", "customs_clearance"],
+            "description": "3PL warehousing, freight forwarding, and customs clearance may stop even if inventory exists.",
+            "urgency": "high",
+            "scope_matches": ["3pl", "customs"],
+            "rationale": "3PL and customs failure is distinct from ocean route loss.",
+        },
+        {
+            "candidate_id": "DISC-CHIP",
+            "title": "Semiconductor component allocation disruption",
+            "risk_type": "supplier_resilience",
+            "risk_themes": ["supplier_resilience", "semiconductor_components", "critical_parts"],
+            "affected_categories": ["critical_parts", "supplier_tiers"],
+            "description": "Sub-tier semiconductor component suppliers may allocate scarce parts to other customers.",
+            "urgency": "high",
+            "scope_matches": ["critical parts"],
+            "rationale": "Critical component allocation is distinct from physical transport failure.",
+        },
+    ]
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "fujifilm_dummy", tmp_path / "data" / "clients" / "fujifilm_dummy")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+    request = RiskDiscoveryRequest(
+        event_title="Taiwan contingency",
+        event_description="A Taiwan Strait contingency may disrupt sea freight, 3PL, customs, and critical components.",
+        countries=["Taiwan"],
+        scope=RiskDiscoveryScope(
+            client_id="fujifilm_dummy",
+            scope_text="Fujifilm logistics including sea freight, air cargo, customs, 3PL, suppliers, and critical parts.",
+        ),
+    )
+
+    result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    selected_ids = {candidate.candidate_id for candidate in result.selected_candidates}
+    assert {"DISC-SEA", "DISC-3PL", "DISC-CHIP"}.issubset(selected_ids)
+    assert not any("duplicate selected risk_type" in candidate.reason for candidate in result.rejected_candidates)
 
 
 def test_risk_discovery_records_bounded_web_event_facts_for_candidate_generation(tmp_path, monkeypatch):

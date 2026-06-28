@@ -30,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--max-risks",
         type=int,
-        default=3,
+        default=5,
         help="Guidance for discovery candidate generation; threshold-selected candidates are not capped by this value.",
     )
     parser.add_argument("--scenario-output", type=Path)

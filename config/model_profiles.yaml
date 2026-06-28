@@ -35,8 +35,15 @@ profiles:
     default_model: qwen/qwen3.6-flash
     temperature: 0.1
     max_tokens: 4096
+  risk_discovery:
+    provider: openrouter
+    model_env: RISK_DISCOVERY_MODEL
+    default_model: qwen/qwen3.7-max
+    temperature: 0.1
+    max_tokens: 8192
 
 agent_profile_map:
+  risk-discovery-agent: risk_discovery
   orchestrator-agent: reasoning
   source-intelligence-agent: fast
   client-context-agent: reasoning

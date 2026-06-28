@@ -305,7 +305,7 @@ class RiskDiscoveryRequest(StrictModel):
     scope: RiskDiscoveryScope
     countries: list[str] = Field(default_factory=list)
     event_date: date | None = None
-    max_risks: int = 3
+    max_risks: int = 5
 
     @field_validator("max_risks")
     @classmethod
