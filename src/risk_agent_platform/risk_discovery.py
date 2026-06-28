@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from datetime import date
@@ -81,6 +82,94 @@ SUPPLIER_SIGNAL_TERMS = [
     "procurement",
     "lead time",
 ]
+SCOPE_DOMAIN_KEYWORDS: dict[str, dict[str, Any]] = {
+    "logistics": {
+        "primary_risk_types": ["supplier_resilience"],
+        "terms": [
+            "logistics",
+            "logistic",
+            "transport",
+            "transportation",
+            "shipping",
+            "shipment",
+            "sea freight",
+            "air freight",
+            "air cargo",
+            "freight",
+            "port",
+            "ports",
+            "customs",
+            "warehouse",
+            "warehousing",
+            "3pl",
+            "carrier",
+            "forwarder",
+            "route",
+            "routes",
+            "lead time",
+            "delivery",
+            "物流",
+            "輸送",
+            "海上輸送",
+            "航空輸送",
+            "空輸",
+            "港湾",
+            "通関",
+            "倉庫",
+            "フォワーダー",
+            "配送",
+            "代替ルート",
+            "リードタイム",
+        ],
+    },
+    "procurement": {
+        "primary_risk_types": ["supplier_resilience"],
+        "terms": [
+            "procurement",
+            "sourcing",
+            "supplier",
+            "suppliers",
+            "alternative supplier",
+            "sub-tier",
+            "parts",
+            "materials",
+            "購買",
+            "調達",
+            "仕入",
+            "サプライヤー",
+            "部材",
+            "代替調達",
+        ],
+    },
+    "treasury": {
+        "primary_risk_types": ["payment_disruption"],
+        "terms": [*PAYMENT_SIGNAL_TERMS, "支払", "支払い", "資金", "銀行", "送金", "決済", "流動性"],
+    },
+    "legal": {
+        "primary_risk_types": ["legal_compliance"],
+        "terms": [*LEGAL_SIGNAL_TERMS, "法務", "契約", "制裁", "輸出規制", "通告", "解除", "規制", "コンプライアンス"],
+    },
+    "accounting": {
+        "primary_risk_types": ["accounting_disclosure"],
+        "terms": [*ACCOUNTING_SIGNAL_TERMS, "会計", "開示", "減損", "引当", "重要性", "監査"],
+    },
+    "executive": {
+        "primary_risk_types": ["executive_resilience"],
+        "terms": [
+            "executive",
+            "management",
+            "board",
+            "crisis committee",
+            "decision",
+            "owner",
+            "経営",
+            "役員",
+            "取締役",
+            "危機対策",
+            "意思決定",
+        ],
+    },
+}
 
 
 class RiskDiscoveryDeepAgent:
@@ -96,6 +185,8 @@ class RiskDiscoveryDeepAgent:
         return (
             "You are the Risk Discovery DeepAgent. Given an external event and a client scope, "
             "identify related risks, filter them to the scope, and record bounded candidate risks. "
+            "If scope_text is provided, treat that free-form natural-language scope as the primary scope signal; "
+            "do not require department or scope_name to classify the scope. "
             "Cover the scope-primary risk types implied by the Expert-as-Code scope relevance rules. "
             "Do not collapse legal or payment risks into supplier_resilience merely because a supplier is involved. "
             "Do not collapse legal_compliance into accounting_disclosure merely because disclosure may later be required. "
@@ -174,8 +265,10 @@ class RiskDiscoveryDeepAgent:
         ]
 
     def discover(self, request: RiskDiscoveryRequest) -> RiskDiscoveryResult:
+        scope_interpretation = _interpret_scope(request)
         self._state = {
             "request": request.model_dump(mode="json"),
+            "scope_interpretation": scope_interpretation,
             "datasets": [],
             "samples": {},
             "feature_summaries": {},
@@ -184,6 +277,8 @@ class RiskDiscoveryDeepAgent:
         }
         self.runner.synthesize(
             "Use discovery tools to inspect client scope and expert knowledge, then record risk candidates. "
+            "If request.scope.scope_text is present, interpret that free-form natural-language scope directly; "
+            "do not require department or scope_name values to infer relevant business concerns. "
             "Cover the scope-primary risk types from applicable scope relevance rules. "
             "Do not collapse legal or payment risks into supplier_resilience merely because a supplier is involved. "
             "Do not collapse legal_compliance into accounting_disclosure merely because disclosure may later be required. "
@@ -191,6 +286,7 @@ class RiskDiscoveryDeepAgent:
             "{\"candidates\": [{\"title\": \"...\", \"risk_type\": \"...\", \"risk_themes\": [], "
             "\"affected_categories\": [], \"description\": \"...\", \"urgency\": \"medium\", "
             "\"scope_matches\": [], \"rationale\": \"...\"}]}.\n"
+            f"scope_interpretation={json.dumps(scope_interpretation, ensure_ascii=False)}\n"
             f"request={json.dumps(request.model_dump(mode='json'), ensure_ascii=False)}",
             max_chars=1200,
         )
@@ -220,6 +316,7 @@ class RiskDiscoveryDeepAgent:
                 "sampled_datasets": sorted((self._state.get("samples") or {}).keys()),
                 "structured_sample_view": "risk_feature_sample",
                 "feature_summaries": self._state.get("feature_summaries", {}),
+                "scope_interpretation": scope_interpretation,
                 "expert_counts": {key: len(value) for key, value in (self._state.get("expert") or {}).items()},
                 "raw_candidate_count": len(raw_candidates),
                 "coverage_augmented_candidate_count": coverage_augmented_count,
@@ -392,7 +489,7 @@ def _augment_scope_coverage(
             )
         )
         added += 1
-    scope_is_executive = request.scope.scope_type == "company" or str(request.scope.department or "").lower() == "executive"
+    scope_is_executive = _is_broad_executive_scope(request) or str(request.scope.department or "").lower() == "executive"
     if scope_is_executive and not any(candidate.risk_type == "executive_resilience" for candidate in augmented):
         augmented.append(
             DiscoveredRisk(
@@ -416,6 +513,40 @@ def _augment_scope_coverage(
     return augmented, added
 
 
+def _interpret_scope(request: RiskDiscoveryRequest) -> dict[str, Any]:
+    raw_parts = [
+        request.scope.scope_text or "",
+        request.scope.scope_name or "",
+        request.scope.department or "",
+        request.scope.region or "",
+        request.scope.site_id or "",
+        json.dumps(request.scope.metadata, ensure_ascii=False),
+    ]
+    text = " ".join(raw_parts).replace("_", " ").lower()
+    matched_domains: list[str] = []
+    matched_terms: list[str] = []
+    primary_risk_types: list[str] = []
+    for domain, config in SCOPE_DOMAIN_KEYWORDS.items():
+        terms = [str(term).lower() for term in config.get("terms", [])]
+        hits = [term for term in terms if term and term in text]
+        if not hits:
+            continue
+        matched_domains.append(domain)
+        matched_terms.extend(hits)
+        for risk_type in config.get("primary_risk_types", []):
+            if risk_type not in primary_risk_types:
+                primary_risk_types.append(str(risk_type))
+    if request.scope.scope_type == "company" and not primary_risk_types and request.scope.scope_text:
+        primary_risk_types.append("executive_resilience")
+    return {
+        "scope_text": request.scope.scope_text,
+        "matched_domains": matched_domains,
+        "matched_terms": list(dict.fromkeys(matched_terms)),
+        "primary_risk_types": primary_risk_types,
+        "source": "scope_text" if request.scope.scope_text else "structured_scope",
+    }
+
+
 def _coverage_candidate_specs(
     candidates: list[DiscoveredRisk],
     request: RiskDiscoveryRequest,
@@ -425,6 +556,36 @@ def _coverage_candidate_specs(
     context = _coverage_context_text(candidates, request, state)
     specs: list[dict[str, Any]] = []
     planned_types: set[str] = set()
+    scope_interpretation = state.get("scope_interpretation") if isinstance(state.get("scope_interpretation"), dict) else {}
+    scope_primary_types = [str(item) for item in scope_interpretation.get("primary_risk_types") or []]
+    scope_terms = [str(item) for item in scope_interpretation.get("matched_terms") or []]
+    if scope_interpretation.get("source") == "scope_text" and scope_terms:
+        for risk_type in scope_primary_types:
+            if risk_type in existing_types or risk_type in planned_types:
+                continue
+            specs.append(
+                _coverage_candidate_spec(
+                    {"rule_id": "SCOPE-TEXT-PRIMARY", "match_terms": scope_terms},
+                    risk_type,
+                    scope_terms,
+                    request,
+                )
+            )
+            planned_types.add(risk_type)
+    if _is_broad_executive_scope(request):
+        broad_terms = ["executive", "portfolio", "cross-functional", request.event_title, request.event_description]
+        for risk_type in ["supplier_resilience", "payment_disruption", "legal_compliance", "executive_resilience"]:
+            if risk_type in existing_types or risk_type in planned_types:
+                continue
+            specs.append(
+                _coverage_candidate_spec(
+                    {"rule_id": "SCOPE-BROAD-EXECUTIVE", "match_terms": broad_terms},
+                    risk_type,
+                    broad_terms,
+                    request,
+                )
+            )
+            planned_types.add(risk_type)
     for rule in _coverage_scope_rules(state, request):
         matched_terms = _matched_rule_terms(rule, context)
         if not matched_terms:
@@ -443,6 +604,19 @@ def _coverage_scope_rules(state: dict[str, Any], request: RiskDiscoveryRequest) 
     if request.scope.scope_type == "department" and department_rules:
         return department_rules
     return applicable
+
+
+def _is_broad_executive_scope(request: RiskDiscoveryRequest) -> bool:
+    if request.scope.scope_text:
+        return False
+    scope_text = " ".join(
+        [
+            request.scope.scope_type,
+            request.scope.scope_name or "",
+            request.scope.department or "",
+        ]
+    ).lower()
+    return request.scope.scope_type == "company" or "executive" in scope_text or "management" in scope_text
 
 
 def _canonical_primary_risk_types(rule: dict[str, Any]) -> list[str]:
@@ -481,6 +655,7 @@ def _coverage_context_text(
         request.event_title,
         request.event_description,
         " ".join(request.countries),
+        request.scope.scope_text or "",
         request.scope.scope_type,
         request.scope.scope_name or "",
         request.scope.department or "",
@@ -574,6 +749,8 @@ def _diversify_selected_candidates(
         for rule in _coverage_scope_rules(state, request)
         for risk_type in _canonical_primary_risk_types(rule)
     }
+    scope_interpretation = state.get("scope_interpretation") if isinstance(state.get("scope_interpretation"), dict) else {}
+    primary_types.update(str(item) for item in scope_interpretation.get("primary_risk_types") or [])
     if not primary_types:
         return selected, rejected
     seen: set[str] = set()
@@ -618,10 +795,16 @@ def _canonical_risk_type(
     normalized = risk_type.strip().lower().replace(" ", "_").replace("-", "_")
     raw = risk_type.lower()
     text = " ".join([raw, title, " ".join(risk_themes), " ".join(affected_categories), description]).lower()
-    department = str((request.scope.department if request else "") or "").lower()
-    if "legal" in department and _contains_any(text, LEGAL_SIGNAL_TERMS):
+    scope_hint = " ".join(
+        [
+            str((request.scope.department if request else "") or ""),
+            str((request.scope.scope_name if request else "") or ""),
+            str((request.scope.scope_text if request else "") or ""),
+        ]
+    ).lower()
+    if _contains_any(scope_hint, ["legal", "法務"]) and _contains_any(text, LEGAL_SIGNAL_TERMS):
         return "legal_compliance"
-    if "treasury" in department and _contains_any(text, PAYMENT_SIGNAL_TERMS):
+    if _contains_any(scope_hint, ["treasury", "finance", "財務", "資金"]) and _contains_any(text, PAYMENT_SIGNAL_TERMS):
         return "payment_disruption"
     if _contains_any(raw, LEGAL_SIGNAL_TERMS):
         return "legal_compliance"
@@ -673,7 +856,7 @@ def _score_scope_relevance(
     samples: dict[str, list[dict[str, str]]],
     rules: list[dict[str, Any]],
 ) -> DiscoveredRisk:
-    score = 65 if request.scope.scope_type == "company" else 35
+    score = 35 if request.scope.scope_text else (65 if request.scope.scope_type == "company" else 35)
     matches: list[str] = []
     candidate_text = " ".join(
         [
@@ -684,6 +867,16 @@ def _score_scope_relevance(
             candidate.description,
         ]
     ).lower()
+    scope_interpretation = _interpret_scope(request)
+    scope_primary_types = {str(item) for item in scope_interpretation.get("primary_risk_types") or []}
+    scope_matched_terms = [str(item) for item in scope_interpretation.get("matched_terms") or []]
+    if candidate.risk_type in scope_primary_types:
+        score += 35
+        matches.append("scope_text:primary")
+    scope_term_hits = [term for term in scope_matched_terms if term and term.lower() in candidate_text]
+    if scope_term_hits:
+        score += min(30, 10 * len(scope_term_hits))
+        matches.extend(f"scope_text:{term}" for term in scope_term_hits[:5])
     scope_terms = _scope_terms(request, samples)
     for term in scope_terms:
         if term and term.lower() in candidate_text:
@@ -732,16 +925,22 @@ def _rule_applies_to_scope(rule: dict[str, Any], request: RiskDiscoveryRequest) 
         return False
     haystacks: list[str] = []
     if scope_kind == "department":
-        haystacks = [request.scope.department or "", request.scope.scope_name or ""]
+        haystacks = [request.scope.department or "", request.scope.scope_name or "", request.scope.scope_text or ""]
     elif scope_kind in {"business_unit", "segment", "scope_name"}:
-        haystacks = [request.scope.scope_name or "", request.scope.department or ""]
+        haystacks = [request.scope.scope_name or "", request.scope.department or "", request.scope.scope_text or ""]
     elif scope_kind == "industry":
-        haystacks = [str(request.scope.metadata.get("industry") or ""), request.scope.scope_name or "", request.scope.department or ""]
+        haystacks = [
+            str(request.scope.metadata.get("industry") or ""),
+            request.scope.scope_name or "",
+            request.scope.department or "",
+            request.scope.scope_text or "",
+        ]
     elif scope_kind in {"scope_type", "company"}:
-        haystacks = [request.scope.scope_type, request.scope.scope_name or ""]
+        haystacks = [request.scope.scope_type, request.scope.scope_name or "", request.scope.scope_text or ""]
     else:
         haystacks = [
             request.scope.scope_type,
+            request.scope.scope_text or "",
             request.scope.scope_name or "",
             request.scope.department or "",
             request.scope.region or "",
@@ -755,8 +954,9 @@ def _rejection_for_candidate(
     request: RiskDiscoveryRequest,
     threshold: int,
 ) -> RejectedRiskCandidate:
+    scope_label = request.scope.scope_name or request.scope.scope_text or request.scope.scope_type
     reason = (
-        f"Low relevance to {request.scope.scope_name or request.scope.scope_type} scope: "
+        f"Low relevance to {scope_label} scope: "
         f"score {candidate.relevance_score} below threshold {threshold}."
     )
     if candidate.scope_matches:
@@ -849,20 +1049,26 @@ def _discovery_unknowns(candidates: list[DiscoveredRisk], request: RiskDiscovery
 
 
 def _scenario_id(request: RiskDiscoveryRequest, candidate: DiscoveredRisk) -> str:
-    base = f"{request.scope.client_id}_{request.event_title}_{candidate.candidate_id}"
-    slug = re.sub(r"[^a-z0-9]+", "_", base.lower()).strip("_")
-    return f"scenario_discovered_{slug[:80]}"
+    event_fingerprint = hashlib.sha1(
+        f"{request.event_title}|{request.event_description}|{'|'.join(request.countries)}".encode("utf-8")
+    ).hexdigest()[:8]
+    event_slug = _slug(f"{request.scope.client_id}_{request.event_title}")[:55].strip("_")
+    event_slug = f"{event_slug}_{event_fingerprint}" if event_slug else event_fingerprint
+    candidate_slug = _slug(candidate.candidate_id or candidate.risk_type)[:24].strip("_")
+    return f"scenario_discovered_{event_slug}_{candidate_slug}".strip("_")
 
 
 def _scope_terms(request: RiskDiscoveryRequest, samples: dict[str, list[dict[str, str]]]) -> list[str]:
     terms = [
         request.scope.client_id,
+        request.scope.scope_text or "",
         request.scope.scope_type,
         request.scope.scope_name or "",
         request.scope.department or "",
         request.scope.region or "",
         request.scope.site_id or "",
     ]
+    terms.extend(_interpret_scope(request).get("matched_terms") or [])
     if request.scope.scope_name:
         needle = request.scope.scope_name.lower()
         for rows in samples.values():

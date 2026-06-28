@@ -150,6 +150,7 @@ def _request_from_case(case: dict[str, Any]) -> RiskDiscoveryRequest:
         max_risks=int(data.get("max_risks", 3)),
         scope=RiskDiscoveryScope(
             client_id=scope["client_id"],
+            scope_text=scope.get("scope_text"),
             scope_type=scope.get("scope_type", "company"),
             scope_name=scope.get("scope_name"),
             department=scope.get("department"),

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
@@ -40,6 +41,37 @@ FIXED_AGENT_ORDER = [
     "expert-as-code-agent",
     "evidence-redteam-agent",
 ]
+CANONICAL_RISK_AGENT_PLAN = {
+    "payment_disruption": {
+        "client-context-agent",
+        "source-intelligence-agent",
+        "treasury-risk-agent",
+        "expert-as-code-agent",
+        "evidence-redteam-agent",
+    },
+    "supplier_resilience": {
+        "client-context-agent",
+        "source-intelligence-agent",
+        "procurement-risk-agent",
+        "expert-as-code-agent",
+        "evidence-redteam-agent",
+    },
+    "legal_compliance": {
+        "client-context-agent",
+        "source-intelligence-agent",
+        "legal-risk-agent",
+        "expert-as-code-agent",
+        "evidence-redteam-agent",
+    },
+    "accounting_disclosure": {
+        "client-context-agent",
+        "source-intelligence-agent",
+        "accounting-risk-agent",
+        "expert-as-code-agent",
+        "evidence-redteam-agent",
+    },
+    "executive_resilience": set(FIXED_AGENT_ORDER),
+}
 
 SOURCE_MAX_QUERIES = 3
 SOURCE_MAX_EXTRACT_URLS = 3
@@ -614,23 +646,33 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
         indexed = self.mcp.call("mcp-expert-knowledge", "index_knowledge_pack", {})
         indexed_cases = self.mcp.call("mcp-expert-knowledge", "index_case_bank", {})
         questions = self.mcp.call("mcp-expert-knowledge", "load_question_bank", {})
-        self.synthesize(
-            "Use Expert-as-Code tools to explore and select similar cases, rubrics, red flags, CTA notes, "
-            "and counterfactuals. Do not write decisions. Keep exploration bounded.\n"
-            f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}"
-        )
         state = self._deepagent_tool_state["expert"]
-        if not state.get("similar_cases"):
-            state["similar_cases"] = self.mcp.call("mcp-expert-knowledge", "search_similar_cases", {"case_description": event.description, "top_k": 5})
-        if not state.get("rubrics"):
-            state["rubrics"] = self.mcp.call("mcp-expert-knowledge", "search_knowledge_objects", {"query": event.title, "top_k": 10})
-        if not state.get("red_flags"):
-            objects = self.mcp.call("mcp-expert-knowledge", "load_knowledge_pack", {})
-            state["red_flags"] = [item for item in objects if item.get("object_type") in {"red_flag", "review_trigger", "evidence_standard"}]
-        if not state.get("cta_notes"):
-            state["cta_notes"] = self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {})
-        if not state.get("counterfactuals"):
-            state["counterfactuals"] = _default_counterfactuals(event)
+        state["similar_cases"] = self.mcp.call(
+            "mcp-expert-knowledge",
+            "search_similar_cases",
+            {"case_description": f"{event.title}\n{event.description}", "top_k": 5},
+        )
+        state["rubrics"] = self.mcp.call(
+            "mcp-expert-knowledge",
+            "search_knowledge_objects",
+            {"query": " ".join([event.title, event.risk_type, *event.risk_themes]), "top_k": 10},
+        )
+        objects = self.mcp.call("mcp-expert-knowledge", "load_knowledge_pack", {})
+        event_text = " ".join([event.title, event.risk_type, *event.risk_themes, *event.affected_categories]).lower()
+        state["red_flags"] = [
+            item
+            for item in objects
+            if item.get("object_type") in {"red_flag", "review_trigger", "evidence_standard"}
+            and _knowledge_object_relevant(item, event_text)
+        ][:10]
+        if not state["red_flags"]:
+            state["red_flags"] = [
+                item
+                for item in objects
+                if item.get("object_type") in {"red_flag", "review_trigger", "evidence_standard"}
+            ][:10]
+        state["cta_notes"] = self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {})
+        state["counterfactuals"] = _default_counterfactuals(event)
         hits = state["rubrics"]
         case_hits = state["similar_cases"]
         cta_notes = state["cta_notes"]
@@ -833,19 +875,7 @@ class DecisionSynthesisDeepAgent(DomainDeepAgentService):
         evidence = self.mcp.call("mcp-evidence-ledger", "list_evidence_by_scenario", {"scenario_id": event.scenario_id})
         knowledge_ids = _knowledge_ids_from_findings(prior)
         decision_id = f"{event.scenario_id}_decision_001"
-        decision = DecisionItem(
-            decision_id=decision_id,
-            priority=1,
-            decision="Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval.",
-            owner="CFO / Legal / Procurement",
-            deadline="24 hours",
-            rationale="Treasury, legal, accounting, and procurement findings converge on payment and supplier continuity risk.",
-            options=["Proceed after screening", "Hold pending legal review", "Prepare approved alternative route"],
-            evidence_ids=[item["evidence_id"] for item in evidence],
-            expert_knowledge_ids=knowledge_ids,
-            risk_if_delayed="Uncontrolled payment or delayed supplier action can worsen sanctions, liquidity, and supply risk.",
-            review_required=True,
-        )
+        decision = _decision_for_event(event, decision_id, evidence, knowledge_ids)
         self.mcp.call(
             "mcp-neo4j",
             "upsert_asset",
@@ -979,6 +1009,9 @@ class OrchestratorDeepAgentService(A2AService):
         )
 
     def _create_analysis_plan(self, event: RiskEvent) -> AnalysisPlan:
+        deterministic_plan = _deterministic_analysis_plan(event)
+        if deterministic_plan:
+            return deterministic_plan
         prompt = (
             "Return only JSON for a bounded risk-analysis plan. Preserve the fixed agent order by selecting names "
             "from fixed_agent_order; do not invent agent names. Schema: "
@@ -1015,6 +1048,26 @@ def create_embedded_a2a_apps(settings: Settings, *, embedded_mcp: bool = True) -
 def create_orchestrator_service(settings: Settings, embedded_apps: dict[str, Any] | None = None) -> OrchestratorDeepAgentService:
     client = A2AHttpClient(settings.service_urls, embedded_apps=embedded_apps, settings=settings)
     return OrchestratorDeepAgentService(settings, client)
+
+
+def _deterministic_analysis_plan(event: RiskEvent) -> AnalysisPlan | None:
+    planned_agents = CANONICAL_RISK_AGENT_PLAN.get(event.risk_type)
+    if not planned_agents:
+        return None
+    selected = [agent for agent in FIXED_AGENT_ORDER if agent in planned_agents]
+    skipped = [agent for agent in FIXED_AGENT_ORDER if agent not in selected]
+    return AnalysisPlan(
+        selected_agents=selected,
+        skipped_agents=skipped,
+        recheck_conditions=[
+            f"Escalate to skipped specialist agents if evidence contradicts `{event.risk_type}` scope or reveals material cross-domain exposure."
+        ],
+        exploration_questions=[
+            f"Which evidence gaps would change the `{event.risk_type}` conclusion or require cross-functional escalation?"
+        ],
+        rationale=f"Deterministic canonical-risk plan for `{event.risk_type}` preserves fixed agent order without mid-run selection.",
+        fallback_used=False,
+    )
 
 
 def _analysis_plan_from_text(text: str) -> AnalysisPlan | None:
@@ -1163,6 +1216,22 @@ def _document_ids(items: list[dict[str, Any]]) -> list[str]:
     return ids
 
 
+def _knowledge_object_relevant(item: dict[str, Any], event_text: str) -> bool:
+    payload = item.get("payload") if isinstance(item.get("payload"), dict) else item
+    searchable = " ".join(
+        [
+            str(payload.get("domain") or ""),
+            str(payload.get("object_type") or ""),
+            str(payload.get("title") or ""),
+            str(payload.get("description") or ""),
+            str(payload.get("text") or ""),
+            " ".join(str(tag) for tag in payload.get("tags") or []),
+        ]
+    ).lower()
+    tokens = [token for token in re.split(r"[^a-z0-9_]+", event_text.lower()) if len(token) >= 4]
+    return any(token in searchable for token in tokens)
+
+
 def _recommended_guardrails_from_knowledge(items: list[dict[str, Any]]) -> list[str]:
     guardrails: list[str] = []
     for item in items:
@@ -1185,6 +1254,74 @@ def _default_counterfactuals(event: RiskEvent) -> list[str]:
         "What if public evidence describes sector risk but not this client's product category?",
         "What if contract continuity risk is lower because alternate supply is already qualified?",
     ]
+
+
+def _decision_for_event(
+    event: RiskEvent,
+    decision_id: str,
+    evidence: list[dict[str, Any]],
+    knowledge_ids: list[str],
+) -> DecisionItem:
+    evidence_ids = [item["evidence_id"] for item in evidence]
+    if event.risk_type == "supplier_resilience":
+        return DecisionItem(
+            decision_id=decision_id,
+            priority=1,
+            decision="Decide whether to activate logistics continuity actions for critical materials and customer shipments.",
+            owner="Procurement / Operations / Logistics",
+            deadline="24 hours",
+            rationale="Procurement, client context, source intelligence, and Expert-as-Code findings converge on supplier and logistics continuity risk.",
+            options=[
+                "Maintain current lanes with daily monitoring",
+                "Reroute through approved alternate ports, carriers, or 3PL capacity",
+                "Allocate inventory and qualify alternate sourcing for critical materials",
+            ],
+            evidence_ids=evidence_ids,
+            expert_knowledge_ids=knowledge_ids,
+            risk_if_delayed="Transport disruption, inventory depletion, and customer shipment delays may become harder to recover.",
+            review_required=True,
+        )
+    if event.risk_type == "legal_compliance":
+        return DecisionItem(
+            decision_id=decision_id,
+            priority=1,
+            decision="Decide whether shipment, counterparty, contract notice, or export-control review is required before execution.",
+            owner="Legal / Compliance",
+            deadline="24 hours",
+            rationale="Legal and Expert-as-Code findings indicate potential sanctions, export-control, or contract-notice exposure.",
+            options=["Proceed after legal clearance", "Pause execution pending counterparty review", "Issue required contract notices"],
+            evidence_ids=evidence_ids,
+            expert_knowledge_ids=knowledge_ids,
+            risk_if_delayed="Unreviewed execution can create sanctions, export-control, or contract-performance exposure.",
+            review_required=True,
+        )
+    if event.risk_type == "accounting_disclosure":
+        return DecisionItem(
+            decision_id=decision_id,
+            priority=1,
+            decision="Decide whether a materiality, impairment, provision, or disclosure assessment is required.",
+            owner="Accounting / Finance",
+            deadline="48 hours",
+            rationale="Accounting and Expert-as-Code findings indicate possible reporting or auditor evidence requirements.",
+            options=["Monitor as non-material", "Prepare auditor evidence pack", "Escalate to disclosure committee"],
+            evidence_ids=evidence_ids,
+            expert_knowledge_ids=knowledge_ids,
+            risk_if_delayed="Late reporting assessment can weaken auditor support and disclosure readiness.",
+            review_required=True,
+        )
+    return DecisionItem(
+        decision_id=decision_id,
+        priority=1,
+        decision="Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval.",
+        owner="CFO / Legal / Procurement",
+        deadline="24 hours",
+        rationale="Treasury, legal, accounting, and procurement findings converge on payment and supplier continuity risk.",
+        options=["Proceed after screening", "Hold pending legal review", "Prepare approved alternative route"],
+        evidence_ids=evidence_ids,
+        expert_knowledge_ids=knowledge_ids,
+        risk_if_delayed="Uncontrolled payment or delayed supplier action can worsen sanctions, liquidity, and supply risk.",
+        review_required=True,
+    )
 
 
 def _default_domain_issues(domain: str, event: RiskEvent) -> list[str]:

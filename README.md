@@ -167,6 +167,23 @@ risk-agent-platform discover-risks `
   --embedded-services
 ```
 
+Natural-language scope discovery and end-to-end analysis:
+
+```powershell
+risk-agent-platform discover-risks `
+  --event-title "Taiwan contingency" `
+  --event-description "A Taiwan Strait contingency may disrupt sea and air logistics, export controls, supplier continuity, site operations, customer shipments, and cross-border payments." `
+  --client-id fujifilm_dummy `
+  --scope-text "富士フイルムの物流。海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルートを含む。" `
+  --country Taiwan `
+  --run-analysis `
+  --embedded-services
+```
+
+`--scope-text` is the preferred input for generic business scopes. It does not require `--department` or `--scope-name`; Risk Discovery records a `scope_interpretation` and uses it for candidate generation, relevance scoring, coverage augmentation, and debug output. `--department` and `--scope-name` remain available for backward-compatible structured cases.
+
+The default `--analysis-mode auto` keeps broad company or executive runs on all selected risks, but for a natural-language `--scope-text` it analyzes the selected RiskEvents whose `risk_type` matches the interpreted scope-primary risk types. This avoids requiring a mid-run human choice such as manually switching to `top` for narrow functional scopes.
+
 Discovery followed by scenario analysis for all selected candidates:
 
 ```powershell

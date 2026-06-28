@@ -18,6 +18,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--event-title", required=True)
     parser.add_argument("--event-description", default="")
     parser.add_argument("--client-id", required=True)
+    parser.add_argument("--scope-text", help="Free-form natural-language scope, e.g. company, function, assets, routes, or concerns.")
     parser.add_argument("--scope-type", default="company")
     parser.add_argument("--scope-name")
     parser.add_argument("--department")
@@ -41,9 +42,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--analysis-mode",
-        choices=["all-selected", "top", "top-n"],
-        default="all-selected",
-        help="Choose which selected RiskEvents are passed to scenario analysis.",
+        choices=["auto", "all-selected", "top", "top-n"],
+        default="auto",
+        help="Choose which selected RiskEvents are passed to scenario analysis; auto uses natural-language scope primary risks when present.",
     )
     parser.add_argument(
         "--top-n",
@@ -63,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
         max_risks=args.max_risks,
         scope=RiskDiscoveryScope(
             client_id=args.client_id,
+            scope_text=args.scope_text,
             scope_type=args.scope_type,
             scope_name=args.scope_name,
             department=args.department,
@@ -141,6 +143,17 @@ def _write_discovery_output(settings: Settings, data: dict[str, object], scenari
 def _events_for_analysis(result: RiskDiscoveryResult, mode: str, top_n: int) -> list[RiskEvent]:
     events = result.selected_events or ([result.selected_event] if result.selected_event else [])
     events = [event for event in events if event is not None]
+    if mode == "auto":
+        raw_interpretation = result.metadata.get("scope_interpretation") if isinstance(result.metadata, dict) else None
+        interpretation = raw_interpretation if isinstance(raw_interpretation, dict) else {}
+        primary_types = {
+            str(item)
+            for item in interpretation.get("primary_risk_types") or []
+        }
+        if interpretation.get("source") == "scope_text" and primary_types:
+            primary_events = [event for event in events if event.risk_type in primary_types]
+            return primary_events or events[:1]
+        return events
     if mode == "top":
         return events[:1]
     if mode == "top-n":
@@ -302,7 +315,7 @@ def _consolidated_decisions(rows: list[dict[str, Any]], decision_rules: list[dic
     consolidated = []
     for group_key, items in groups.items():
         rule = _decision_rule_by_group(group_key, decision_rules)
-        owners = sorted({str(item.get("owner") or "Unassigned") for item in items})
+        owners = sorted({owner for item in items for owner in _owner_tokens(item.get("owner"))})
         deadlines = sorted({str(item.get("deadline") or "Unspecified") for item in items})
         priorities = [int(item.get("priority") or 999) for item in items]
         representative = min((str(item.get("decision") or "") for item in items), key=len, default=group_key)
@@ -329,6 +342,12 @@ def _consolidated_decisions(rows: list[dict[str, Any]], decision_rules: list[dic
             }
         )
     return sorted(consolidated, key=lambda item: (item["priority"], -item["source_count"], item["group_id"]))
+
+
+def _owner_tokens(owner: Any) -> list[str]:
+    raw = str(owner or "Unassigned")
+    tokens = [token.strip() for token in re.split(r"\s*(?:/|,|;|&|\band\b)\s*", raw) if token.strip()]
+    return tokens or ["Unassigned"]
 
 
 def _decision_group_key(text: str, decision_rules: list[dict[str, Any]] | None = None) -> str:
@@ -387,7 +406,7 @@ def _decision_conflicts(consolidated: list[dict[str, Any]]) -> list[dict[str, An
                     "rule_id": item.get("rule_id"),
                 }
             )
-        if len(owners) > 1 or len(deadlines) > 1:
+        if int(item.get("source_count") or 0) > 1 and (len(owners) > 1 or len(deadlines) > 1):
             conflicts.append(
                 {
                     "group_id": item["group_id"],
@@ -408,7 +427,7 @@ def _portfolio_markdown(data: dict[str, Any]) -> str:
         f"# Risk Discovery Portfolio Summary: {request['event_title']}",
         "",
         f"- Client: `{request['scope']['client_id']}`",
-        f"- Scope: `{request['scope']['scope_type']}` `{request['scope'].get('scope_name') or ''}`",
+        f"- Scope: `{request['scope']['scope_type']}` `{request['scope'].get('scope_name') or request['scope'].get('scope_text') or ''}`",
         f"- Discovery confidence: `{(data.get('discovery_metadata') or {}).get('discovery_confidence', '')}`",
         f"- Fallback used: `{(data.get('discovery_metadata') or {}).get('fallback_used', False)}`",
         f"- Selected candidates: {len(data['selected_candidates'])}",

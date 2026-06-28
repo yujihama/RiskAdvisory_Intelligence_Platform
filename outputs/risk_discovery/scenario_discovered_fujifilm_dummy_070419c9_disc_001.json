@@ -1,0 +1,337 @@
+{
+  "request": {
+    "event_title": "台湾有事",
+    "event_description": "台湾海峡での有事により、海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルート、顧客向け出荷、輸出規制、国際決済に影響が出る可能性がある。",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_text": "富士フイルムの物流。海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルートを含む。",
+      "scope_type": "company",
+      "scope_name": null,
+      "department": null,
+      "region": null,
+      "site_id": null,
+      "metadata": {}
+    },
+    "countries": [
+      "Taiwan"
+    ],
+    "event_date": null,
+    "max_risks": 3
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "台湾有事による海上・航空輸送ルートの分断と物流遅延",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "transport_disruption",
+        "route_concentration"
+      ],
+      "affected_categories": [
+        "logistics",
+        "procurement"
+      ],
+      "description": "台湾有事により台湾海峡の海上輸送路および航空路が封鎖・制限され、富士フイルムの重要部材・製品の海上・航空輸送に遅延または停止が生じる。3PLプロバイダーの港湾・空港利用にも影響が波及する。",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "海上輸送",
+        "航空輸送",
+        "港湾",
+        "3PL",
+        "輸送遅延",
+        "scope_text:primary",
+        "scope_text:3pl",
+        "scope_text:物流",
+        "scope_text:輸送",
+        "scope_text:海上輸送",
+        "scope_text:航空輸送",
+        "3pl"
+      ],
+      "rationale": "台湾海峡は東アジアの主要海上・航空輸送路であり、有事による封鎖は富士フイルムの物流ネットワーク全体に直接的な供給連鎖リスクをもたらす。",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [
+    {
+      "candidate_id": "DISC-003",
+      "title": "3PLプロバイダーの機能停止による物流代行サービスの中断",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 100,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 40.",
+      "scope_matches": [
+        "3PL",
+        "物流",
+        "scope_text:primary",
+        "scope_text:3pl",
+        "scope_text:物流",
+        "scope_text:通関",
+        "3pl"
+      ]
+    },
+    {
+      "candidate_id": "DISC-005",
+      "title": "代替ルートへの転換遅延による物流ボトルネック",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 100,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 40.",
+      "scope_matches": [
+        "代替ルート",
+        "海上輸送",
+        "航空輸送",
+        "scope_text:primary",
+        "scope_text:物流",
+        "scope_text:代替ルート"
+      ]
+    },
+    {
+      "candidate_id": "DISC-002",
+      "title": "港湾機能停止および通関手続きの遅延",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 90,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 90; selection threshold was 40.",
+      "scope_matches": [
+        "港湾",
+        "通関",
+        "scope_text:primary",
+        "scope_text:港湾",
+        "scope_text:通関"
+      ]
+    },
+    {
+      "candidate_id": "DISC-004",
+      "title": "重要部材の輸送遅延による生産停止リスク",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 90,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 90; selection threshold was 40.",
+      "scope_matches": [
+        "重要部材",
+        "輸送遅延",
+        "代替ルート",
+        "scope_text:primary",
+        "scope_text:輸送",
+        "scope_text:部材"
+      ]
+    }
+  ],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+    "client_id": "fujifilm_dummy",
+    "title": "台湾有事による海上・航空輸送ルートの分断と物流遅延",
+    "risk_type": "supplier_resilience",
+    "countries": [
+      "Taiwan"
+    ],
+    "risk_themes": [
+      "transport_disruption",
+      "route_concentration"
+    ],
+    "affected_categories": [
+      "logistics",
+      "procurement"
+    ],
+    "description": "台湾有事により台湾海峡の海上輸送路および航空路が封鎖・制限され、富士フイルムの重要部材・製品の海上・航空輸送に遅延または停止が生じる。3PLプロバイダーの港湾・空港利用にも影響が波及する。",
+    "event_date": "2026-06-28",
+    "urgency": "high"
+  },
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+      "client_id": "fujifilm_dummy",
+      "title": "台湾有事による海上・航空輸送ルートの分断と物流遅延",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "transport_disruption",
+        "route_concentration"
+      ],
+      "affected_categories": [
+        "logistics",
+        "procurement"
+      ],
+      "description": "台湾有事により台湾海峡の海上輸送路および航空路が封鎖・制限され、富士フイルムの重要部材・製品の海上・航空輸送に遅延または停止が生じる。3PLプロバイダーの港湾・空港利用にも影響が波及する。",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    }
+  ],
+  "generated_at": "2026-06-28T12:26:11.086233Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "logistics",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "logistics": {
+        "dataset": "logistics",
+        "row_count": 0,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "segments": {
+        "dataset": "segments",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "regions": {
+        "dataset": "regions",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 5,
+        "countries": [
+          "Japan",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      },
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "payments": {
+        "dataset": "payments",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [
+          "EUR",
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 5,
+        "amount_buckets": {
+          "1m_5m": 2,
+          "gte_50m": 1,
+          "250k_1m": 2
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 5,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      }
+    },
+    "scope_interpretation": {
+      "scope_text": "富士フイルムの物流。海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルートを含む。",
+      "matched_domains": [
+        "logistics",
+        "procurement"
+      ],
+      "matched_terms": [
+        "3pl",
+        "物流",
+        "輸送",
+        "海上輸送",
+        "航空輸送",
+        "空輸",
+        "港湾",
+        "通関",
+        "代替ルート",
+        "部材"
+      ],
+      "primary_risk_types": [
+        "supplier_resilience"
+      ],
+      "source": "scope_text"
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 5,
+    "coverage_augmented_candidate_count": 0,
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?",
+      "Which selected risks require executive cross-functional decision ownership?",
+      "Which evidence gaps block immediate mitigation decisions?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring."
+    ],
+    "scope_relevance_rule_count": 10
+  }
+}

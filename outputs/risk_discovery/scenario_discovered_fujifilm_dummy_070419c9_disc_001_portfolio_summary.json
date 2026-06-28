@@ -1,0 +1,1426 @@
+{
+  "request": {
+    "event_title": "台湾有事",
+    "event_description": "台湾海峡での有事により、海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルート、顧客向け出荷、輸出規制、国際決済に影響が出る可能性がある。",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_text": "富士フイルムの物流。海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルートを含む。",
+      "scope_type": "company",
+      "scope_name": null,
+      "department": null,
+      "region": null,
+      "site_id": null,
+      "metadata": {}
+    },
+    "countries": [
+      "Taiwan"
+    ],
+    "event_date": null,
+    "max_risks": 3
+  },
+  "discovery_metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "logistics",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "logistics": {
+        "dataset": "logistics",
+        "row_count": 0,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "segments": {
+        "dataset": "segments",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "regions": {
+        "dataset": "regions",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 5,
+        "countries": [
+          "Japan",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      },
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "payments": {
+        "dataset": "payments",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [
+          "EUR",
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 5,
+        "amount_buckets": {
+          "1m_5m": 2,
+          "gte_50m": 1,
+          "250k_1m": 2
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 5,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      }
+    },
+    "scope_interpretation": {
+      "scope_text": "富士フイルムの物流。海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルートを含む。",
+      "matched_domains": [
+        "logistics",
+        "procurement"
+      ],
+      "matched_terms": [
+        "3pl",
+        "物流",
+        "輸送",
+        "海上輸送",
+        "航空輸送",
+        "空輸",
+        "港湾",
+        "通関",
+        "代替ルート",
+        "部材"
+      ],
+      "primary_risk_types": [
+        "supplier_resilience"
+      ],
+      "source": "scope_text"
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 5,
+    "coverage_augmented_candidate_count": 0,
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?",
+      "Which selected risks require executive cross-functional decision ownership?",
+      "Which evidence gaps block immediate mitigation decisions?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring."
+    ],
+    "scope_relevance_rule_count": 10
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "台湾有事による海上・航空輸送ルートの分断と物流遅延",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "transport_disruption",
+        "route_concentration"
+      ],
+      "affected_categories": [
+        "logistics",
+        "procurement"
+      ],
+      "description": "台湾有事により台湾海峡の海上輸送路および航空路が封鎖・制限され、富士フイルムの重要部材・製品の海上・航空輸送に遅延または停止が生じる。3PLプロバイダーの港湾・空港利用にも影響が波及する。",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "海上輸送",
+        "航空輸送",
+        "港湾",
+        "3PL",
+        "輸送遅延",
+        "scope_text:primary",
+        "scope_text:3pl",
+        "scope_text:物流",
+        "scope_text:輸送",
+        "scope_text:海上輸送",
+        "scope_text:航空輸送",
+        "3pl"
+      ],
+      "rationale": "台湾海峡は東アジアの主要海上・航空輸送路であり、有事による封鎖は富士フイルムの物流ネットワーク全体に直接的な供給連鎖リスクをもたらす。",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [
+    {
+      "candidate_id": "DISC-003",
+      "title": "3PLプロバイダーの機能停止による物流代行サービスの中断",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 100,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 40.",
+      "scope_matches": [
+        "3PL",
+        "物流",
+        "scope_text:primary",
+        "scope_text:3pl",
+        "scope_text:物流",
+        "scope_text:通関",
+        "3pl"
+      ]
+    },
+    {
+      "candidate_id": "DISC-005",
+      "title": "代替ルートへの転換遅延による物流ボトルネック",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 100,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 40.",
+      "scope_matches": [
+        "代替ルート",
+        "海上輸送",
+        "航空輸送",
+        "scope_text:primary",
+        "scope_text:物流",
+        "scope_text:代替ルート"
+      ]
+    },
+    {
+      "candidate_id": "DISC-002",
+      "title": "港湾機能停止および通関手続きの遅延",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 90,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 90; selection threshold was 40.",
+      "scope_matches": [
+        "港湾",
+        "通関",
+        "scope_text:primary",
+        "scope_text:港湾",
+        "scope_text:通関"
+      ]
+    },
+    {
+      "candidate_id": "DISC-004",
+      "title": "重要部材の輸送遅延による生産停止リスク",
+      "risk_type": "supplier_resilience",
+      "relevance_score": 90,
+      "reason": "Moved below threshold by scope diversity pass: duplicate selected risk_type `supplier_resilience` was demoted so scope-primary coverage can remain visible. Original relevance score was 90; selection threshold was 40.",
+      "scope_matches": [
+        "重要部材",
+        "輸送遅延",
+        "代替ルート",
+        "scope_text:primary",
+        "scope_text:輸送",
+        "scope_text:部材"
+      ]
+    }
+  ],
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+      "client_id": "fujifilm_dummy",
+      "title": "台湾有事による海上・航空輸送ルートの分断と物流遅延",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Taiwan"
+      ],
+      "risk_themes": [
+        "transport_disruption",
+        "route_concentration"
+      ],
+      "affected_categories": [
+        "logistics",
+        "procurement"
+      ],
+      "description": "台湾有事により台湾海峡の海上輸送路および航空路が封鎖・制限され、富士フイルムの重要部材・製品の海上・航空輸送に遅延または停止が生じる。3PLプロバイダーの港湾・空港利用にも影響が波及する。",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    }
+  ],
+  "decision_consolidation_rules": [
+    {
+      "rule_id": "DECISION-CONSOLIDATION-SANCTIONS-001",
+      "group_id": "sanctions_review",
+      "match_terms": [
+        "sanction",
+        "restricted party",
+        "screening",
+        "beneficial ownership",
+        "export control"
+      ],
+      "required_owners": [
+        "Legal"
+      ],
+      "primary_owner": "Legal",
+      "secondary_owners": [
+        "Treasury",
+        "Procurement"
+      ],
+      "rationale": "Sanctions-related decisions require Legal ownership, with execution support from the affected function."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-PAYMENT-001",
+      "group_id": "payment_execution",
+      "match_terms": [
+        "payment",
+        "cash",
+        "bank",
+        "liquidity",
+        "funding",
+        "route",
+        "currency"
+      ],
+      "required_owners": [
+        "Treasury",
+        "Legal"
+      ],
+      "primary_owner": "Treasury",
+      "secondary_owners": [
+        "Legal"
+      ],
+      "rationale": "Payment execution decisions should combine Treasury execution ownership with Legal review when sanctions or bank-route constraints may apply."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-SUPPLIER-001",
+      "group_id": "supplier_continuity",
+      "match_terms": [
+        "supplier",
+        "procurement",
+        "alternative",
+        "inventory",
+        "sourcing",
+        "logistics",
+        "shipment"
+      ],
+      "required_owners": [
+        "Procurement",
+        "Operations"
+      ],
+      "primary_owner": "Procurement",
+      "secondary_owners": [
+        "Operations"
+      ],
+      "rationale": "Supplier continuity decisions should be consolidated into procurement and operations actions, not split across isolated risk memos."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-CONTRACT-001",
+      "group_id": "contract_review",
+      "match_terms": [
+        "contract",
+        "notice",
+        "force majeure",
+        "termination",
+        "clause",
+        "customer commitment"
+      ],
+      "required_owners": [
+        "Legal"
+      ],
+      "primary_owner": "Legal",
+      "secondary_owners": [
+        "Sales",
+        "Customer Success"
+      ],
+      "rationale": "Contract notice and customer-commitment decisions require Legal as primary owner with commercial teams included where customer obligations are affected."
+    }
+  ],
+  "portfolio_overview": {
+    "analysis_count": 1,
+    "completed_count": 1,
+    "failed_count": 0,
+    "status_counts": {
+      "completed": 1
+    },
+    "risk_types": [
+      "supplier_resilience"
+    ],
+    "total_decisions": 1,
+    "total_evidence": 5,
+    "evidence_domains": [
+      "financialprofessionals.org",
+      "henryjacksonsociety.org",
+      "ibuyxs.com",
+      "interos.ai",
+      "wild-tech.com"
+    ],
+    "review_required_scenarios": [
+      "scenario_discovered_fujifilm_dummy_070419c9_disc_001"
+    ],
+    "priority_decisions": [
+      {
+        "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+        "risk_type": "supplier_resilience",
+        "decision": "Decide whether to activate logistics continuity actions for critical materials and customer shipments.",
+        "owner": "Procurement / Operations / Logistics",
+        "priority": 1,
+        "review_required": true
+      }
+    ],
+    "consolidated_decisions": [
+      {
+        "group_id": "supplier_continuity",
+        "rule_id": "DECISION-CONSOLIDATION-SUPPLIER-001",
+        "decision": "Decide whether to activate logistics continuity actions for critical materials and customer shipments.",
+        "owners": [
+          "Logistics",
+          "Operations",
+          "Procurement"
+        ],
+        "required_owners": [
+          "Procurement",
+          "Operations"
+        ],
+        "primary_owner": "Procurement",
+        "secondary_owners": [
+          "Operations"
+        ],
+        "owner_gap": [],
+        "deadlines": [
+          "24 hours"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_fujifilm_dummy_070419c9_disc_001"
+        ],
+        "risk_types": [
+          "supplier_resilience"
+        ],
+        "source_count": 1,
+        "priority": 1,
+        "review_required": true,
+        "rationale": "Supplier continuity decisions should be consolidated into procurement and operations actions, not split across isolated risk memos."
+      }
+    ],
+    "decisions_by_owner": {
+      "Procurement / Operations / Logistics": 1
+    },
+    "decisions_by_deadline": {
+      "24 hours": 1
+    },
+    "decision_conflicts": []
+  },
+  "analyses": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+      "title": "台湾有事による海上・航空輸送ルートの分断と物流遅延",
+      "risk_type": "supplier_resilience",
+      "risk_themes": [
+        "transport_disruption",
+        "route_concentration"
+      ],
+      "urgency": "high",
+      "status": "completed",
+      "trace_id": "342cf3e8-c790-484f-a502-daf8578821ce",
+      "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+      "error": null,
+      "decision_count": 1,
+      "decisions": [
+        {
+          "decision_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001_decision_001",
+          "decision": "Decide whether to activate logistics continuity actions for critical materials and customer shipments.",
+          "owner": "Procurement / Operations / Logistics",
+          "deadline": "24 hours",
+          "rationale": "Procurement, client context, source intelligence, and Expert-as-Code findings converge on supplier and logistics continuity risk.",
+          "options": [
+            "Maintain current lanes with daily monitoring",
+            "Reroute through approved alternate ports, carriers, or 3PL capacity",
+            "Allocate inventory and qualify alternate sourcing for critical materials"
+          ],
+          "evidence_ids": [
+            "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_001",
+            "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_002",
+            "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_003",
+            "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_004",
+            "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_005"
+          ],
+          "expert_knowledge_ids": [
+            "PRC-PAT-001",
+            "DECISION-CONSOLIDATION-SUPPLIER-001",
+            "PRC-PLAY-001",
+            "PRC-RF-002",
+            "XFN-PAT-001",
+            "PRC-RUB-002",
+            "PRC-RF-001",
+            "LEG-RF-003",
+            "TRE-PAT-001",
+            "TRE-RF-002",
+            "CASE-XFN-001",
+            "CASE-PRC-002",
+            "CASE-PRC-003",
+            "CASE-ACC-003",
+            "CASE-PRC-001"
+          ],
+          "risk_if_delayed": "Transport disruption, inventory depletion, and customer shipment delays may become harder to recover.",
+          "review_required": true,
+          "priority": 1
+        }
+      ],
+      "evidence_count": 5,
+      "evidence_domains": [
+        "financialprofessionals.org",
+        "henryjacksonsociety.org",
+        "ibuyxs.com",
+        "interos.ai",
+        "wild-tech.com"
+      ],
+      "orchestrator_finding": {
+        "agent_name": "orchestrator-agent",
+        "mode": "orchestrator",
+        "summary": "Delegated scenario to 6 Domain Agent findings through A2A.",
+        "risk_score": null,
+        "confidence": "medium",
+        "evidence_ids": [],
+        "assumptions": [],
+        "unknowns": [],
+        "recommended_actions": [
+          "Decide whether to activate logistics continuity actions for critical materials and customer shipments."
+        ],
+        "review_required": true,
+        "rationale": "Orchestrator used A2A task requests and did not directly call Tavily, Qdrant, Neo4j, or filesystem.",
+        "metadata": {
+          "analysis_plan": {
+            "selected_agents": [
+              "client-context-agent",
+              "source-intelligence-agent",
+              "procurement-risk-agent",
+              "expert-as-code-agent",
+              "evidence-redteam-agent"
+            ],
+            "skipped_agents": [
+              "treasury-risk-agent",
+              "legal-risk-agent",
+              "accounting-risk-agent"
+            ],
+            "recheck_conditions": [
+              "Escalate to skipped specialist agents if evidence contradicts `supplier_resilience` scope or reveals material cross-domain exposure."
+            ],
+            "exploration_questions": [
+              "Which evidence gaps would change the `supplier_resilience` conclusion or require cross-functional escalation?"
+            ],
+            "rationale": "Deterministic canonical-risk plan for `supplier_resilience` preserves fixed agent order without mid-run selection.",
+            "fallback_used": false
+          },
+          "findings": [
+            {
+              "agent_name": "client-context-agent",
+              "mode": "client_context",
+              "summary": "Registered RiskScenario and 5 suppliers in Neo4j; affected candidates: 3.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "Sub-tier suppliers remain unknown until additional data is supplied."
+              ],
+              "recommended_actions": [
+                "Validate supplier criticality and sub-tier dependencies."
+              ],
+              "review_required": true,
+              "rationale": "Client context is source-backed from structured data and relationship-backed in Neo4j.",
+              "metadata": {
+                "datasets": [
+                  "contracts",
+                  "payments",
+                  "regions",
+                  "segments",
+                  "sites",
+                  "source_references",
+                  "suppliers"
+                ],
+                "affected_supplier_ids": [
+                  "SUP-FJ-IR-001",
+                  "SUP-FJ-GULF-002",
+                  "SUP-FJ-JP-003"
+                ],
+                "confidential_terms": [
+                  "SUP-FJ-IR-001",
+                  "Tehran Medical Service Partner",
+                  "PRD-MED-SVC",
+                  "Medical systems field-service parts",
+                  "SITE-FJ-HEALTH-JP-01",
+                  "SUP-FJ-GULF-002",
+                  "Gulf Logistics Corridor",
+                  "PRD-LOG-GULF",
+                  "Middle East cold-chain and spare-parts logistics",
+                  "SUP-FJ-JP-003",
+                  "Japan Electronic Materials Partner",
+                  "PRD-SEM-MAT",
+                  "Semiconductor materials precursor supply",
+                  "SITE-FJ-ELEC-JP-01",
+                  "SUP-FJ-EU-004",
+                  "Europe Bioprocess Consumables",
+                  "PRD-BIO-CONS",
+                  "Bioprocess consumables and validation kits",
+                  "SITE-FJ-BIO-US-01",
+                  "SUP-FJ-US-005",
+                  "North America Imaging Components",
+                  "PRD-IMG-PARTS",
+                  "Imaging device service parts",
+                  "SITE-FJ-IMG-JP-01",
+                  "Healthcare systems Japan hub",
+                  "Electronic materials Japan plant",
+                  "Bioprocess CDMO support hub",
+                  "SITE-FJ-BI-JP-01",
+                  "Business Innovation Japan operations",
+                  "Imaging service and distribution hub",
+                  "CTR-FJ-IR-9001",
+                  "CTR-FJ-GULF-9002",
+                  "CTR-FJ-JP-9003",
+                  "CTR-FJ-EU-9004",
+                  "CTR-FJ-US-9005"
+                ]
+              }
+            },
+            {
+              "agent_name": "source-intelligence-agent",
+              "mode": "source_intelligence",
+              "summary": "The 3 searches completed successfully, each returning 3 results. However, the tool responses only show summaries (status, query_hash, result_count) without the actual URLs. This appears to be a display truncation issue.\n\nI cannot extract URLs without seeing the search result content. The searches covered:\n\n1. **Transport disruption** — \"Taiwan transport disruption route concentration official regulatory update\" (3 results)\n2. **Payment/sanctions** — \"Taiwan payment disruption sanctions banking official source\" (3 results)\n3. **Supplier continuity** — \"Taiwan supplier continuity logistics disru Registered 5 bounded Tavily evidence items.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_001",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_002",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_003",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_004",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_005"
+              ],
+              "assumptions": [],
+              "unknowns": [],
+              "recommended_actions": [
+                "Review authoritative sources and retain query hash for audit."
+              ],
+              "review_required": false,
+              "rationale": "Source Intelligence planned bounded queries, ran sanitized Tavily searches through MCP, extracted selected URLs, and registered EvidenceItems through Evidence Ledger.",
+              "metadata": {
+                "queries": [
+                  {
+                    "query": "Taiwan payment disruption sanctions banking official source",
+                    "query_hash": "2b534c4c3969e989"
+                  },
+                  {
+                    "query": "Taiwan supplier continuity client-specific entity disruption authoritative source",
+                    "query_hash": "6010918a4c2235cf"
+                  },
+                  {
+                    "query": "Taiwan transport disruption route concentration official regulatory update",
+                    "query_hash": "2a65695efe0b069e"
+                  }
+                ],
+                "extracted_urls": [
+                  "https://www.financialprofessionals.org/docs/default-source/default-document-library/pdf/cp_afp-taiwan-pdf.pdf?sfvrsn=0",
+                  "https://henryjacksonsociety.org/wp-content/uploads/2022/10/HJS-Lessons-for-Taiwan-%E2%80%93-Ukraine-Sanctions-Report-WEB.pdf",
+                  "https://www.banking.gov.tw/en/home.jsp?id=93&parentpath=0%2C86"
+                ],
+                "deepagent_tool_invoked": true,
+                "confidential_terms_count": 35,
+                "limits": {
+                  "max_queries": 3,
+                  "max_extract_urls": 3,
+                  "max_evidence": 5
+                }
+              }
+            },
+            {
+              "agent_name": "procurement-risk-agent",
+              "mode": "procurement",
+              "summary": "Procurement exposure includes 0 critical suppliers in the target country filter.",
+              "risk_score": 30,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "Alternative qualification status must be validated with procurement owner."
+              ],
+              "recommended_actions": [
+                "Start alternative sourcing and inventory runway validation."
+              ],
+              "review_required": false,
+              "rationale": "Procurement Agent uses supplier exposure MCP tools and remains separate from Treasury.",
+              "metadata": {
+                "supplier_exposure": {
+                  "supplier_count": 0,
+                  "critical_count": 0,
+                  "items": []
+                }
+              }
+            },
+            {
+              "agent_name": "expert-as-code-agent",
+              "mode": "expert_as_code",
+              "summary": "Indexed expert knowledge and case bank; retrieved 10 objects and 5 similar cases.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [],
+              "recommended_actions": [
+                "Apply payment action language guardrails and joint review triggers."
+              ],
+              "review_required": true,
+              "rationale": "Expert-as-Code uses structured Knowledge Objects and case bank entries indexed into Qdrant via MCP.",
+              "metadata": {
+                "indexed": {
+                  "collection": "expert_knowledge",
+                  "upserted": 65
+                },
+                "indexed_cases": {
+                  "collection": "expert_cases",
+                  "upserted": 14
+                },
+                "knowledge_object_ids": [
+                  "PRC-PAT-001",
+                  "DECISION-CONSOLIDATION-SUPPLIER-001",
+                  "PRC-PLAY-001",
+                  "PRC-RF-002",
+                  "XFN-PAT-001",
+                  "PRC-RUB-002",
+                  "PRC-RF-001",
+                  "LEG-RF-003",
+                  "TRE-PAT-001",
+                  "TRE-RF-002"
+                ],
+                "case_ids": [
+                  "CASE-XFN-001",
+                  "CASE-PRC-002",
+                  "CASE-PRC-003",
+                  "CASE-ACC-003",
+                  "CASE-PRC-001"
+                ],
+                "question_count": 24,
+                "cta_note_count": 11,
+                "hits": [
+                  {
+                    "id": "2891f414-917b-56ce-81d2-b546155d6117",
+                    "score": 0.54209197,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "PRC-PAT-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "logistics disruption",
+                        "critical inbound shipment",
+                        "short inventory runway"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "pattern",
+                      "text": "Port/logistics disruption to production delay\nA port, corridor, carrier, customs or warehouse disruption can become production risk when inbound items are critical, inventory runway is short, and alternative routing has longer lead time or compliance constraints.",
+                      "created_at": "2026-06-28T12:30:16.222577+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "8f9e69f3-5a89-5dc3-870a-014eb3b53fc2",
+                    "score": 0.53053284,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "executive",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "DECISION-CONSOLIDATION-SUPPLIER-001",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier",
+                        "procurement",
+                        "alternative",
+                        "inventory",
+                        "sourcing",
+                        "logistics",
+                        "shipment"
+                      ],
+                      "domain": "executive",
+                      "object_type": "decision_consolidation_rule",
+                      "text": "supplier_continuity\nSupplier continuity decisions should be consolidated into procurement and operations actions, not split across isolated risk memos.\nsupplier procurement alternative inventory sourcing logistics shipment",
+                      "created_at": "2026-06-28T12:30:45.643558+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "a10a103a-4372-51de-ad79-7d075d0726d2",
+                    "score": 0.49125677,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "PRC-PLAY-001",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier or logistics disruption medium-high or higher"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "playbook",
+                      "text": "0-72h procurement disruption response\nWithin 72 hours, procurement should confirm affected suppliers and parts, inventory runway, alternative sources, expedited logistics, customer priority, and contractual levers.",
+                      "created_at": "2026-06-28T12:30:17.096705+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "e82fecfa-ba77-55d9-94d7-09e1035df19a",
+                    "score": 0.4560038,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "PRC-RF-002",
+                      "confidence": "high",
+                      "tags": [
+                        "tier-1 supplier known",
+                        "sub-tier data missing",
+                        "critical product or region exposure"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "red_flag",
+                      "text": "Sub-tier visibility gap\nTier-1 supplier visibility alone can hide concentration in sub-tier suppliers, shared facilities, logistics corridors, raw materials, or restricted jurisdictions.",
+                      "created_at": "2026-06-28T12:30:13.373500+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "d653a38c-3075-5936-b8aa-ec92efe3966f",
+                    "score": 0.39415708,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "cross_functional",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "XFN-PAT-001",
+                      "confidence": "high",
+                      "tags": [
+                        "geopolitical event",
+                        "supplier or bank exposure",
+                        "near-term payment or shipment dependency"
+                      ],
+                      "domain": "cross_functional",
+                      "object_type": "pattern",
+                      "text": "Geopolitical shock to payment-to-supply disruption cascade\nA geopolitical or sanctions shock may first appear as a payment-routing issue, then create supplier non-payment, shipment hold, inventory run-down, production delay, customer contract exposure, and accounting/disclosure pressure.",
+                      "created_at": "2026-06-28T12:29:50.285046+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "f8e26ef6-c7ba-5aa2-8c97-5c708dfbf0a7",
+                    "score": 0.39064145,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "PRC-RUB-002",
+                      "confidence": "high",
+                      "tags": [
+                        "inventory and lead-time data available or estimated"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "rubric",
+                      "text": "Inventory Runway urgency rubric\nCompare available inventory days to supplier recovery or substitution lead time. 1=runway materially exceeds stressed lead time; 3=runway close to lead time; 5=runway shorter than likely disruption duration.",
+                      "created_at": "2026-06-28T12:30:15.327096+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "df8af5ac-d703-5863-a376-a8217c43fe64",
+                    "score": 0.38344353,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "PRC-RF-001",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier criticality high",
+                        "alternative supplier missing or unapproved",
+                        "inventory runway below lead time"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "red_flag",
+                      "text": "Single-source or sole-source dependency\nA supplier is high-risk when a critical component, material, service or logistics step has no approved alternative within the required recovery time.",
+                      "created_at": "2026-06-28T12:30:12.216634+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "a0fcfb7b-fdfc-5f06-abe5-5df004614d6a",
+                    "score": 0.37218618,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "legal",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "LEG-RF-003",
+                      "confidence": "high",
+                      "tags": [
+                        "payment instructions changed",
+                        "shipment route changed",
+                        "end-user details changed",
+                        "counterparty refuses transaction details"
+                      ],
+                      "domain": "legal",
+                      "object_type": "red_flag",
+                      "text": "Last-minute changes to payment or shipment arrangements\nLast-minute requests to change bank account, consignee, route, documentation, end user, or destination can indicate sanctions, fraud, diversion, or export-control evasion risk.",
+                      "created_at": "2026-06-28T12:30:03.048026+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "0fd4961f-8ea6-52e8-8368-858fa2a5afb3",
+                    "score": 0.3628289,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "TRE-PAT-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "bank disruption, correspondent banking issue, sanctions screening delay, payment rejected or at risk"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "pattern",
+                      "text": "Banking disruption to payment rerouting pattern\nIf a bank or correspondent route is impaired, the issue is not only whether cash exists, but whether payment can be executed in compliant time through an alternative bank, currency, entity or settlement route.",
+                      "created_at": "2026-06-28T12:29:57.654340+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "62fe5286-e20b-5d43-86ea-f94cd073dd5b",
+                    "score": 0.35830918,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "TRE-RF-002",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier criticality high",
+                        "payment due within 14 days",
+                        "country/bank/sanctions/logistics risk present"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "red_flag",
+                      "text": "Near-term critical supplier payment exposure\nPayment due within 14 days to a critical supplier in an affected country creates a decision conflict between payment control risk and operational continuity risk.",
+                      "created_at": "2026-06-28T12:29:52.953160+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  }
+                ],
+                "case_hits": [
+                  {
+                    "id": "a8da351d-3446-5b13-a8eb-ec0638f8e186",
+                    "score": 0.41042233,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "cross_functional",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-XFN-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "sanctions",
+                        "supplier_payment",
+                        "cross_mode_conflict",
+                        "decision_queue"
+                      ],
+                      "domain": "cross_functional",
+                      "object_type": "expert_case",
+                      "text": "Sanctions-adjacent supplier payment hold creates supply disruption\nGeopolitical shock increases sanctions risk. Treasury considers payment hold. Supplier threatens shipment hold. Legal requires ownership screening. Procurement has short inventory runway. Accounting may need disclosure if disruption crosses materiality.\nDecision should be framed as payment/legal/supply trade-off, not isolated sanctions or treasury issue.",
+                      "created_at": "2026-06-28T12:30:47.361579+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "a5d7c3fe-9868-5156-90a5-a24bf713f87e",
+                    "score": 0.39466867,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-PRC-002",
+                      "confidence": "medium",
+                      "tags": [
+                        "sub_tier",
+                        "hidden_dependency",
+                        "export_restriction"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "expert_case",
+                      "text": "Tier-1 supplier unaffected but sub-tier material concentrated\nTier-1 supplier reports no disruption, but underlying material is likely sourced from a region affected by export restrictions.\nSub-tier unknown should be treated as significant; generate hypotheses and ask procurement for BOM/sub-tier confirmation.",
+                      "created_at": "2026-06-28T12:30:55.539572+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "24bf3b1a-c0cd-57ef-b22c-8005ac0adc39",
+                    "score": 0.3669523,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-PRC-003",
+                      "confidence": "medium",
+                      "tags": [
+                        "port_disruption",
+                        "logistics",
+                        "expedite_freight"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "expert_case",
+                      "text": "Port closure extends inbound shipment lead time\nPort closure delays inbound shipments. Inventory runway is below the estimated rerouting lead time, and expedited freight has large cost impact.\nProcurement, Treasury and Accounting should coordinate route choice, cost approval and possible customer commitments.",
+                      "created_at": "2026-06-28T12:30:56.308725+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "0ab9bd9a-0a2a-5922-bbc6-64ab07c02a45",
+                    "score": 0.32674295,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "accounting",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-ACC-003",
+                      "confidence": "medium",
+                      "tags": [
+                        "ias36",
+                        "impairment",
+                        "inventory"
+                      ],
+                      "domain": "accounting",
+                      "object_type": "expert_case",
+                      "text": "Flood damages plant and changes cash-flow outlook\nA major plant flood reduces capacity for months. Fixed assets and inventory are material; recoverable amount may fall.\nFlag impairment and inventory valuation review; request asset/CGU carrying amount and forecast sensitivity.",
+                      "created_at": "2026-06-28T12:30:54.132286+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "c232722d-5aed-5ad2-b79a-c6e188fc2cd3",
+                    "score": 0.31224692,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-PRC-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "sole_source",
+                        "inventory_runway",
+                        "qualification"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "expert_case",
+                      "text": "Single-source component disrupted by natural disaster\nA critical component is sourced from one supplier in an affected region. Alternative source exists but is not approved and qualification takes months.\nSupplier substitution friction is high; decision should focus on inventory runway, customer prioritization and qualification acceleration.",
+                      "created_at": "2026-06-28T12:30:54.839979+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  }
+                ],
+                "deepagent_tool_invoked": false,
+                "knowledge_application_finding": {
+                  "similar_case_ids": [
+                    "CASE-XFN-001",
+                    "CASE-PRC-002",
+                    "CASE-PRC-003",
+                    "CASE-ACC-003",
+                    "CASE-PRC-001"
+                  ],
+                  "rubric_ids": [
+                    "PRC-PAT-001",
+                    "DECISION-CONSOLIDATION-SUPPLIER-001",
+                    "PRC-PLAY-001",
+                    "PRC-RF-002",
+                    "XFN-PAT-001",
+                    "PRC-RUB-002",
+                    "PRC-RF-001",
+                    "LEG-RF-003",
+                    "TRE-PAT-001",
+                    "TRE-RF-002"
+                  ],
+                  "red_flags": [
+                    "Single-source or sole-source dependency",
+                    "Sub-tier visibility gap"
+                  ],
+                  "cta_note_ids": [
+                    "CTA-XFN-001",
+                    "CTA-XFN-002",
+                    "CTA-TRE-001",
+                    "CTA-TRE-002",
+                    "CTA-LEG-001",
+                    "CTA-LEG-002",
+                    "CTA-ACC-001",
+                    "CTA-ACC-002",
+                    "CTA-PRC-001",
+                    "CTA-PRC-002",
+                    "CTA-EXE-001"
+                  ],
+                  "cta_notes": [
+                    "Do not collapse the issue into one risk score. Senior decision makers need an explicit trade-off with options.",
+                    "The right response is not to ignore the risk, but to lower confidence and request official-source confirmation.",
+                    "Treasury experts distinguish accounting cash from usable cash; practical mobility determines crisis value.",
+                    "Timing mismatch creates urgency even before the legal conclusion is known.",
+                    "Specialists focus on ownership and aggregation, not only exact name matches.",
+                    "Experts avoid doctrine-level conclusions until clause, causation, notice and governing law are reviewed."
+                  ],
+                  "counterfactuals": [
+                    "What if the supplier is outside Taiwan but its bank route is exposed?",
+                    "What if public evidence describes sector risk but not this client's product category?",
+                    "What if contract continuity risk is lower because alternate supply is already qualified?"
+                  ],
+                  "recommended_guardrails": [],
+                  "additional_questions": [
+                    "What claim would be unsafe to make without an official source or specialist review?",
+                    "Which missing data point would most change the decision, and who owns it?",
+                    "If the current risk rating is wrong, is it more likely overstated or understated, and why?",
+                    "What is the most plausible cascade from external event to cash, contract, accounting and customer impact?",
+                    "Which cash balances are book cash but not practically available within the decision window?",
+                    "Which payments are due before the risk can be clarified, and which of them support critical suppliers or operations?"
+                  ],
+                  "review_required": true,
+                  "rationale": "Expert-as-Code selected bounded comparable cases, rubrics, red flags, CTA notes, and counterfactual checks."
+                }
+              }
+            },
+            {
+              "agent_name": "evidence-redteam-agent",
+              "mode": "evidence_red_team",
+              "summary": "Red team reviewed 5 evidence items.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "No high-reliability government, regulator, international organization, or official disclosure source is present."
+              ],
+              "recommended_actions": [
+                "Separate facts, assumptions, and inferred risk paths in the final output."
+              ],
+              "review_required": true,
+              "rationale": "Evidence / Red Team Agent reads Evidence Ledger through MCP and challenges confidence.",
+              "metadata": {
+                "evidence_count": 5,
+                "contradiction_searches": [
+                  {
+                    "query": "Taiwan transport disruption route concentration logistics",
+                    "results": [
+                      {
+                        "id": "015014e5-ebf5-54f0-8f0a-0262cad9c836",
+                        "score": 0.48559618,
+                        "payload": {
+                          "client_id": "fujifilm_dummy",
+                          "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_004",
+                          "document_id": null,
+                          "source_url": "https://ibuyxs.com/navigating-supply-chain-disruption-after-taiwan-earthquake",
+                          "source_title": "Navigating Supply Chain Disruption After Taiwan Earthquake - iBuyXS",
+                          "source_domain": "ibuyxs.com",
+                          "reliability": "medium",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "transport_disruption",
+                            "route_concentration"
+                          ],
+                          "text": "# Navigating Supply Chain Disruption After Taiwan Earthquake. ## Understanding the Taiwan Earthquake’s Impact on Supply Chain. The recent earthquake in Taiwan has exerted a notable influence on the global supply chain, particularly within the electronic component industry. The earthquake has caused disruptions in the production and distribution of these components, leading to supply chain challenges. One of the main effects of the Taiwan earthquake on the supply chain is the disruption of manufacturing operations. This has resulted in a **shortage** of electronic components, causing **delays** in the production of various electronic devices. The electronic component industry is facing several challenges in the aftermath of the Taiwan earthquake. One of the main challenges is the **shortage of key components.** With the disruption of manufacturing operations in Taiwan, companies are struggling to source the necessary electronic components for their products. To navigate through the supply chain disruption caused by the Taiwan earthquake, companies can employ various strategies to mitigate the impact.",
+                          "created_at": "2026-06-28T12:29:43.287232+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "3aaa3e95-3293-5c33-ae5e-6bd960fceab8",
+                        "score": 0.47974783,
+                        "payload": {
+                          "client_id": "fujifilm_dummy",
+                          "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_003",
+                          "document_id": null,
+                          "source_url": "https://www.interos.ai/blog-why-taiwan-could-be-the-next-source-of-global-supply-chain-disruption",
+                          "source_title": "Why Taiwan Could Be the Next Source of Global Supply Chain ...",
+                          "source_domain": "interos.ai",
+                          "reliability": "medium",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "transport_disruption",
+                            "route_concentration"
+                          ],
+                          "text": "# Why Taiwan Could Be the Next Source of Global Supply Chain Disruption. Soon, the supply chain impact of a Chinese invasion of Taiwan may top that list. Just prior to Russia’s invasion of Ukraine, for example, an Interos survey of 1,500 procurement and IT security professionals found that geopolitical considerations were by far the lowest ranked risk factor when evaluating suppliers. The events in Russia and Ukraine demonstrate how military conflict can quickly disrupt global supply chains that are heavily dependent on a particular region or country. * More than 23,100 U.S. companies buy directly from Taiwanese suppliers at tier-1, while more than 112,500 buy indirectly at tier-2, and over 237,500 at tier-3. * More than 1,200 companies in Japan and Singapore, along with Australia, buy directly from Taiwanese suppliers at tier-1, while over 11,300 buy indirectly at tier-2, and over 26,000 at tier-3.",
+                          "created_at": "2026-06-28T12:29:41.681789+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "3b00b328-0c06-56fd-97da-f63ba1ac361c",
+                        "score": 0.40597144,
+                        "payload": {
+                          "client_id": "fujifilm_dummy",
+                          "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_005",
+                          "document_id": null,
+                          "source_url": "https://wild-tech.com/wp-content/uploads/2022/10/White-Paper-China-and-Taiwan-Overcoming-Supply-Chain-Disruption-through-Diversification-AI-and-ERP.pdf",
+                          "source_title": "[PDF] CHINA & TAIWAN: OVERCOMING SUPPLY CHAIN DISRUPTION ...",
+                          "source_domain": "wild-tech.com",
+                          "reliability": "medium",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "transport_disruption",
+                            "route_concentration"
+                          ],
+                          "text": "7.\tKrukowska, Ewa, EU Plans to Intervene in Energy Market as Winter Crisis Looms, 29/8/22, https://www.bloomberg.com/news/articles/2022-08-29/eu-plans-emergency-intervention-to-stem-surging-power-prices REACTIVE VS PROACTIVE GLOBAL RESPONSES TO DATE Reading time: 2½ Minutes 11 Wild Tech / China & Taiwan, Overcoming Supply Disruption through Diversification, AI & ERP 12 Wild Tech / China & Taiwan, Overcoming Supply Disruption through Diversification, AI & ERP REACTIVE VS PROACTIVE GLOBAL RESPONSES TO DATE To adapt and safeguard their supply chain, businesses have been experimenting with a variety of strategies: Of these strategies, the tendency to seek suppliers in the company’s home country, or an amiable regional neighbour, is emerging as one of the most favoured. Cosgrove, Emma, ‘Schneider Electric invests $40M in supply chain upgrades to prepare for post-pandemic demand’, 12/11/20, https://www.supplychaindive.com/news/Schneider-electric-40M-supply-chain/588907/ 13 Edgecliffe-Johnson, Andrew, and Masters, Brooke, ‘How just-in-time became just-in-case’, 21/12/21, https://www.afr.com/policy/economy/how-just-in-time-became-just-in-case-20211221-p59j9e AN EMERGING OPPORTUNITY FOR AUS",
+                          "created_at": "2026-06-28T12:29:44.846535+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "7a56cc8b-d61d-5150-92a7-28e5d0425201",
+                        "score": 0.29838228,
+                        "payload": {
+                          "client_id": "fujifilm_dummy",
+                          "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_001",
+                          "document_id": null,
+                          "source_url": "https://www.financialprofessionals.org/docs/default-source/default-document-library/pdf/cp_afp-taiwan-pdf.pdf?sfvrsn=0",
+                          "source_title": "[PDF] TAIWAN - AFP | The Association for Financial Professionals",
+                          "source_domain": "financialprofessionals.org",
+                          "reliability": "medium",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "transport_disruption",
+                            "route_concentration"
+                          ],
+                          "text": "CASH AND TREASURY MANAGEMENT COUNTRY REPORT TAIWAN Underwritten by 2 TAIWAN Return to Contents page Executive Summary Banking The Taiwanese central bank is the Central Bank of the Republic of China (CBC). Bank supervision is performed by the Financial Supervisory Commission, which is also responsible for supervising insurance companies and securities firms. Taiwan applies central bank reporting requirements. These are managed by the CBC, according to the rules set out in Article 39 of the Central Bank of China Act.\nResident entities are permitted to hold convertible foreign currency bank accounts domestically and outside Taiwan. Non-resident entities are permitted to hold convertible foreign currency bank accounts within Taiwan. They may also hold domestic currency accounts, such as time deposits, demand deposits and demand savings deposits. Taiwan has 40 domestic banks, 23 credit cooperatives and 37 off-shore banking units. There is a significant foreign banking presence in Taiwan – 27 foreign banks have established branches in Taiwan. Payments Taiwan’s four main interbank payment clearing systems are CIFS, FISC, the TCH and the ACH. There is also new foreign-currency clearing and",
+                          "created_at": "2026-06-28T12:29:37.892851+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "9b5ae567-35a5-553b-ad76-523a6146c56b",
+                        "score": 0.28176937,
+                        "payload": {
+                          "client_id": "fujifilm_dummy",
+                          "scenario_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_002",
+                          "document_id": null,
+                          "source_url": "https://henryjacksonsociety.org/wp-content/uploads/2022/10/HJS-Lessons-for-Taiwan-%E2%80%93-Ukraine-Sanctions-Report-WEB.pdf",
+                          "source_title": "[PDF] HJS 'Lessons for Taiwan – Ukraine Sanctions' Report.indd",
+                          "source_domain": "henryjacksonsociety.org",
+                          "reliability": "medium",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "transport_disruption",
+                            "route_concentration"
+                          ],
+                          "text": "DEFENDING EUROPE: “GLOBAL BRITAIN” AND THE FUTURE OF EUROPEAN GEOPOLITICS BY JAMES ROGERS DEMOCRACY | FREEDOM | HUMAN RIGHTS Report No. 2018/1 LESSONS FOR TAIWAN: UNDERSTANDING WHY SANCTIONS FAILED TO DETER CONFLICT IN UKRAINE BY RICHARD TICE AND SAM ASHWORTH-HAYES June 2022 DEFENDING EUROPE: “GLOBAL BRITAIN” AND THE FUTURE OF EUROPEAN GEOPOLITICS BY JAMES ROGERS DEMOCRACY | FREEDOM | HUMAN RIGHTS Report No. 2018/1 Published in 2022 by The Henry Jackson Society The Henry Jackson Society Millbank Tower 21-24 Millbank London SW1P 4QP Registered charity no. 1140489 Tel: +44 (0)20 7340 4520 www.henryjacksonsociety.org © The Henry Jackson Society, 2022. All rights reserved.\nTitle: “LESSONS FOR TAIWAN: UNDERSTANDING WHY SANCTIONS FAILED TO DETER CONFLICT IN UKRAINE” By Richard Tice and Sam Ashworth-Hayes ISBN: 978-1-909035-79-9 £9.95 where sold The views expressed in this publication are those of the author and are not necessarily indicative of those of The Henry Jackson Society or its Trustees.\nCover image: ‘Smoke’ flags of Kyiv and Taiwan isolated on black background by vladm at Shutterstock (https:/ /www.shutterstock.com/image-illustration/kyiv-kiev-vs-taiwan-taiwanese-china-213630504",
+                          "created_at": "2026-06-28T12:29:39.809514+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "missing_data": [
+                  "No high-reliability government, regulator, international organization, or official disclosure source is present."
+                ],
+                "overclaims": [],
+                "deepagent_tool_invoked": true,
+                "decision_queue_written": false
+              }
+            },
+            {
+              "agent_name": "decision-synthesis-agent",
+              "mode": "decision_synthesis",
+              "summary": "Generated Decision Queue, Executive Brief, Evidence Summary, Red Team Review, Unknowns, and Trace Metadata.",
+              "risk_score": 30,
+              "confidence": "medium",
+              "evidence_ids": [
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_001",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_002",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_003",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_004",
+                "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_005"
+              ],
+              "assumptions": [],
+              "unknowns": [],
+              "recommended_actions": [
+                "Decide whether to activate logistics continuity actions for critical materials and customer shipments."
+              ],
+              "review_required": true,
+              "rationale": "Decision Synthesis Agent writes final artifacts via MCP filesystem and uses Evidence Ledger through MCP.",
+              "metadata": {
+                "decision": {
+                  "decision_id": "scenario_discovered_fujifilm_dummy_070419c9_disc_001_decision_001",
+                  "decision": "Decide whether to activate logistics continuity actions for critical materials and customer shipments.",
+                  "owner": "Procurement / Operations / Logistics",
+                  "deadline": "24 hours",
+                  "rationale": "Procurement, client context, source intelligence, and Expert-as-Code findings converge on supplier and logistics continuity risk.",
+                  "options": [
+                    "Maintain current lanes with daily monitoring",
+                    "Reroute through approved alternate ports, carriers, or 3PL capacity",
+                    "Allocate inventory and qualify alternate sourcing for critical materials"
+                  ],
+                  "evidence_ids": [
+                    "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_001",
+                    "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_002",
+                    "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_003",
+                    "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_004",
+                    "scenario_discovered_fujifilm_dummy_070419c9_disc_001_tavily_005"
+                  ],
+                  "expert_knowledge_ids": [
+                    "PRC-PAT-001",
+                    "DECISION-CONSOLIDATION-SUPPLIER-001",
+                    "PRC-PLAY-001",
+                    "PRC-RF-002",
+                    "XFN-PAT-001",
+                    "PRC-RUB-002",
+                    "PRC-RF-001",
+                    "LEG-RF-003",
+                    "TRE-PAT-001",
+                    "TRE-RF-002",
+                    "CASE-XFN-001",
+                    "CASE-PRC-002",
+                    "CASE-PRC-003",
+                    "CASE-ACC-003",
+                    "CASE-PRC-001"
+                  ],
+                  "risk_if_delayed": "Transport disruption, inventory depletion, and customer shipment delays may become harder to recover.",
+                  "review_required": true,
+                  "priority": 1
+                },
+                "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_fujifilm_dummy_070419c9_disc_001"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

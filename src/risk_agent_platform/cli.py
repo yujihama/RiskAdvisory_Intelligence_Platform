@@ -21,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     discover.add_argument("--event-title", required=True)
     discover.add_argument("--event-description", default="")
     discover.add_argument("--client-id", required=True)
+    discover.add_argument("--scope-text")
     discover.add_argument("--scope-type", default="company")
     discover.add_argument("--scope-name")
     discover.add_argument("--department")
@@ -44,9 +45,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     discover.add_argument(
         "--analysis-mode",
-        choices=["all-selected", "top", "top-n"],
-        default="all-selected",
-        help="Choose which selected RiskEvents are passed to scenario analysis.",
+        choices=["auto", "all-selected", "top", "top-n"],
+        default="auto",
+        help="Choose which selected RiskEvents are passed to scenario analysis; auto uses natural-language scope primary risks when present.",
     )
     discover.add_argument(
         "--top-n",
@@ -100,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if args.event_description:
             argv.extend(["--event-description", args.event_description])
-        for name in ("scope_name", "department", "industry", "region", "site_id", "event_date", "scenario_output"):
+        for name in ("scope_text", "scope_name", "department", "industry", "region", "site_id", "event_date", "scenario_output"):
             value = getattr(args, name)
             if value:
                 argv.extend([f"--{name.replace('_', '-')}", str(value)])

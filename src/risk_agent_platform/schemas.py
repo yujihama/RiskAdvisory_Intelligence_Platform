@@ -279,6 +279,7 @@ class KnowledgePackVersion(StrictModel):
 
 class RiskDiscoveryScope(StrictModel):
     client_id: str
+    scope_text: str | None = None
     scope_type: Literal[
         "company",
         "business_unit",

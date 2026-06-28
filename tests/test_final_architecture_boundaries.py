@@ -10,10 +10,10 @@ from risk_agent_platform.config import Settings
 from risk_agent_platform.a2a_sdk_adapter import sdk_agent_card_dict
 from risk_agent_platform.embeddings import create_embedding_provider
 from risk_agent_platform.evidence_repository import EvidenceRepository
-from risk_agent_platform.final_agents import _analysis_plan_from_text
+from risk_agent_platform.final_agents import _analysis_plan_from_text, _decision_for_event, _deterministic_analysis_plan
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
-from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
+from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent, _candidate_to_event
 import risk_agent_platform.run_discovery as run_discovery
 import risk_agent_platform.run_discovery_evaluation as run_discovery_evaluation
 from risk_agent_platform.schemas import (
@@ -173,6 +173,24 @@ def test_orchestrator_analysis_plan_parses_bounded_json_and_preserves_fixed_orde
     assert plan.fallback_used is False
 
 
+def test_orchestrator_uses_deterministic_plan_for_canonical_supplier_risk():
+    event = _event().model_copy(update={"risk_type": "supplier_resilience"})
+
+    plan = _deterministic_analysis_plan(event)
+
+    assert plan is not None
+    assert plan.selected_agents == [
+        "client-context-agent",
+        "source-intelligence-agent",
+        "procurement-risk-agent",
+        "expert-as-code-agent",
+        "evidence-redteam-agent",
+    ]
+    assert "treasury-risk-agent" in plan.skipped_agents
+    assert "legal-risk-agent" in plan.skipped_agents
+    assert plan.fallback_used is False
+
+
 def test_knowledge_application_finding_is_structured():
     finding = KnowledgeApplicationFinding(
         similar_case_ids=["case_sanctions_payment_001"],
@@ -186,6 +204,22 @@ def test_knowledge_application_finding_is_structured():
 
     assert finding.review_required is True
     assert finding.similar_case_ids == ["case_sanctions_payment_001"]
+
+
+def test_decision_synthesis_uses_supplier_logistics_decision_for_supplier_risk():
+    event = _event().model_copy(update={"risk_type": "supplier_resilience"})
+
+    decision = _decision_for_event(
+        event,
+        "decision-001",
+        [{"evidence_id": "evidence-001"}],
+        ["DECISION-CONSOLIDATION-SUPPLIER-001"],
+    )
+
+    assert "logistics continuity" in decision.decision
+    assert decision.owner == "Procurement / Operations / Logistics"
+    assert "payment" not in decision.decision.lower()
+    assert "DECISION-CONSOLIDATION-SUPPLIER-001" in decision.expert_knowledge_ids
 
 
 def test_source_reliability_scores_domain_classes():
@@ -430,6 +464,45 @@ def test_risk_discovery_adds_department_primary_coverage_when_llm_misses_it(tmp_
     assert any("SCOPE-DEPT-LEGAL-001:coverage_primary" in candidate.scope_matches for candidate in result.selected_candidates)
 
 
+def test_risk_discovery_uses_natural_language_scope_without_department_mapping(tmp_path, monkeypatch):
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _RecordingCandidateRunner)
+    _RecordingCandidateRunner.candidates = [
+        {
+            "candidate_id": "DISC-ACC",
+            "title": "Reporting follow-up after logistics disruption",
+            "risk_type": "accounting_disclosure",
+            "risk_themes": ["disclosure"],
+            "affected_categories": ["financial_reporting"],
+            "description": "Disclosure may be needed later if the disruption becomes material.",
+            "urgency": "medium",
+            "scope_matches": [],
+            "rationale": "LLM missed the direct logistics risk.",
+        }
+    ]
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "fujifilm_dummy", tmp_path / "data" / "clients" / "fujifilm_dummy")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+    request = RiskDiscoveryRequest(
+        event_title="Taiwan contingency",
+        event_description="A Taiwan Strait contingency may disrupt sea and air logistics.",
+        countries=["Taiwan"],
+        scope=RiskDiscoveryScope(
+            client_id="fujifilm_dummy",
+            scope_text="富士フイルムの物流。海上輸送、航空輸送、港湾、通関、3PL、重要部材の輸送遅延、代替ルートを含む。",
+        ),
+    )
+
+    result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    assert result.metadata["fallback_used"] is False
+    assert "logistics" in result.metadata["scope_interpretation"]["matched_domains"]
+    assert result.metadata["coverage_augmented_candidate_count"] >= 1
+    assert result.selected_candidates[0].risk_type == "supplier_resilience"
+    assert result.selected_candidates[0].scope_matches[0] == "SCOPE-TEXT-PRIMARY:coverage_primary"
+    assert "executive_resilience" not in {candidate.risk_type for candidate in result.selected_candidates}
+
+
 def test_risk_discovery_preserves_rejected_candidate_reasons_without_llm_tools(tmp_path, monkeypatch):
     monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _NoStructuredCandidateRunner)
     root = Path.cwd()
@@ -498,9 +571,59 @@ def test_discovery_analysis_modes_default_to_all_selected():
     )
 
     assert run_discovery._events_for_analysis(result, "all-selected", top_n=3) == [first, second]
+    assert run_discovery._events_for_analysis(result, "auto", top_n=3) == [first, second]
     assert run_discovery._events_for_analysis(result, "top", top_n=3) == [first]
     assert run_discovery._events_for_analysis(result, "top-n", top_n=1) == [first]
     assert run_discovery._events_for_analysis(result, "top-n", top_n=2) == [first, second]
+
+    natural_scope_result = result.model_copy(
+        update={
+            "metadata": {
+                "scope_interpretation": {
+                    "source": "scope_text",
+                    "primary_risk_types": ["supplier_resilience"],
+                }
+            }
+        }
+    )
+    assert run_discovery._events_for_analysis(natural_scope_result, "auto", top_n=3) == [second]
+
+
+def test_risk_discovery_scenario_ids_keep_candidate_identity():
+    request = RiskDiscoveryRequest(
+        event_title="Regional conflict escalation affecting manufacturing continuity",
+        event_description="Disruption may affect multiple modes.",
+        countries=["Taiwan"],
+        scope=RiskDiscoveryScope(client_id="fujifilm_dummy", scope_text="物流と支払いと法務を含む"),
+    )
+    first = DiscoveredRisk(
+        candidate_id="DISC-001",
+        title="Supplier continuity",
+        risk_type="supplier_resilience",
+        description="Supplier continuity risk.",
+        rationale="test",
+    )
+    second = first.model_copy(update={"candidate_id": "DISC-AUG-EXEC", "risk_type": "executive_resilience"})
+
+    first_id = _candidate_to_event(first, request).scenario_id
+    second_id = _candidate_to_event(second, request).scenario_id
+
+    assert first_id != second_id
+    assert first_id.endswith("_disc_001")
+    assert second_id.endswith("_disc_aug_exec")
+
+    japanese_request = request.model_copy(
+        update={
+            "event_title": "台湾有事",
+            "event_description": "台湾海峡の物流寸断",
+        }
+    )
+    japanese_id = _candidate_to_event(first, japanese_request).scenario_id
+    event_hash = japanese_id.split("_")[-3]
+    assert japanese_id.startswith("scenario_discovered_fujifilm_dummy_")
+    assert len(event_hash) == 8
+    assert all(char in "0123456789abcdef" for char in event_hash)
+    assert japanese_id.endswith("_disc_001")
 
 
 def test_run_analysis_blocks_template_fallback_without_explicit_allow(tmp_path, monkeypatch, capsys):
