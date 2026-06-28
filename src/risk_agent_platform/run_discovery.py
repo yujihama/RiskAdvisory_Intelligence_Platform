@@ -13,6 +13,9 @@ from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
 from risk_agent_platform.schemas import AgentTaskRequest, RiskDiscoveryRequest, RiskDiscoveryResult, RiskDiscoveryScope, RiskEvent
 
 
+DEFAULT_ANALYSIS_MODE = "all-selected"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--event-title", required=True)
@@ -43,8 +46,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--analysis-mode",
         choices=["auto", "all-selected", "top", "top-n"],
-        default="auto",
-        help="Choose which selected RiskEvents are passed to scenario analysis; auto uses natural-language scope primary risks when present.",
+        default=DEFAULT_ANALYSIS_MODE,
+        help="Choose which selected RiskEvents are passed to scenario analysis; default all-selected analyzes every selected risk.",
     )
     parser.add_argument(
         "--top-n",

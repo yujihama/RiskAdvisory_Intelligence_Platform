@@ -736,6 +736,8 @@ def test_risk_discovery_preserves_rejected_candidate_reasons_without_llm_tools(t
 
 
 def test_discovery_analysis_modes_default_to_all_selected():
+    assert run_discovery.DEFAULT_ANALYSIS_MODE == "all-selected"
+
     request = RiskDiscoveryRequest(
         event_title="Iran war escalation",
         event_description="Shipping, sanctions, and payments may be disrupted.",

@@ -187,7 +187,7 @@ During Discovery, the DeepAgent may call `discovery_search_event_context` and `d
 
 Risk Discovery uses the `risk_discovery` model profile, which defaults to `qwen/qwen3.7-max` and can be overridden with `RISK_DISCOVERY_MODEL`.
 
-The default `--analysis-mode auto` keeps broad company or executive runs on all selected risks, but for a natural-language `--scope-text` it analyzes the selected RiskEvents whose `risk_type` matches the interpreted scope-primary risk types. This avoids requiring a mid-run human choice such as manually switching to `top` for narrow functional scopes.
+`--analysis-mode all-selected` is the default and analyzes every selected RiskEvent when `--run-analysis` is used. `--analysis-mode auto` remains available when a caller explicitly wants natural-language `--scope-text` runs narrowed to the interpreted scope-primary risk types.
 
 Discovery followed by scenario analysis for all selected candidates:
 
