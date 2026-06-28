@@ -63,6 +63,9 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--top-n", type=int, default=3)
     evaluate.add_argument("--min-recall", type=float, default=0.75)
     evaluate.add_argument("--min-question-match", type=float, default=0.25)
+    evaluate.add_argument("--min-missing-data-match", type=float, default=0.5)
+    evaluate.add_argument("--min-reason-quality", type=float, default=0.75)
+    evaluate.add_argument("--min-rubric-coverage", type=float, default=0.5)
 
     sub.add_parser("preflight", help="Check required final architecture configuration.")
 
@@ -121,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
             str(args.min_recall),
             "--min-question-match",
             str(args.min_question_match),
+            "--min-missing-data-match",
+            str(args.min_missing_data_match),
+            "--min-reason-quality",
+            str(args.min_reason_quality),
+            "--min-rubric-coverage",
+            str(args.min_rubric_coverage),
         ]
         if args.output:
             argv.extend(["--output", args.output])

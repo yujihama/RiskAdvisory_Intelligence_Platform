@@ -181,13 +181,15 @@ def _write_portfolio_summary(
     portfolio_id = result.selected_event.scenario_id if result.selected_event else "discovery"
     output_dir = settings.project_root / "outputs" / "risk_discovery"
     output_dir.mkdir(parents=True, exist_ok=True)
+    decision_rules = _load_decision_consolidation_rules(settings)
     data = {
         "request": result.request.model_dump(mode="json"),
         "discovery_metadata": result.metadata,
         "selected_candidates": [candidate.model_dump(mode="json") for candidate in result.selected_candidates],
         "rejected_candidates": [candidate.model_dump(mode="json") for candidate in result.rejected_candidates],
         "selected_events": [event.model_dump(mode="json") for event in result.selected_events],
-        "portfolio_overview": _portfolio_overview(records),
+        "decision_consolidation_rules": decision_rules,
+        "portfolio_overview": _portfolio_overview(records, decision_rules),
         "analyses": records,
     }
     json_path = output_dir / f"{portfolio_id}_portfolio_summary.json"
@@ -197,14 +199,14 @@ def _write_portfolio_summary(
     return {"json": str(json_path), "markdown": str(md_path)}
 
 
-def _portfolio_overview(records: list[dict[str, Any]]) -> dict[str, Any]:
+def _portfolio_overview(records: list[dict[str, Any]], decision_rules: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     status_counts: dict[str, int] = {}
     risk_types: set[str] = set()
     evidence_domains: set[str] = set()
     review_required_scenarios: list[str] = []
     priority_decisions: list[dict[str, Any]] = []
     decision_rows = _decision_rows(records)
-    consolidated_decisions = _consolidated_decisions(decision_rows)
+    consolidated_decisions = _consolidated_decisions(decision_rows, decision_rules or [])
     total_evidence = 0
 
     for record in records:
@@ -285,34 +287,56 @@ def _decision_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rows
 
 
-def _consolidated_decisions(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _load_decision_consolidation_rules(settings: Settings) -> list[dict[str, Any]]:
+    path = settings.data_dir / "expert_knowledge" / "decision_consolidation_rules.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _consolidated_decisions(rows: list[dict[str, Any]], decision_rules: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    decision_rules = decision_rules or []
     groups: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
-        groups.setdefault(_decision_group_key(str(row.get("decision") or "")), []).append(row)
+        groups.setdefault(_decision_group_key(str(row.get("decision") or ""), decision_rules), []).append(row)
     consolidated = []
     for group_key, items in groups.items():
+        rule = _decision_rule_by_group(group_key, decision_rules)
         owners = sorted({str(item.get("owner") or "Unassigned") for item in items})
         deadlines = sorted({str(item.get("deadline") or "Unspecified") for item in items})
         priorities = [int(item.get("priority") or 999) for item in items]
         representative = min((str(item.get("decision") or "") for item in items), key=len, default=group_key)
+        required_owners = [str(item) for item in (rule or {}).get("required_owners", [])]
+        owners_lower = {owner.lower() for owner in owners}
+        owner_gap = [owner for owner in required_owners if owner.lower() not in owners_lower]
         consolidated.append(
             {
                 "group_id": group_key,
+                "rule_id": (rule or {}).get("rule_id"),
                 "decision": representative,
                 "owners": owners,
+                "required_owners": required_owners,
+                "primary_owner": (rule or {}).get("primary_owner"),
+                "secondary_owners": [str(item) for item in (rule or {}).get("secondary_owners", [])],
+                "owner_gap": owner_gap,
                 "deadlines": deadlines,
                 "scenario_ids": sorted({str(item.get("scenario_id") or "") for item in items if item.get("scenario_id")}),
                 "risk_types": sorted({str(item.get("risk_type") or "") for item in items if item.get("risk_type")}),
                 "source_count": len(items),
                 "priority": min(priorities) if priorities else 999,
                 "review_required": any(bool(item.get("review_required")) for item in items),
+                "rationale": (rule or {}).get("rationale"),
             }
         )
     return sorted(consolidated, key=lambda item: (item["priority"], -item["source_count"], item["group_id"]))
 
 
-def _decision_group_key(text: str) -> str:
+def _decision_group_key(text: str, decision_rules: list[dict[str, Any]] | None = None) -> str:
     lowered = text.lower()
+    for rule in decision_rules or []:
+        terms = [str(term).lower() for term in rule.get("match_terms") or []]
+        if terms and any(term in lowered for term in terms):
+            return str(rule.get("group_id") or rule.get("rule_id") or "decision_review")
     if "sanction" in lowered or "restricted" in lowered:
         return "sanctions_review"
     if "payment" in lowered or "cash" in lowered or "bank" in lowered:
@@ -329,6 +353,13 @@ def _decision_group_key(text: str) -> str:
     return "_".join(tokens[:5]) if tokens else "decision_review"
 
 
+def _decision_rule_by_group(group_id: str, decision_rules: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for rule in decision_rules:
+        if str(rule.get("group_id") or "") == group_id:
+            return rule
+    return None
+
+
 def _group_decisions(rows: list[dict[str, Any]], field: str) -> dict[str, int]:
     counts: dict[str, int] = {}
     for row in rows:
@@ -342,6 +373,20 @@ def _decision_conflicts(consolidated: list[dict[str, Any]]) -> list[dict[str, An
     for item in consolidated:
         owners = item.get("owners") or []
         deadlines = item.get("deadlines") or []
+        owner_gap = item.get("owner_gap") or []
+        if owner_gap:
+            conflicts.append(
+                {
+                    "group_id": item["group_id"],
+                    "issue": "Required owner is missing from consolidated decision.",
+                    "missing_owners": owner_gap,
+                    "required_owners": item.get("required_owners", []),
+                    "owners": owners,
+                    "deadlines": deadlines,
+                    "scenario_ids": item.get("scenario_ids", []),
+                    "rule_id": item.get("rule_id"),
+                }
+            )
         if len(owners) > 1 or len(deadlines) > 1:
             conflicts.append(
                 {
@@ -350,6 +395,7 @@ def _decision_conflicts(consolidated: list[dict[str, Any]]) -> list[dict[str, An
                     "owners": owners,
                     "deadlines": deadlines,
                     "scenario_ids": item.get("scenario_ids", []),
+                    "rule_id": item.get("rule_id"),
                 }
             )
     return conflicts
@@ -396,6 +442,8 @@ def _portfolio_markdown(data: dict[str, Any]) -> str:
             lines.append(
                 f"- `{decision.get('group_id')}` {decision.get('decision')} "
                 f"(owners={', '.join(decision.get('owners') or [])}, "
+                f"required={', '.join(decision.get('required_owners') or []) or 'None'}, "
+                f"owner_gap={', '.join(decision.get('owner_gap') or []) or 'None'}, "
                 f"deadlines={', '.join(decision.get('deadlines') or [])}, "
                 f"sources={decision.get('source_count')})"
             )
@@ -408,6 +456,7 @@ def _portfolio_markdown(data: dict[str, Any]) -> str:
             lines.append(
                 f"- `{conflict.get('group_id')}` {conflict.get('issue')} "
                 f"(owners={', '.join(conflict.get('owners') or [])}, "
+                f"missing={', '.join(conflict.get('missing_owners') or []) or 'None'}, "
                 f"deadlines={', '.join(conflict.get('deadlines') or [])})"
             )
     else:

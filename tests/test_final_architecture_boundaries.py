@@ -27,6 +27,7 @@ from risk_agent_platform.schemas import (
     RiskEvent,
 )
 from risk_agent_platform.source_reliability import score_source
+from risk_agent_platform.tool_policy import RAW_STRUCTURED_DATA_TOOLS, agent_llm_tools
 from risk_agent_platform.vector import VECTOR_SIZE
 
 
@@ -235,6 +236,7 @@ def test_expert_pack_exposes_case_question_and_cta_files():
     notes = gateway.call("mcp-expert-knowledge", "load_cta_notes", {})
     primitives = gateway.call("mcp-expert-knowledge", "load_primitives", {})
     scope_rules = gateway.call("mcp-expert-knowledge", "load_scope_relevance_rules", {})
+    decision_rules = gateway.call("mcp-expert-knowledge", "load_decision_consolidation_rules", {})
     version = gateway.call("mcp-expert-knowledge", "load_knowledge_pack_version", {})
     refs = gateway.call("mcp-expert-knowledge", "load_source_refs", {})
     reliability = gateway.call("mcp-expert-knowledge", "load_source_reliability_seed", {})
@@ -244,6 +246,7 @@ def test_expert_pack_exposes_case_question_and_cta_files():
     assert len(notes) >= 11 and notes[0]["note_id"]
     assert len(primitives) >= 20 and primitives[0]["id"]
     assert len(scope_rules) >= 10 and scope_rules[0]["rule_id"]
+    assert len(decision_rules) >= 4 and decision_rules[0]["rule_id"]
     assert version["pack_id"]
     assert refs
     assert reliability["high_reliability_domains"]
@@ -279,6 +282,27 @@ def test_structured_data_risk_feature_sample_redacts_raw_identifiers():
     assert "items" not in safe_summary
     assert "total_amount" not in safe_summary
     assert safe_summary["features"][0]["amount_bucket"] == "1m_5m"
+
+    contract_summary = gateway.call(
+        "mcp-structured-data",
+        "summarize_contract_exposure_safe",
+        {"client_id": "demo_client"},
+    )
+    assert contract_summary["contract_count"] == 2
+    assert "items" not in contract_summary
+    assert contract_summary["features"][0]["has_sanctions_clause"] is True
+
+
+def test_deepagent_tool_policy_keeps_raw_structured_tools_out_of_llm_slots():
+    discovery_structured = agent_llm_tools("risk-discovery-agent", "mcp-structured-data")
+    assert "risk_feature_sample" in discovery_structured
+    assert "sample_rows" not in discovery_structured
+
+    for agent_name in ("treasury-risk-agent", "legal-risk-agent", "accounting-risk-agent"):
+        allowed = agent_llm_tools(agent_name, "mcp-structured-data")
+        assert allowed
+        assert not (allowed & RAW_STRUCTURED_DATA_TOOLS)
+        assert all(tool_name.endswith("_safe") for tool_name in allowed)
 
 
 def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_path, monkeypatch):
@@ -530,7 +554,7 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
         selected_event=first,
         selected_events=[first, second],
     )
-    settings = replace(Settings.load(Path.cwd()), project_root=tmp_path, data_dir=tmp_path / "data")
+    settings = replace(Settings.load(Path.cwd()), project_root=tmp_path, data_dir=Path.cwd() / "data")
     records = [
         {
             "scenario_id": first.scenario_id,
@@ -610,6 +634,15 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
         if item["group_id"] == "sanctions_review"
     ][0]
     assert sanctions_group["source_count"] == 3
+    assert sanctions_group["rule_id"] == "DECISION-CONSOLIDATION-SANCTIONS-001"
+    assert sanctions_group["required_owners"] == ["Legal"]
+    assert sanctions_group["owner_gap"] == []
+    supplier_group = [
+        item
+        for item in summary["portfolio_overview"]["consolidated_decisions"]
+        if item["group_id"] == "supplier_continuity"
+    ][0]
+    assert supplier_group["owner_gap"] == ["Operations"]
     assert summary["portfolio_overview"]["decision_conflicts"]
     assert "## Portfolio Overview" in markdown
     assert "## Priority Decisions" in markdown
@@ -622,6 +655,7 @@ def test_risk_discovery_evaluation_cases_compute_quality_metrics():
             by_department = {
                 "Treasury": (
                     ["payment_disruption"],
+                    "SCOPE-DEPT-TREASURY-001",
                     [
                         "Which pending payments are near term and routed through affected bank countries?",
                         "Which alternate payment routes are available without increasing sanctions risk?",
@@ -629,6 +663,7 @@ def test_risk_discovery_evaluation_cases_compute_quality_metrics():
                 ),
                 "Legal": (
                     ["legal_compliance"],
+                    "SCOPE-DEPT-LEGAL-001",
                     [
                         "Which contracts include sanctions, force majeure, notice, or termination clauses?",
                         "Which counterparties require beneficial ownership or restricted party review?",
@@ -636,6 +671,7 @@ def test_risk_discovery_evaluation_cases_compute_quality_metrics():
                 ),
                 "Accounting": (
                     ["accounting_disclosure"],
+                    "SCOPE-DEPT-ACCOUNTING-001",
                     [
                         "Which exposures could become material for impairment, provision, or disclosure?",
                         "What evidence package is required for auditor review?",
@@ -643,13 +679,16 @@ def test_risk_discovery_evaluation_cases_compute_quality_metrics():
                 ),
                 "Executive": (
                     ["supplier_resilience", "payment_disruption", "legal_compliance", "executive_resilience"],
+                    "SCOPE-IND-MANUFACTURING-001",
                     [
+                        "Which critical suppliers have low inventory runway or no qualified alternative source?",
+                        "Which pending payments are near term and routed through affected bank countries?",
                         "Which selected risks require executive cross-functional decision ownership?",
                         "Which evidence gaps block immediate mitigation decisions?",
                     ],
                 ),
             }
-            selected_types, questions = by_department[request.scope.department or "Executive"]
+            selected_types, rubric_id, questions = by_department[request.scope.department or "Executive"]
             candidates = [
                 DiscoveredRisk(
                     candidate_id=f"DISC-{idx:03d}",
@@ -659,6 +698,7 @@ def test_risk_discovery_evaluation_cases_compute_quality_metrics():
                     relevance_score=90 - idx,
                     rationale="evaluation fake",
                     selected_for_analysis=True,
+                    scope_matches=[f"{rubric_id}:term"],
                 )
                 for idx, risk_type in enumerate(selected_types, start=1)
             ]
@@ -697,6 +737,10 @@ def test_risk_discovery_evaluation_cases_compute_quality_metrics():
     assert report["summary"]["average_recall"] == 1.0
     assert report["summary"]["forbidden_top_violation_count"] == 0
     assert report["summary"]["average_question_match"] > 0.9
+    assert report["summary"]["average_question_semantic_match"] == 1.0
+    assert report["summary"]["average_missing_data_category_match"] == 1.0
+    assert report["summary"]["average_reason_quality"] == 1.0
+    assert report["summary"]["average_expert_rubric_coverage"] == 1.0
 
 
 def test_evidence_repository_upserts_by_evidence_id(tmp_path):

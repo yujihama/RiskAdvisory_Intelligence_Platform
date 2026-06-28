@@ -17,10 +17,18 @@ from risk_agent_platform.schemas import (
     RiskDiscoveryResult,
     RiskEvent,
 )
+from risk_agent_platform.tool_policy import ensure_llm_tool_allowed
 
 
 DISCOVERY_AGENT_NAME = "risk-discovery-agent"
 DISCOVERY_DATASET_LIMIT = 25
+CANONICAL_RISK_TYPES = {
+    "payment_disruption",
+    "supplier_resilience",
+    "legal_compliance",
+    "accounting_disclosure",
+    "executive_resilience",
+}
 
 
 class RiskDiscoveryDeepAgent:
@@ -43,6 +51,7 @@ class RiskDiscoveryDeepAgent:
         @tool("discovery_list_datasets")
         def discovery_list_datasets(client_id: str) -> str:
             """List available structured client datasets for scope filtering."""
+            ensure_llm_tool_allowed(DISCOVERY_AGENT_NAME, "mcp-structured-data", "list_datasets")
             datasets = self.mcp.call("mcp-structured-data", "list_datasets", {"client_id": client_id})
             self._state["datasets"] = datasets
             return json.dumps({"datasets": datasets}, ensure_ascii=False)
@@ -50,6 +59,7 @@ class RiskDiscoveryDeepAgent:
         @tool("discovery_sample_dataset")
         def discovery_sample_dataset(client_id: str, dataset: str, limit: int = 10) -> str:
             """Sample abstracted risk features without exposing raw client rows."""
+            ensure_llm_tool_allowed(DISCOVERY_AGENT_NAME, "mcp-structured-data", "risk_feature_sample")
             feature_view = self.mcp.call(
                 "mcp-structured-data",
                 "risk_feature_sample",
@@ -73,6 +83,15 @@ class RiskDiscoveryDeepAgent:
         @tool("discovery_load_expert_pack")
         def discovery_load_expert_pack() -> str:
             """Load seed Expert-as-Code objects, primitives, cases, questions, and CTA notes."""
+            for tool_name in (
+                "load_knowledge_pack",
+                "load_primitives",
+                "load_case_bank",
+                "load_question_bank",
+                "load_cta_notes",
+                "load_scope_relevance_rules",
+            ):
+                ensure_llm_tool_allowed(DISCOVERY_AGENT_NAME, "mcp-expert-knowledge", tool_name)
             expert = {
                 "rules": self.mcp.call("mcp-expert-knowledge", "load_knowledge_pack", {}),
                 "primitives": self.mcp.call("mcp-expert-knowledge", "load_primitives", {}),
@@ -120,6 +139,7 @@ class RiskDiscoveryDeepAgent:
         self._ensure_context(request)
         raw_candidates = self._state.get("raw_candidates") or []
         candidates = _normalize_candidates(raw_candidates, request) if raw_candidates else self._fallback_candidates(request)
+        candidates, coverage_augmented_count = _augment_scope_coverage(candidates, request)
         selected_candidates, rejected_candidates = self._filter_to_scope(candidates, request)
         selected_candidates = [
             candidate.model_copy(update={"selected_for_analysis": True})
@@ -144,6 +164,7 @@ class RiskDiscoveryDeepAgent:
                 "feature_summaries": self._state.get("feature_summaries", {}),
                 "expert_counts": {key: len(value) for key, value in (self._state.get("expert") or {}).items()},
                 "raw_candidate_count": len(raw_candidates),
+                "coverage_augmented_candidate_count": coverage_augmented_count,
                 "fallback_used": fallback_used,
                 "discovery_confidence": "template_fallback" if fallback_used else "agent_recorded_candidates",
                 "additional_questions": additional_questions,
@@ -260,20 +281,87 @@ def _normalize_candidates(raw_candidates: list[Any], request: RiskDiscoveryReque
     for idx, raw in enumerate(raw_candidates, start=1):
         if not isinstance(raw, dict):
             continue
+        title = str(raw.get("title") or f"Discovered risk {idx}")
+        risk_themes = [str(item) for item in raw.get("risk_themes") or []]
+        affected_categories = [str(item) for item in raw.get("affected_categories") or []]
+        description = str(raw.get("description") or request.event_description or request.event_title)
+        risk_type = _canonical_risk_type(
+            str(raw.get("risk_type") or "event_related_risk"),
+            title=title,
+            risk_themes=risk_themes,
+            affected_categories=affected_categories,
+            description=description,
+        )
         candidate = DiscoveredRisk(
             candidate_id=str(raw.get("candidate_id") or f"DISC-{idx:03d}"),
-            title=str(raw.get("title") or f"Discovered risk {idx}"),
-            risk_type=str(raw.get("risk_type") or "event_related_risk"),
+            title=title,
+            risk_type=risk_type,
             countries=[str(item) for item in raw.get("countries") or countries],
-            risk_themes=[str(item) for item in raw.get("risk_themes") or []],
-            affected_categories=[str(item) for item in raw.get("affected_categories") or []],
-            description=str(raw.get("description") or request.event_description or request.event_title),
+            risk_themes=risk_themes,
+            affected_categories=affected_categories,
+            description=description,
             urgency=str(raw.get("urgency") or "medium").lower() if str(raw.get("urgency") or "").lower() in {"low", "medium", "high"} else "medium",
             scope_matches=[str(item) for item in raw.get("scope_matches") or []],
             rationale=str(raw.get("rationale") or "Generated by Risk Discovery DeepAgent."),
         )
         candidates.append(candidate)
     return candidates
+
+
+def _augment_scope_coverage(candidates: list[DiscoveredRisk], request: RiskDiscoveryRequest) -> tuple[list[DiscoveredRisk], int]:
+    augmented = list(candidates)
+    added = 0
+    scope_is_executive = request.scope.scope_type == "company" or str(request.scope.department or "").lower() == "executive"
+    if scope_is_executive and not any(candidate.risk_type == "executive_resilience" for candidate in augmented):
+        augmented.append(
+            DiscoveredRisk(
+                candidate_id="DISC-AUG-EXEC",
+                title=f"Cross-functional executive decision urgency: {request.event_title}",
+                risk_type="executive_resilience",
+                countries=request.countries or _country_hints(request.event_title, request.event_description),
+                risk_themes=["decision_urgency", "operational_resilience", "cross_mode_conflict"],
+                affected_categories=["critical_services", "decision_queue", "specialist_review"],
+                description=(
+                    "The event may require an executive trade-off across treasury, legal, accounting, "
+                    "procurement, and operations. Event: "
+                    f"{request.event_description or request.event_title}"
+                ),
+                urgency="high",
+                scope_matches=["coverage_augmentation:executive_scope"],
+                rationale="Added by deterministic coverage augmentation for company or executive scope.",
+            )
+        )
+        added += 1
+    return augmented, added
+
+
+def _canonical_risk_type(
+    risk_type: str,
+    *,
+    title: str,
+    risk_themes: list[str],
+    affected_categories: list[str],
+    description: str,
+) -> str:
+    normalized = risk_type.strip().lower().replace(" ", "_").replace("-", "_")
+    if normalized in CANONICAL_RISK_TYPES:
+        return normalized
+    raw = risk_type.lower()
+    text = " ".join([raw, title, " ".join(risk_themes), " ".join(affected_categories), description]).lower()
+    if "financial reporting" in raw or _contains_any(text, ["accounting", "impairment", "provision", "disclosure", "auditor", "recoverability"]):
+        return "accounting_disclosure"
+    if "supply chain" in raw or _contains_any(text, ["supplier", "inventory", "logistics", "shipment", "sourcing", "alternative source"]):
+        return "supplier_resilience"
+    if "payment" in raw or _contains_any(text, ["payment", "cash", "bank", "liquidity", "correspondent", "currency", "funding"]):
+        return "payment_disruption"
+    if _contains_any(raw, ["contract", "legal", "regulatory", "compliance"]) or _contains_any(
+        text,
+        ["sanction", "export control", "restricted party", "beneficial ownership", "force majeure", "termination", "notice"],
+    ):
+        return "legal_compliance"
+    if _contains_any(text, ["executive", "cross-functional", "decision ownership", "board", "crisis committee"]):
+        return "executive_resilience"
+    return normalized or "event_related_risk"
 
 
 def _build_candidate(

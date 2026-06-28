@@ -193,7 +193,7 @@ risk-agent-platform evaluate-discovery `
   --embedded-services
 ```
 
-This runs each evaluation case through Risk Discovery, calculates expected risk-type recall, checks whether `should_not_prioritize` risk types appear in the top results, and compares expected questions against Discovery `additional_questions` / `unknowns`.
+This runs each evaluation case through Risk Discovery, calculates expected risk-type recall, checks whether `should_not_prioritize` risk types appear in the top results, compares expected questions against Discovery `additional_questions` / `unknowns`, checks missing-data category coverage, scores selected/rejected reason quality, and measures Expert-as-Code rubric coverage.
 
 Local embedded A2A/MCP endpoints:
 
@@ -238,13 +238,15 @@ Initial source reliability scoring is domain-based: government, regulator, inter
 
 ## Expert-as-Code
 
-Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, CTA notes, scope relevance rules, source references, source reliability seeds, and pack version metadata. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl`, `data/expert_knowledge/primitives.jsonl`, and `data/expert_knowledge/cases.jsonl` into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
+Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, CTA notes, scope relevance rules, decision consolidation rules, source references, source reliability seeds, and pack version metadata. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl`, `data/expert_knowledge/primitives.jsonl`, `data/expert_knowledge/cases.jsonl`, and decision consolidation rules into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
 
 Risk Discovery scope filtering is also Expert-as-Code driven: `data/expert_knowledge/scope_relevance_rules.jsonl` defines what Treasury, Legal, Accounting, Procurement, business units, and industries treat as risk-relevant. Rejected candidates are preserved with a reason and relevance score so specialist reviewers can challenge false negatives.
 
-Risk Discovery evaluation cases live in `data/evaluation/risk_discovery_cases.jsonl`. Each case includes input event/scope, expected selected risk types, risk types that should not be prioritized, and expected follow-up questions.
+Portfolio Decision consolidation is Expert-as-Code driven by `data/expert_knowledge/decision_consolidation_rules.jsonl`. Consolidated Decisions retain the matched rule ID, required owners, primary/secondary owners, rationale, and owner gaps for management review.
 
-Structured-data MCP tools include LLM-safe summaries: `summarize_payment_exposure_safe`, `summarize_supplier_exposure_safe`, and `summarize_invoice_exposure_safe`. They return bucketed features and aggregate signals instead of raw rows.
+Risk Discovery evaluation cases live in `data/evaluation/risk_discovery_cases.jsonl`. Each case includes input event/scope, expected selected risk types, risk types that should not be prioritized, expected follow-up questions, expected missing-data categories, and expected Expert-as-Code rubric IDs.
+
+Structured-data MCP tools include LLM-safe summaries: `summarize_payment_exposure_safe`, `summarize_supplier_exposure_safe`, `summarize_invoice_exposure_safe`, and `summarize_contract_exposure_safe`. They return bucketed features and aggregate signals instead of raw rows. DeepAgent tool-use is governed by `src/risk_agent_platform/tool_policy.py`: LLM slots receive safe tools only, while raw rows and raw exposure tools remain available to deterministic Python logic.
 
 ## Document Parsing and OCR
 

@@ -26,6 +26,7 @@ from risk_agent_platform.schemas import (
     RiskEvent,
 )
 from risk_agent_platform.source_reliability import score_source
+from risk_agent_platform.tool_policy import ensure_llm_tool_allowed
 from risk_agent_platform.tracing import TraceRecorder
 
 
@@ -111,8 +112,11 @@ class DomainDeepAgentService(A2AService):
     def explore_issues(self, task: AgentTask, domain: str, context: dict[str, Any]) -> dict[str, Any]:
         event = self.event(task)
         self._deepagent_tool_state["issue_exploration"] = None
+        self._deepagent_tool_state["safe_tool_results"] = []
         prompt = (
             "Use the provided issue exploration tool once to record bounded hypotheses. "
+            "If you need client structured data, use only the safe summary tools exposed to you; "
+            "do not request raw rows, raw identifiers, raw amounts, or raw account data. "
             "Do not make final scores or decisions. Keep the result JSON concise with keys: "
             "issues, missing_data, recheck_conditions, exploration_questions.\n"
             f"domain={domain}\n"
@@ -124,6 +128,7 @@ class DomainDeepAgentService(A2AService):
         if isinstance(recorded, dict):
             recorded["deepagent_tool_invoked"] = True
             recorded["synthesis"] = synthesis
+            recorded["safe_tool_results"] = self._deepagent_tool_state.get("safe_tool_results", [])
             return recorded
         return {
             "issues": _default_domain_issues(domain, event),
@@ -131,8 +136,21 @@ class DomainDeepAgentService(A2AService):
             "recheck_conditions": [],
             "exploration_questions": [],
             "deepagent_tool_invoked": False,
+            "safe_tool_results": self._deepagent_tool_state.get("safe_tool_results", []),
             "synthesis": synthesis,
         }
+
+    def _call_llm_safe_structured_tool(self, tool_name: str, payload: dict[str, Any]) -> str:
+        ensure_llm_tool_allowed(self.name, "mcp-structured-data", tool_name)
+        result = self.mcp.call("mcp-structured-data", tool_name, payload)
+        self._deepagent_tool_state.setdefault("safe_tool_results", []).append(
+            {
+                "server": "mcp-structured-data",
+                "tool": tool_name,
+                "result": result,
+            }
+        )
+        return json.dumps({"tool": tool_name, "result": result}, ensure_ascii=False)
 
     def _record_issue_exploration(self, issues_json: str) -> str:
         data = _json_object_from_text(issues_json) or {}
@@ -156,12 +174,14 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
         @tool("source_search_authoritative_sources")
         def source_search_authoritative_sources(query: str, max_results: int = 3) -> str:
             """Run one sanitized Tavily search through MCP within the Source Agent query budget."""
+            ensure_llm_tool_allowed(self.name, "mcp-web-search", "search_authoritative_sources")
             self._deepagent_tool_state.setdefault("source", {})["deepagent_tool_invoked"] = True
             return json.dumps(self._source_search(query, max_results=max_results), ensure_ascii=False)
 
         @tool("source_extract_url")
         def source_extract_url(url: str) -> str:
             """Extract one selected URL through Tavily within the Source Agent extraction budget."""
+            ensure_llm_tool_allowed(self.name, "mcp-web-search", "extract_url")
             self._deepagent_tool_state.setdefault("source", {})["deepagent_tool_invoked"] = True
             return json.dumps(self._source_extract(url), ensure_ascii=False)
 
@@ -363,18 +383,27 @@ class TreasuryRiskDeepAgent(DomainDeepAgentService):
     modes = ["treasury"]
 
     def deepagent_tools(self) -> list[Any]:
+        @tool("treasury_summarize_payment_exposure_safe")
+        def treasury_summarize_payment_exposure_safe(client_id: str, country: str = "") -> str:
+            """Summarize payment exposure for Treasury issue exploration without raw rows or raw amounts."""
+            payload: dict[str, Any] = {"client_id": client_id}
+            if country:
+                payload["country"] = country
+            return self._call_llm_safe_structured_tool("summarize_payment_exposure_safe", payload)
+
         @tool("record_treasury_issue_exploration")
         def record_treasury_issue_exploration(issues_json: str) -> str:
             """Record bounded Treasury hypotheses and missing data; do not score or decide."""
             return self._record_issue_exploration(issues_json)
 
-        return [record_treasury_issue_exploration]
+        return [treasury_summarize_payment_exposure_safe, record_treasury_issue_exploration]
 
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
         exposure = self.mcp.call("mcp-structured-data", "summarize_payment_exposure", {"client_id": event.client_id, "country": event.countries[0] if event.countries else None})
+        safe_exposure = self.mcp.call("mcp-structured-data", "summarize_payment_exposure_safe", {"client_id": event.client_id, "country": event.countries[0] if event.countries else None})
         evidence = self.mcp.call("mcp-qdrant", "search_evidence", {"query": event.title, "filters": {"scenario_id": event.scenario_id}, "top_k": 5})
-        issue_exploration = self.explore_issues(task, "treasury", {"payment_exposure": exposure, "evidence_hit_count": len(evidence)})
+        issue_exploration = self.explore_issues(task, "treasury", {"payment_exposure_safe": safe_exposure, "evidence_hit_count": len(evidence)})
         score = min(100, 40 + int(float(exposure.get("total_amount", 0)) / 100000))
         return AgentFinding(
             agent_name=self.name,
@@ -388,7 +417,7 @@ class TreasuryRiskDeepAgent(DomainDeepAgentService):
             recommended_actions=["Prepare controlled CFO/Legal/Procurement decision on payment continuation or hold."],
             review_required=True,
             rationale="Treasury analysis uses structured payment exposure and Qdrant evidence search through MCP.",
-            metadata={"payment_exposure": exposure, "qdrant_hits": evidence, "issue_exploration": issue_exploration},
+            metadata={"payment_exposure": exposure, "payment_exposure_safe": safe_exposure, "qdrant_hits": evidence, "issue_exploration": issue_exploration},
         )
 
 
@@ -399,18 +428,24 @@ class LegalRiskDeepAgent(DomainDeepAgentService):
     modes = ["legal"]
 
     def deepagent_tools(self) -> list[Any]:
+        @tool("legal_summarize_contract_exposure_safe")
+        def legal_summarize_contract_exposure_safe(client_id: str) -> str:
+            """Summarize contract exposure for Legal issue exploration without raw contract rows."""
+            return self._call_llm_safe_structured_tool("summarize_contract_exposure_safe", {"client_id": client_id})
+
         @tool("record_legal_issue_exploration")
         def record_legal_issue_exploration(issues_json: str) -> str:
             """Record bounded Legal hypotheses and missing data; do not score or decide."""
             return self._record_issue_exploration(issues_json)
 
-        return [record_legal_issue_exploration]
+        return [legal_summarize_contract_exposure_safe, record_legal_issue_exploration]
 
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
         contracts = self.mcp.call("mcp-structured-data", "sample_rows", {"client_id": event.client_id, "dataset": "contracts", "limit": 100})
         issues = [row["contract_id"] for row in contracts if row.get("sanctions_clause") == "true" or row.get("force_majeure_clause") == "true"]
-        issue_exploration = self.explore_issues(task, "legal", {"contract_count": len(contracts), "contract_issue_ids": issues})
+        safe_contracts = self.mcp.call("mcp-structured-data", "summarize_contract_exposure_safe", {"client_id": event.client_id})
+        issue_exploration = self.explore_issues(task, "legal", {"contract_exposure_safe": safe_contracts, "contract_issue_count": len(issues)})
         return AgentFinding(
             agent_name=self.name,
             mode="legal",
@@ -421,7 +456,7 @@ class LegalRiskDeepAgent(DomainDeepAgentService):
             recommended_actions=["Review notice, termination, sanctions, and force majeure clauses before payment decision."],
             review_required=bool(issues),
             rationale="Legal Agent is separated from Accounting and uses structured contract data via MCP.",
-            metadata={"contract_issue_ids": issues, "issue_exploration": issue_exploration},
+            metadata={"contract_issue_ids": issues, "contract_exposure_safe": safe_contracts, "issue_exploration": issue_exploration},
         )
 
 
@@ -432,18 +467,33 @@ class AccountingRiskDeepAgent(DomainDeepAgentService):
     modes = ["accounting"]
 
     def deepagent_tools(self) -> list[Any]:
+        @tool("accounting_summarize_payment_exposure_safe")
+        def accounting_summarize_payment_exposure_safe(client_id: str) -> str:
+            """Summarize payment exposure for Accounting issue exploration without raw rows or raw amounts."""
+            return self._call_llm_safe_structured_tool("summarize_payment_exposure_safe", {"client_id": client_id})
+
+        @tool("accounting_summarize_invoice_exposure_safe")
+        def accounting_summarize_invoice_exposure_safe(client_id: str) -> str:
+            """Summarize invoice exposure for Accounting issue exploration without raw rows or raw amounts."""
+            return self._call_llm_safe_structured_tool("summarize_invoice_exposure_safe", {"client_id": client_id})
+
         @tool("record_accounting_issue_exploration")
         def record_accounting_issue_exploration(issues_json: str) -> str:
             """Record bounded Accounting hypotheses and missing data; do not score or decide."""
             return self._record_issue_exploration(issues_json)
 
-        return [record_accounting_issue_exploration]
+        return [
+            accounting_summarize_payment_exposure_safe,
+            accounting_summarize_invoice_exposure_safe,
+            record_accounting_issue_exploration,
+        ]
 
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
         exposure = self.mcp.call("mcp-structured-data", "summarize_payment_exposure", {"client_id": event.client_id})
+        safe_exposure = self.mcp.call("mcp-structured-data", "summarize_payment_exposure_safe", {"client_id": event.client_id})
         amount = float(exposure.get("total_amount", 0))
-        issue_exploration = self.explore_issues(task, "accounting", {"payment_exposure": exposure})
+        issue_exploration = self.explore_issues(task, "accounting", {"payment_exposure_safe": safe_exposure})
         score = min(100, 25 + int(amount / 100000))
         return AgentFinding(
             agent_name=self.name,
@@ -455,7 +505,7 @@ class AccountingRiskDeepAgent(DomainDeepAgentService):
             recommended_actions=["Prepare auditor evidence pack if disruption becomes probable."],
             review_required=score >= 50,
             rationale="Accounting Agent is separate and maps operational/payment disruption to reporting pressure.",
-            metadata={"payment_exposure": exposure, "issue_exploration": issue_exploration},
+            metadata={"payment_exposure": exposure, "payment_exposure_safe": safe_exposure, "issue_exploration": issue_exploration},
         )
 
 
@@ -493,6 +543,7 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
         @tool("expert_search_similar_cases")
         def expert_search_similar_cases(case_description: str, mode: str = "", top_k: int = 5) -> str:
             """Search similar Expert-as-Code cases through MCP."""
+            ensure_llm_tool_allowed(self.name, "mcp-expert-knowledge", "search_similar_cases")
             self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
             result = self.mcp.call(
                 "mcp-expert-knowledge",
@@ -505,6 +556,7 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
         @tool("expert_search_rubrics")
         def expert_search_rubrics(query: str, domain: str = "", top_k: int = 10) -> str:
             """Search rubrics, guardrails, review triggers, and evidence standards through MCP."""
+            ensure_llm_tool_allowed(self.name, "mcp-expert-knowledge", "search_knowledge_objects")
             self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
             result = self.mcp.call(
                 "mcp-expert-knowledge",
@@ -517,6 +569,7 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
         @tool("expert_load_red_flags")
         def expert_load_red_flags(domain: str = "") -> str:
             """Load red-flag-like expert knowledge objects through MCP."""
+            ensure_llm_tool_allowed(self.name, "mcp-expert-knowledge", "load_knowledge_pack")
             self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
             objects = self.mcp.call("mcp-expert-knowledge", "load_knowledge_pack", {})
             selected = [
@@ -531,6 +584,7 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
         @tool("expert_load_cta_notes")
         def expert_load_cta_notes(case_id: str = "") -> str:
             """Load CTA notes and optionally filter by case id."""
+            ensure_llm_tool_allowed(self.name, "mcp-expert-knowledge", "load_cta_notes")
             self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
             notes = self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {})
             selected = [item for item in notes if not case_id or item.get("case_id") == case_id]
@@ -628,6 +682,7 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
         @tool("redteam_list_scenario_evidence")
         def redteam_list_scenario_evidence(scenario_id: str) -> str:
             """List scenario evidence from Evidence Ledger for challenge review."""
+            ensure_llm_tool_allowed(self.name, "mcp-evidence-ledger", "list_evidence_by_scenario")
             self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
             result = self.mcp.call("mcp-evidence-ledger", "list_evidence_by_scenario", {"scenario_id": scenario_id})
             self._deepagent_tool_state.setdefault("redteam", {})["evidence"] = result
@@ -636,6 +691,7 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
         @tool("redteam_search_evidence")
         def redteam_search_evidence(query: str, scenario_id: str, top_k: int = 5) -> str:
             """Search scenario evidence for support strength."""
+            ensure_llm_tool_allowed(self.name, "mcp-evidence-ledger", "search_evidence")
             self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
             result = self.mcp.call("mcp-evidence-ledger", "search_evidence", {"query": query, "scenario_id": scenario_id, "top_k": min(top_k, 5)})
             self._deepagent_tool_state.setdefault("redteam", {}).setdefault("evidence_searches", []).append({"query": query, "results": result})
@@ -644,6 +700,7 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
         @tool("redteam_search_contradictions")
         def redteam_search_contradictions(query: str, scenario_id: str, top_k: int = 5) -> str:
             """Search for contradiction candidates in the scenario evidence index."""
+            ensure_llm_tool_allowed(self.name, "mcp-evidence-ledger", "search_evidence")
             self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
             result = self.mcp.call(
                 "mcp-evidence-ledger",
@@ -652,6 +709,36 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
             )
             self._deepagent_tool_state.setdefault("redteam", {}).setdefault("contradiction_searches", []).append({"query": query, "results": result})
             return json.dumps({"candidate_count": len(result)}, ensure_ascii=False)
+
+        @tool("redteam_find_risk_paths")
+        def redteam_find_risk_paths(scenario_id: str, max_depth: int = 4) -> str:
+            """Read bounded graph risk paths for challenge review without mutating the graph."""
+            ensure_llm_tool_allowed(self.name, "mcp-neo4j", "find_risk_paths")
+            self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
+            result = self.mcp.call("mcp-neo4j", "find_risk_paths", {"scenario_id": scenario_id, "max_depth": min(max_depth, 4)})
+            self._deepagent_tool_state.setdefault("redteam", {})["risk_paths"] = result
+            return json.dumps({"path_count": len(result)}, ensure_ascii=False)
+
+        @tool("redteam_summarize_payment_exposure_safe")
+        def redteam_summarize_payment_exposure_safe(client_id: str, country: str = "") -> str:
+            """Read LLM-safe payment exposure for missing-data and overclaim checks."""
+            payload: dict[str, Any] = {"client_id": client_id}
+            if country:
+                payload["country"] = country
+            return self._call_llm_safe_structured_tool("summarize_payment_exposure_safe", payload)
+
+        @tool("redteam_summarize_supplier_exposure_safe")
+        def redteam_summarize_supplier_exposure_safe(client_id: str, country: str = "") -> str:
+            """Read LLM-safe supplier exposure for missing-data and overclaim checks."""
+            payload: dict[str, Any] = {"client_id": client_id}
+            if country:
+                payload["country"] = country
+            return self._call_llm_safe_structured_tool("summarize_supplier_exposure_safe", payload)
+
+        @tool("redteam_summarize_contract_exposure_safe")
+        def redteam_summarize_contract_exposure_safe(client_id: str) -> str:
+            """Read LLM-safe contract exposure for missing-data and overclaim checks."""
+            return self._call_llm_safe_structured_tool("summarize_contract_exposure_safe", {"client_id": client_id})
 
         @tool("redteam_record_missing_data")
         def redteam_record_missing_data(missing_data_json: str) -> str:
@@ -675,6 +762,10 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
             redteam_list_scenario_evidence,
             redteam_search_evidence,
             redteam_search_contradictions,
+            redteam_find_risk_paths,
+            redteam_summarize_payment_exposure_safe,
+            redteam_summarize_supplier_exposure_safe,
+            redteam_summarize_contract_exposure_safe,
             redteam_record_missing_data,
             redteam_record_overclaims,
         ]

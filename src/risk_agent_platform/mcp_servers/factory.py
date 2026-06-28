@@ -275,6 +275,11 @@ def create_structured_data_server(settings: Settings) -> FastMCP:
         invoices = _read_rows(settings, client_id, "invoices")
         return _safe_exposure_summary("invoices", invoices, "invoice_count")
 
+    @mcp.tool
+    def summarize_contract_exposure_safe(client_id: str) -> dict[str, Any]:
+        contracts = _read_rows(settings, client_id, "contracts")
+        return _safe_exposure_summary("contracts", contracts, "contract_count")
+
     return mcp
 
 
@@ -400,6 +405,13 @@ def create_expert_knowledge_server(settings: Settings) -> FastMCP:
         return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
     @mcp.tool
+    def load_decision_consolidation_rules() -> list[dict[str, Any]]:
+        path = settings.data_dir / "expert_knowledge" / "decision_consolidation_rules.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    @mcp.tool
     def load_knowledge_pack_version() -> dict[str, Any]:
         path = settings.data_dir / "expert_knowledge" / "knowledge_pack_version.json"
         if not path.exists():
@@ -424,6 +436,7 @@ def create_expert_knowledge_server(settings: Settings) -> FastMCP:
     def index_knowledge_pack() -> dict[str, Any]:
         objects = load_knowledge_pack()
         primitives = load_primitives()
+        decision_rules = load_decision_consolidation_rules()
         chunks = [
             {
                 "text": f"{obj.get('title', '')}\n{obj.get('description', '')}",
@@ -461,6 +474,25 @@ def create_expert_knowledge_server(settings: Settings) -> FastMCP:
                 },
             }
             for item in primitives
+        )
+        chunks.extend(
+            {
+                "text": f"{item.get('group_id', '')}\n{item.get('rationale', '')}\n{' '.join(item.get('match_terms', []))}",
+                "metadata": {
+                    "client_id": None,
+                    "scenario_id": None,
+                    "source_type": "expert_knowledge",
+                    "mode": "executive",
+                    "asset_id": None,
+                    "evidence_id": None,
+                    "document_id": item.get("rule_id"),
+                    "confidence": "high",
+                    "tags": item.get("match_terms", []),
+                    "domain": "executive",
+                    "object_type": "decision_consolidation_rule",
+                },
+            }
+            for item in decision_rules
         )
         return QdrantStore(settings).upsert_texts("expert_knowledge", chunks)
 

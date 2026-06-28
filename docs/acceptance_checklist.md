@@ -12,16 +12,32 @@ This checklist maps the implementation instruction to concrete evidence in the c
 - [x] Risk Discovery DeepAgent converts an event + client scope into scope-relevant selected/rejected candidates and threshold-selected `RiskEvent` items, while preserving the top `selected_event` for compatibility.
 - [x] Risk Discovery passes structured client data to DeepAgent as `risk_feature_sample` views rather than raw rows, and records `discovery_confidence`.
 - [x] `--run-analysis` blocks template fallback Discovery results unless `--allow-fallback-analysis` is explicitly supplied.
-- [x] `evaluate-discovery` runs evaluation cases, computes expected risk-type recall, forbidden top-result violations, and expected-question matching.
-- [x] Portfolio summary consolidates similar Decisions, groups them by owner/deadline, and flags potential duplicate owner/deadline conflicts.
-- [x] Source Intelligence, Expert-as-Code, and Evidence / Red Team include DeepAgent tool-use slots; Treasury, Legal, and Accounting include bounded issue-exploration slots while final scoring remains structured.
+- [x] `evaluate-discovery` runs evaluation cases and computes expected risk-type recall, forbidden top-result violations, expected-question matching, semantic/category matching, selected/rejected reason quality, and Expert-as-Code rubric coverage.
+- [x] Portfolio summary consolidates similar Decisions using Expert-as-Code decision consolidation rules, groups them by owner/deadline, and flags duplicate owner/deadline conflicts plus required-owner gaps.
+- [x] Source Intelligence, Expert-as-Code, and Evidence / Red Team include DeepAgent tool-use slots; Treasury, Legal, and Accounting include bounded issue-exploration slots with safe structured-data tools while final scoring remains structured.
+- [x] DeepAgent LLM tool-use is governed by an allowlist that excludes raw structured-data tools from LLM slots.
 
 Evidence:
 
 - `src/risk_agent_platform/deepagent_runtime.py`
 - `src/risk_agent_platform/final_agents.py`
+- `src/risk_agent_platform/tool_policy.py`
+- `data/expert_knowledge/decision_consolidation_rules.jsonl`
 - `python -m compileall src tests`
 - `pytest` -> current suite passes
+
+Discovery quality verification:
+
+- Command: `risk-agent-platform evaluate-discovery --embedded-services`
+- case_count=4
+- average_recall=1.000
+- average_question_match=1.000
+- average_question_semantic_match=1.000
+- average_missing_data_category_match=1.000
+- average_reason_quality=1.000
+- average_expert_rubric_coverage=1.000
+- forbidden_top_violation_count=0
+- passed=true
 
 ## A2A
 
@@ -41,7 +57,7 @@ Evidence:
 
 - [x] FastMCP servers exist for all required MCP server names.
 - [x] Agents call external capabilities through `MCPGateway` and FastMCP `Client`.
-- [x] Structured-data MCP exposes LLM-safe summary tools for payment, supplier, and invoice exposure.
+- [x] Structured-data MCP exposes LLM-safe summary tools for payment, supplier, invoice, and contract exposure.
 - [x] Docker HTTP MCP tools were verified for Qdrant, Neo4j, structured data, document parser, expert knowledge, and OCR error handling.
 - [x] Normal execution uses FastMCP servers through `MCPGateway`.
 
@@ -141,7 +157,7 @@ Verified commands:
 - [x] Knowledge Object and Knowledge Primitive schemas are defined.
 - [x] Expert case, question, response, CTA note, and Knowledge Pack version schemas are defined.
 - [x] Sample Knowledge Pack files exist under `data/expert_knowledge/`.
-- [x] Expert Knowledge MCP loaders read rules, primitives, scope relevance rules, cases, questions, CTA notes, source refs, source reliability seed, and pack version metadata.
+- [x] Expert Knowledge MCP loaders read rules, primitives, scope relevance rules, decision consolidation rules, cases, questions, CTA notes, source refs, source reliability seed, and pack version metadata.
 - [x] Expert-as-Code Agent indexes knowledge objects and case bank into Qdrant.
 - [x] Expert-as-Code Agent uses bounded DeepAgent tools for similar cases, rubrics, red flags, CTA notes, and counterfactuals.
 - [x] Expert-as-Code emits a structured `KnowledgeApplicationFinding` inside the AgentFinding metadata.
@@ -174,7 +190,7 @@ Evidence:
 ## E2E
 
 - [x] `pytest` includes a final architecture embedded E2E using dummy client data, mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and output artifact generation.
-- [x] `pytest` includes Risk Discovery fallback coverage for event + department scope intake, selected `RiskEvent` generation, all-selected/top/top-n analysis mode selection, fallback analysis blocking, normal non-fallback candidate recording, scope-specific selection, rejected candidate reasons, feature-view redaction, safe summaries, evaluation quality metrics, and portfolio summary integration with Decision consolidation.
+- [x] `pytest` includes Risk Discovery fallback coverage for event + department scope intake, selected `RiskEvent` generation, all-selected/top/top-n analysis mode selection, fallback analysis blocking, normal non-fallback candidate recording, scope-specific selection, rejected candidate reasons, feature-view redaction, safe summaries, safe tool allowlists, evaluation quality metrics, and portfolio summary integration with Expert-as-Code Decision consolidation.
 - [x] Langfuse-enabled final E2E passed.
 - [x] Final CLI fails explicitly when Tavily is missing.
 - [x] Full live E2E with real Tavily search, Qdrant, Neo4j, Langfuse, OpenRouter, and output artifacts is verified.
