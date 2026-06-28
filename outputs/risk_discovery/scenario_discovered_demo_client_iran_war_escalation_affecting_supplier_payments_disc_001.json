@@ -1,0 +1,224 @@
+{
+  "request": {
+    "event_title": "Iran war escalation affecting supplier payments",
+    "event_description": "Shipping, sanctions screening, and supplier payments may be disrupted.",
+    "scope": {
+      "client_id": "demo_client",
+      "scope_type": "department",
+      "scope_name": "Treasury",
+      "department": "Treasury",
+      "region": null,
+      "site_id": null,
+      "metadata": {
+        "industry": "manufacturing"
+      }
+    },
+    "countries": [
+      "Iran"
+    ],
+    "event_date": null,
+    "max_risks": 1
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "Iran sanctions escalation disrupts supplier payments and triggers compliance exposure",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "sanctions_screening",
+        "payment_disruption",
+        "supply_chain_disruption"
+      ],
+      "affected_categories": [
+        "Treasury",
+        "Payments",
+        "Compliance"
+      ],
+      "description": "Escalation of conflict involving Iran heightens sanctions screening requirements and may disrupt supplier payments routed through or involving Iranian entities, corridors, or regional trade partners. The client's Treasury department manages pending payments and holds contracts with sanctions clauses (England-governed) that could be triggered. High-criticality suppliers (e.g., Noveria, no alternative) face shipping and payment channel disruptions due to regional instability, creating cash flow and working capital pressure on Treasury.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "department: Treasury",
+        "industry: manufacturing",
+        "contracts with sanctions clauses",
+        "pending near-term payments",
+        "high-criticality suppliers with no alternatives",
+        "department",
+        "Treasury",
+        "SCOPE-DEPT-TREASURY-001:term",
+        "SCOPE-IND-MANUFACTURING-001:primary",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Directly affects Treasury's core functions: payment processing, sanctions compliance screening, and supplier payment obligations. The England-governed contract includes a sanctions clause and force majeure provision, creating potential payment suspension or termination exposure. Near-term pending payments ($1-5M in Noveria, $250k-1M USD) are vulnerable to sanctions-related payment blocks. High-criticality Noveria supplier with no alternative creates supply disruption risk that Treasury must fund or manage through working capital adjustments.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+    "client_id": "demo_client",
+    "title": "Iran sanctions escalation disrupts supplier payments and triggers compliance exposure",
+    "risk_type": "supplier_resilience",
+    "countries": [
+      "Iran"
+    ],
+    "risk_themes": [
+      "sanctions_screening",
+      "payment_disruption",
+      "supply_chain_disruption"
+    ],
+    "affected_categories": [
+      "Treasury",
+      "Payments",
+      "Compliance"
+    ],
+    "description": "Escalation of conflict involving Iran heightens sanctions screening requirements and may disrupt supplier payments routed through or involving Iranian entities, corridors, or regional trade partners. The client's Treasury department manages pending payments and holds contracts with sanctions clauses (England-governed) that could be triggered. High-criticality suppliers (e.g., Noveria, no alternative) face shipping and payment channel disruptions due to regional instability, creating cash flow and working capital pressure on Treasury.",
+    "event_date": "2026-06-28",
+    "urgency": "medium"
+  },
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+      "client_id": "demo_client",
+      "title": "Iran sanctions escalation disrupts supplier payments and triggers compliance exposure",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "sanctions_screening",
+        "payment_disruption",
+        "supply_chain_disruption"
+      ],
+      "affected_categories": [
+        "Treasury",
+        "Payments",
+        "Compliance"
+      ],
+      "description": "Escalation of conflict involving Iran heightens sanctions screening requirements and may disrupt supplier payments routed through or involving Iranian entities, corridors, or regional trade partners. The client's Treasury department manages pending payments and holds contracts with sanctions clauses (England-governed) that could be triggered. High-criticality suppliers (e.g., Noveria, no alternative) face shipping and payment channel disruptions due to regional instability, creating cash flow and working capital pressure on Treasury.",
+      "event_date": "2026-06-28",
+      "urgency": "medium"
+    }
+  ],
+  "generated_at": "2026-06-28T06:25:54.031249Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "sites",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "Treasury",
+      "contracts",
+      "payments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "Treasury": {
+        "dataset": "Treasury",
+        "row_count": 0,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "payments": {
+        "dataset": "payments",
+        "row_count": 3,
+        "countries": [
+          "Japan",
+          "Noveria"
+        ],
+        "currencies": [
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 3,
+        "amount_buckets": {
+          "1m_5m": 1,
+          "250k_1m": 1,
+          "lt_250k": 1
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 2,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      },
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 3,
+        "countries": [
+          "Freedonia",
+          "Japan",
+          "Noveria"
+        ],
+        "currencies": [],
+        "critical_count": 2,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 2,
+        "countries": [
+          "Japan"
+        ],
+        "currencies": [],
+        "critical_count": 1,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      }
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 1,
+    "coverage_augmented_candidate_count": 0,
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring."
+    ],
+    "scope_relevance_rule_count": 10
+  }
+}

@@ -1,0 +1,224 @@
+{
+  "request": {
+    "event_title": "Iran war escalation affecting supplier payments",
+    "event_description": "Shipping, sanctions screening, and supplier payments may be disrupted.",
+    "scope": {
+      "client_id": "demo_client",
+      "scope_type": "department",
+      "scope_name": "Treasury",
+      "department": "Treasury",
+      "region": null,
+      "site_id": null,
+      "metadata": {
+        "industry": "manufacturing"
+      }
+    },
+    "countries": [
+      "Iran"
+    ],
+    "event_date": null,
+    "max_risks": 3
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-002",
+      "title": "Payment processing disruption from banking channel degradation",
+      "risk_type": "Operational",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "supply_chain",
+        "payment_disruption",
+        "counterparty"
+      ],
+      "affected_categories": [
+        "payments",
+        "cash_management"
+      ],
+      "description": "Iran war escalation may degrade SWIFT connectivity, correspondent banking relationships, and cross-border payment rails in the Middle East region. Treasury's ability to process time-sensitive supplier payments could be impaired, causing late payments, penalty fees, and supplier relationship damage.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "Treasury department manages payment execution and banking relationships",
+        "Manufacturing sector relies on just-in-time supplier payments",
+        "Treasury",
+        "SCOPE-DEPT-TREASURY-001:term",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Two pending payments to high-criticality supplier SUP-001 (Northern Rare Materials, $1.25M + $780K) are at risk of delay. SUP-001 has no alternative supplier and only 18 days of inventory. Payment disruption to this critical supplier could cascade into production stoppages.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-003",
+      "title": "Force majeure and payment term disputes from supplier disruption",
+      "risk_type": "Contractual",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "contract_dispute",
+        "force_majeure",
+        "counterparty_risk"
+      ],
+      "affected_categories": [
+        "payments",
+        "contract_management"
+      ],
+      "description": "Shipping and sanctions disruptions from Iran escalation may cause suppliers to invoke force majeure clauses, altering payment schedules, triggering penalty clauses, or creating disputes over payment obligations. Treasury faces cash flow uncertainty and potential unplanned outflows from dispute resolution.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "Treasury department manages payment terms and cash flow forecasting",
+        "Contracts with force majeure clauses (CTR-9001) may be triggered",
+        "Treasury",
+        "SCOPE-DEPT-TREASURY-001:term",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "CTR-9001 (SUP-001) has a force majeure clause with 7-day notice and sanctions clause. If shipping disruptions occur due to Iran-related sanctions, SUP-001 could invoke force majeure, altering payment timing. CTR-9002 (SUP-002) lacks a sanctions clause, creating ambiguity. Treasury must manage the resulting cash flow uncertainty.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-001",
+      "title": "Sanctions screening failure on payments routing through Iranian channels",
+      "risk_type": "Compliance",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "sanctions",
+        "regulatory",
+        "financial crime"
+      ],
+      "affected_categories": [
+        "payments",
+        "treasury_operations"
+      ],
+      "description": "Escalation of Iran conflict may trigger secondary sanctions affecting correspondent banks and payment routing. Pending payments (e.g., PAY-1002 via unknown correspondent bank) risk inadvertently clearing through Iranian financial institutions or blocked entities, resulting in regulatory violations, frozen funds, and enforcement action.",
+      "urgency": "high",
+      "relevance_score": 82,
+      "scope_matches": [
+        "Treasury department handles payment processing and sanctions screening",
+        "Manufacturing industry subject to OFAC and international sanctions regimes",
+        "Treasury",
+        "SCOPE-DEPT-TREASURY-001:term"
+      ],
+      "rationale": "PAY-1002 uses an 'Unknown correspondent bank' with no bank_country specified, creating a sanctions screening gap. Iran war escalation increases the probability that correspondent banking relationships will be disrupted or that payments will be flagged for Iranian nexus. Treasury is directly responsible for payment compliance.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_002",
+    "client_id": "demo_client",
+    "title": "Payment processing disruption from banking channel degradation",
+    "risk_type": "Operational",
+    "countries": [
+      "Iran"
+    ],
+    "risk_themes": [
+      "supply_chain",
+      "payment_disruption",
+      "counterparty"
+    ],
+    "affected_categories": [
+      "payments",
+      "cash_management"
+    ],
+    "description": "Iran war escalation may degrade SWIFT connectivity, correspondent banking relationships, and cross-border payment rails in the Middle East region. Treasury's ability to process time-sensitive supplier payments could be impaired, causing late payments, penalty fees, and supplier relationship damage.",
+    "event_date": "2026-06-28",
+    "urgency": "high"
+  },
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_002",
+      "client_id": "demo_client",
+      "title": "Payment processing disruption from banking channel degradation",
+      "risk_type": "Operational",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "supply_chain",
+        "payment_disruption",
+        "counterparty"
+      ],
+      "affected_categories": [
+        "payments",
+        "cash_management"
+      ],
+      "description": "Iran war escalation may degrade SWIFT connectivity, correspondent banking relationships, and cross-border payment rails in the Middle East region. Treasury's ability to process time-sensitive supplier payments could be impaired, causing late payments, penalty fees, and supplier relationship damage.",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_003",
+      "client_id": "demo_client",
+      "title": "Force majeure and payment term disputes from supplier disruption",
+      "risk_type": "Contractual",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "contract_dispute",
+        "force_majeure",
+        "counterparty_risk"
+      ],
+      "affected_categories": [
+        "payments",
+        "contract_management"
+      ],
+      "description": "Shipping and sanctions disruptions from Iran escalation may cause suppliers to invoke force majeure clauses, altering payment schedules, triggering penalty clauses, or creating disputes over payment obligations. Treasury faces cash flow uncertainty and potential unplanned outflows from dispute resolution.",
+      "event_date": "2026-06-28",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+      "client_id": "demo_client",
+      "title": "Sanctions screening failure on payments routing through Iranian channels",
+      "risk_type": "Compliance",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "sanctions",
+        "regulatory",
+        "financial crime"
+      ],
+      "affected_categories": [
+        "payments",
+        "treasury_operations"
+      ],
+      "description": "Escalation of Iran conflict may trigger secondary sanctions affecting correspondent banks and payment routing. Pending payments (e.g., PAY-1002 via unknown correspondent bank) risk inadvertently clearing through Iranian financial institutions or blocked entities, resulting in regulatory violations, frozen funds, and enforcement action.",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    }
+  ],
+  "generated_at": "2026-06-28T04:35:31.396354Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "sites",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "payments",
+      "sites",
+      "suppliers"
+    ],
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 3,
+    "fallback_used": false,
+    "scope_relevance_rule_count": 10
+  }
+}

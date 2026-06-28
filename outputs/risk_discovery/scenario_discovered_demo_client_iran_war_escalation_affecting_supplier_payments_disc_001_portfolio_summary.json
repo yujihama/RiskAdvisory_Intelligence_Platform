@@ -1,0 +1,1996 @@
+{
+  "request": {
+    "event_title": "Iran war escalation affecting supplier payments",
+    "event_description": "Shipping, sanctions screening, and supplier payments may be disrupted.",
+    "scope": {
+      "client_id": "demo_client",
+      "scope_type": "department",
+      "scope_name": "Treasury",
+      "department": "Treasury",
+      "region": null,
+      "site_id": null,
+      "metadata": {
+        "industry": "manufacturing"
+      }
+    },
+    "countries": [
+      "Iran"
+    ],
+    "event_date": null,
+    "max_risks": 1
+  },
+  "discovery_metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "sites",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "Treasury",
+      "contracts",
+      "payments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "Treasury": {
+        "dataset": "Treasury",
+        "row_count": 0,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "payments": {
+        "dataset": "payments",
+        "row_count": 3,
+        "countries": [
+          "Japan",
+          "Noveria"
+        ],
+        "currencies": [
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 3,
+        "amount_buckets": {
+          "1m_5m": 1,
+          "250k_1m": 1,
+          "lt_250k": 1
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 2,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      },
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 3,
+        "countries": [
+          "Freedonia",
+          "Japan",
+          "Noveria"
+        ],
+        "currencies": [],
+        "critical_count": 2,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 2,
+        "countries": [
+          "Japan"
+        ],
+        "currencies": [],
+        "critical_count": 1,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      }
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 1,
+    "coverage_augmented_candidate_count": 0,
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring."
+    ],
+    "scope_relevance_rule_count": 10
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "Iran sanctions escalation disrupts supplier payments and triggers compliance exposure",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "sanctions_screening",
+        "payment_disruption",
+        "supply_chain_disruption"
+      ],
+      "affected_categories": [
+        "Treasury",
+        "Payments",
+        "Compliance"
+      ],
+      "description": "Escalation of conflict involving Iran heightens sanctions screening requirements and may disrupt supplier payments routed through or involving Iranian entities, corridors, or regional trade partners. The client's Treasury department manages pending payments and holds contracts with sanctions clauses (England-governed) that could be triggered. High-criticality suppliers (e.g., Noveria, no alternative) face shipping and payment channel disruptions due to regional instability, creating cash flow and working capital pressure on Treasury.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "department: Treasury",
+        "industry: manufacturing",
+        "contracts with sanctions clauses",
+        "pending near-term payments",
+        "high-criticality suppliers with no alternatives",
+        "department",
+        "Treasury",
+        "SCOPE-DEPT-TREASURY-001:term",
+        "SCOPE-IND-MANUFACTURING-001:primary",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Directly affects Treasury's core functions: payment processing, sanctions compliance screening, and supplier payment obligations. The England-governed contract includes a sanctions clause and force majeure provision, creating potential payment suspension or termination exposure. Near-term pending payments ($1-5M in Noveria, $250k-1M USD) are vulnerable to sanctions-related payment blocks. High-criticality Noveria supplier with no alternative creates supply disruption risk that Treasury must fund or manage through working capital adjustments.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+      "client_id": "demo_client",
+      "title": "Iran sanctions escalation disrupts supplier payments and triggers compliance exposure",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "sanctions_screening",
+        "payment_disruption",
+        "supply_chain_disruption"
+      ],
+      "affected_categories": [
+        "Treasury",
+        "Payments",
+        "Compliance"
+      ],
+      "description": "Escalation of conflict involving Iran heightens sanctions screening requirements and may disrupt supplier payments routed through or involving Iranian entities, corridors, or regional trade partners. The client's Treasury department manages pending payments and holds contracts with sanctions clauses (England-governed) that could be triggered. High-criticality suppliers (e.g., Noveria, no alternative) face shipping and payment channel disruptions due to regional instability, creating cash flow and working capital pressure on Treasury.",
+      "event_date": "2026-06-28",
+      "urgency": "medium"
+    }
+  ],
+  "decision_consolidation_rules": [
+    {
+      "rule_id": "DECISION-CONSOLIDATION-SANCTIONS-001",
+      "group_id": "sanctions_review",
+      "match_terms": [
+        "sanction",
+        "restricted party",
+        "screening",
+        "beneficial ownership",
+        "export control"
+      ],
+      "required_owners": [
+        "Legal"
+      ],
+      "primary_owner": "Legal",
+      "secondary_owners": [
+        "Treasury",
+        "Procurement"
+      ],
+      "rationale": "Sanctions-related decisions require Legal ownership, with execution support from the affected function."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-PAYMENT-001",
+      "group_id": "payment_execution",
+      "match_terms": [
+        "payment",
+        "cash",
+        "bank",
+        "liquidity",
+        "funding",
+        "route",
+        "currency"
+      ],
+      "required_owners": [
+        "Treasury",
+        "Legal"
+      ],
+      "primary_owner": "Treasury",
+      "secondary_owners": [
+        "Legal"
+      ],
+      "rationale": "Payment execution decisions should combine Treasury execution ownership with Legal review when sanctions or bank-route constraints may apply."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-SUPPLIER-001",
+      "group_id": "supplier_continuity",
+      "match_terms": [
+        "supplier",
+        "procurement",
+        "alternative",
+        "inventory",
+        "sourcing",
+        "logistics",
+        "shipment"
+      ],
+      "required_owners": [
+        "Procurement",
+        "Operations"
+      ],
+      "primary_owner": "Procurement",
+      "secondary_owners": [
+        "Operations"
+      ],
+      "rationale": "Supplier continuity decisions should be consolidated into procurement and operations actions, not split across isolated risk memos."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-CONTRACT-001",
+      "group_id": "contract_review",
+      "match_terms": [
+        "contract",
+        "notice",
+        "force majeure",
+        "termination",
+        "clause",
+        "customer commitment"
+      ],
+      "required_owners": [
+        "Legal"
+      ],
+      "primary_owner": "Legal",
+      "secondary_owners": [
+        "Sales",
+        "Customer Success"
+      ],
+      "rationale": "Contract notice and customer-commitment decisions require Legal as primary owner with commercial teams included where customer obligations are affected."
+    }
+  ],
+  "portfolio_overview": {
+    "analysis_count": 1,
+    "completed_count": 1,
+    "failed_count": 0,
+    "status_counts": {
+      "completed": 1
+    },
+    "risk_types": [
+      "supplier_resilience"
+    ],
+    "total_decisions": 1,
+    "total_evidence": 5,
+    "evidence_domains": [
+      "govinfo.gov",
+      "home.treasury.gov",
+      "ismworld.org",
+      "ofac.treasury.gov",
+      "oxfordcollegeofprocurementandsupply.com"
+    ],
+    "review_required_scenarios": [
+      "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001"
+    ],
+    "priority_decisions": [
+      {
+        "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+        "risk_type": "supplier_resilience",
+        "decision": "Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval.",
+        "owner": "CFO / Legal / Procurement",
+        "priority": 1,
+        "review_required": true
+      }
+    ],
+    "consolidated_decisions": [
+      {
+        "group_id": "payment_execution",
+        "rule_id": "DECISION-CONSOLIDATION-PAYMENT-001",
+        "decision": "Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval.",
+        "owners": [
+          "CFO / Legal / Procurement"
+        ],
+        "required_owners": [
+          "Treasury",
+          "Legal"
+        ],
+        "primary_owner": "Treasury",
+        "secondary_owners": [
+          "Legal"
+        ],
+        "owner_gap": [
+          "Treasury",
+          "Legal"
+        ],
+        "deadlines": [
+          "24 hours"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001"
+        ],
+        "risk_types": [
+          "supplier_resilience"
+        ],
+        "source_count": 1,
+        "priority": 1,
+        "review_required": true,
+        "rationale": "Payment execution decisions should combine Treasury execution ownership with Legal review when sanctions or bank-route constraints may apply."
+      }
+    ],
+    "decisions_by_owner": {
+      "CFO / Legal / Procurement": 1
+    },
+    "decisions_by_deadline": {
+      "24 hours": 1
+    },
+    "decision_conflicts": [
+      {
+        "group_id": "payment_execution",
+        "issue": "Required owner is missing from consolidated decision.",
+        "missing_owners": [
+          "Treasury",
+          "Legal"
+        ],
+        "required_owners": [
+          "Treasury",
+          "Legal"
+        ],
+        "owners": [
+          "CFO / Legal / Procurement"
+        ],
+        "deadlines": [
+          "24 hours"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001"
+        ],
+        "rule_id": "DECISION-CONSOLIDATION-PAYMENT-001"
+      }
+    ]
+  },
+  "analyses": [
+    {
+      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+      "title": "Iran sanctions escalation disrupts supplier payments and triggers compliance exposure",
+      "risk_type": "supplier_resilience",
+      "risk_themes": [
+        "sanctions_screening",
+        "payment_disruption",
+        "supply_chain_disruption"
+      ],
+      "urgency": "medium",
+      "status": "completed",
+      "trace_id": "1c885781-4307-44e7-a590-cb0a1e309395",
+      "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+      "error": null,
+      "decision_count": 1,
+      "decisions": [
+        {
+          "decision_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_decision_001",
+          "decision": "Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval.",
+          "owner": "CFO / Legal / Procurement",
+          "deadline": "24 hours",
+          "rationale": "Treasury, legal, accounting, and procurement findings converge on payment and supplier continuity risk.",
+          "options": [
+            "Proceed after screening",
+            "Hold pending legal review",
+            "Prepare approved alternative route"
+          ],
+          "evidence_ids": [
+            "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_001",
+            "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_002",
+            "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_003",
+            "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_004",
+            "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_005"
+          ],
+          "expert_knowledge_ids": [
+            "XFN-PAT-001",
+            "DECISION-CONSOLIDATION-SANCTIONS-001",
+            "LEG-RF-001",
+            "LEG-ESTD-001",
+            "P-TRE-TH-001",
+            "TRE-RF-002",
+            "TRE-PLAY-001",
+            "TRE-PAT-001",
+            "PRC-PLAY-001",
+            "DECISION-CONSOLIDATION-SUPPLIER-001",
+            "CASE-XFN-001",
+            "CASE-TRE-002",
+            "CASE-PRC-002",
+            "CASE-PRC-001",
+            "CASE-LEG-003",
+            "a8da351d-3446-5b13-a8eb-ec0638f8e186",
+            "e9dc9ad8-342f-513b-8e05-7e6a53f72076",
+            "df1a3556-26eb-51b9-8af0-6da1db3ccad7",
+            "CASE-TRE-001",
+            "CASE-LEG-001"
+          ],
+          "risk_if_delayed": "Uncontrolled payment or delayed supplier action can worsen sanctions, liquidity, and supply risk.",
+          "review_required": true,
+          "priority": 1
+        }
+      ],
+      "evidence_count": 5,
+      "evidence_domains": [
+        "govinfo.gov",
+        "home.treasury.gov",
+        "ismworld.org",
+        "ofac.treasury.gov",
+        "oxfordcollegeofprocurementandsupply.com"
+      ],
+      "orchestrator_finding": {
+        "agent_name": "orchestrator-agent",
+        "mode": "orchestrator",
+        "summary": "Delegated scenario to 9 Domain Agent findings through A2A.",
+        "risk_score": null,
+        "confidence": "medium",
+        "evidence_ids": [],
+        "assumptions": [],
+        "unknowns": [],
+        "recommended_actions": [
+          "Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval."
+        ],
+        "review_required": true,
+        "rationale": "Orchestrator used A2A task requests and did not directly call Tavily, Qdrant, Neo4j, or filesystem.",
+        "metadata": {
+          "analysis_plan": {
+            "selected_agents": [
+              "client-context-agent",
+              "source-intelligence-agent",
+              "treasury-risk-agent",
+              "legal-risk-agent",
+              "accounting-risk-agent",
+              "procurement-risk-agent",
+              "expert-as-code-agent",
+              "evidence-redteam-agent"
+            ],
+            "skipped_agents": [],
+            "recheck_conditions": [
+              "Iran sanctions regime changes (OFAC, EU, UK HMT updates)",
+              "Escalation to direct military conflict involving Iran's regional partners",
+              "Client supplier base restructured or alternative suppliers identified",
+              "Payment corridors through Iran-adjacent jurisdictions (UAE, Turkey, Iraq) disrupted",
+              "England-governed contract force majeure or sanctions clauses invoked",
+              "Client cash reserves or working capital thresholds breached"
+            ],
+            "exploration_questions": [
+              "What percentage of the client's supplier base or payment volume has direct or indirect exposure to Iran or sanctioned corridors?",
+              "Which high-criticality suppliers (e.g., Noveria) have contracts with sanctions clauses, and what are the trigger conditions under England law?",
+              "Are any pending Treasury payments routed through Iranian entities, correspondent banks, or regional trade hubs (UAE, Turkey, Bahrain)?",
+              "Does the client have force majeure or hardship provisions activated by sanctions escalation in its supplier contracts?",
+              "What is the client's sanctions screening coverage across its supplier onboarding and transaction monitoring?",
+              "How would a prolonged disruption to Noveria or similar sole-source suppliers impact the client's working capital and liquidity position?",
+              "Are there secondary sanctions risks from transactions with Iran's trade partners (e.g., China, Russia, Iraq)?",
+              "What financial reporting and disclosure obligations arise if supplier disruptions trigger material losses or going-concern considerations?"
+            ],
+            "rationale": "All eight agents are selected because the risk event spans multiple domains: sanctions intelligence (source-intelligence-agent), client-specific exposure mapping (client-context-agent), Treasury payment and liquidity impact (treasury-risk-agent), England-governed contract and sanctions clause analysis (legal-risk-agent), financial reporting and provision implications (accounting-risk-agent), sole-source supplier vulnerability (procurement-risk-agent), specialized compliance/supply-chain modeling (expert-as-code-agent), and adversarial stress-testing of the analysis (evidence-redteam-agent). No agent can be skipped without leaving a material gap in the risk assessment. The scenario's medium urgency and multi-jurisdictional nature warrant comprehensive coverage across all functional domains.",
+            "fallback_used": false
+          },
+          "findings": [
+            {
+              "agent_name": "client-context-agent",
+              "mode": "client_context",
+              "summary": "Registered RiskScenario and 3 suppliers in Neo4j; affected candidates: 2.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "Sub-tier suppliers remain unknown until additional data is supplied."
+              ],
+              "recommended_actions": [
+                "Validate supplier criticality and sub-tier dependencies."
+              ],
+              "review_required": true,
+              "rationale": "Client context is source-backed from structured data and relationship-backed in Neo4j.",
+              "metadata": {
+                "datasets": [
+                  "contracts",
+                  "payments",
+                  "sites",
+                  "suppliers"
+                ],
+                "affected_supplier_ids": [
+                  "SUP-001",
+                  "SUP-003"
+                ],
+                "confidential_terms": [
+                  "SUP-001",
+                  "Northern Rare Materials",
+                  "PRD-CHIP",
+                  "Power module",
+                  "SITE-JP-01",
+                  "SUP-002",
+                  "Harbor Logistics",
+                  "PRD-LOG",
+                  "Inbound logistics",
+                  "SUP-003",
+                  "Pacific Assembly",
+                  "PRD-ASM",
+                  "Final assembly",
+                  "SITE-JP-02",
+                  "Kanto Component Plant",
+                  "Kyushu Assembly Plant",
+                  "CTR-9001",
+                  "CTR-9002"
+                ]
+              }
+            },
+            {
+              "agent_name": "source-intelligence-agent",
+              "mode": "source_intelligence",
+              "summary": "The three searches completed successfully (3 results each), but the actual result items (URLs, titles, snippets) weren't returned in the tool output — only metadata was captured. This appears to be a tool output truncation issue.\n\n**Status:**\n- ✅ Search 1: `Iran sanctions_screening payment_disruption supply_chain_disruption official regulatory update` — 3 results\n- ✅ Search 2: `Iran payment disruption sanctions banking official source` — 3 results\n- ✅ Search 3: `Iran supplier continuity logistics disruption authoritative source` — 3 results\n\n**Blocker:** The search results' URL payloads weren' Registered 5 bounded Tavily evidence items.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_001",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_002",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_003",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_004",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_005"
+              ],
+              "assumptions": [],
+              "unknowns": [],
+              "recommended_actions": [
+                "Review authoritative sources and retain query hash for audit."
+              ],
+              "review_required": false,
+              "rationale": "Source Intelligence planned bounded queries, ran sanitized Tavily searches through MCP, extracted selected URLs, and registered EvidenceItems through Evidence Ledger.",
+              "metadata": {
+                "queries": [
+                  {
+                    "query": "Iran supplier continuity logistics disruption authoritative source",
+                    "query_hash": "f1f76641cb856618"
+                  },
+                  {
+                    "query": "Iran payment disruption sanctions banking official source",
+                    "query_hash": "01e883c076d0ff5d"
+                  },
+                  {
+                    "query": "Iran sanctions_screening payment_disruption supply_chain_disruption official regulatory update",
+                    "query_hash": "8d9c2e730bab3960"
+                  }
+                ],
+                "extracted_urls": [
+                  "https://www.ismworld.org/supply-management-news-and-reports/news-publications/inside-supply-management-magazine/blog/2026/2026-03/disruption-has-become-the-name-of-the-game",
+                  "https://www.oxfordcollegeofprocurementandsupply.com/how-the-iran-conflict-is-disrupting-global-supply-chains",
+                  "https://www.z2data.com/insights/how-the-iran-conflict-is-rippling-across-global-supply-chains"
+                ],
+                "deepagent_tool_invoked": true,
+                "confidential_terms_count": 18,
+                "limits": {
+                  "max_queries": 3,
+                  "max_extract_urls": 3,
+                  "max_evidence": 5
+                }
+              }
+            },
+            {
+              "agent_name": "treasury-risk-agent",
+              "mode": "treasury",
+              "summary": "Payment exposure count=0 amount=0.",
+              "risk_score": 40,
+              "confidence": "medium",
+              "evidence_ids": [
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_005",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_004",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_001",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_003",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_002"
+              ],
+              "assumptions": [
+                "Pending payments are used as near-term liquidity exposure until bank confirmations arrive."
+              ],
+              "unknowns": [
+                "Correspondent bank status and sanctions screening result must be confirmed."
+              ],
+              "recommended_actions": [
+                "Prepare controlled CFO/Legal/Procurement decision on payment continuation or hold."
+              ],
+              "review_required": true,
+              "rationale": "Treasury analysis uses structured payment exposure and Qdrant evidence search through MCP.",
+              "metadata": {
+                "payment_exposure": {
+                  "payment_count": 0,
+                  "total_amount": 0,
+                  "items": []
+                },
+                "payment_exposure_safe": {
+                  "payment_count": 0,
+                  "features": [],
+                  "summary": {
+                    "dataset": "payments",
+                    "row_count": 0,
+                    "countries": [],
+                    "currencies": [],
+                    "critical_count": 0,
+                    "near_term_due_count": 0,
+                    "amount_buckets": {},
+                    "risk_signals": []
+                  },
+                  "redaction_policy": {
+                    "omitted_fields": [],
+                    "amounts": "bucketed",
+                    "identifiers": "omitted",
+                    "names": "omitted"
+                  }
+                },
+                "qdrant_hits": [
+                  {
+                    "id": "6ea84492-13c9-5591-acb4-303af665b2fc",
+                    "score": 0.5754445,
+                    "payload": {
+                      "client_id": "demo_client",
+                      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                      "source_type": "web",
+                      "mode": "evidence",
+                      "asset_id": null,
+                      "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_005",
+                      "document_id": null,
+                      "source_url": "https://www.oxfordcollegeofprocurementandsupply.com/how-the-iran-conflict-is-disrupting-global-supply-chains",
+                      "source_title": "How the Iran Conflict Is Disrupting Global Supply Chains - Oxford College of Procurement and Supply",
+                      "source_domain": "oxfordcollegeofprocurementandsupply.com",
+                      "reliability": "medium",
+                      "confidence": "medium",
+                      "tags": [
+                        "supplier_resilience",
+                        "sanctions_screening",
+                        "payment_disruption",
+                        "supply_chain_disruption"
+                      ],
+                      "text": "[Skip to content](#content)\n\n**Call Us Today!**  [**+44 (0)1865 515255**](tel:+441865515255)\n\n# How the Iran Conflict Is Disrupting Global Supply Chains\n\nHow the Iran Conflict Is Disrupting Global Supply Chains\n\nThe ongoing Iran conflict has the potential to significantly disrupt global supply chains. As the Middle East is a key hub for energy production and international shipping routes, instability in the region can have widespread economic consequences.\n\nFrom rising energy prices to disrupted shipping routes, the Iran conflict could create major challenges for supply chain professionals, procurement teams and global businesses.\n\n## Why the Strait of Hormuz Matters for Global Trade\n\nOne of the most critical factors is the Strait of Hormuz, a narrow shipping route between Iran and Oman. It is one of the world’s most important maritime chokepoints, with around a quarter of global crude oil shipments passing through it daily.\n\nIf conflict restricts traffic through this route, global energy supply can be affected almost immediately. Military escalation in the region has already led to disruptions in oil and natural gas shipments, contributing to rising energy prices.\n\n## Rising Energ",
+                      "created_at": "2026-06-28T06:26:33.128718+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "43acf8a7-3ab2-5206-9154-0a854d34b7c9",
+                    "score": 0.57115203,
+                    "payload": {
+                      "client_id": "demo_client",
+                      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                      "source_type": "web",
+                      "mode": "evidence",
+                      "asset_id": null,
+                      "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_004",
+                      "document_id": null,
+                      "source_url": "https://www.ismworld.org/supply-management-news-and-reports/news-publications/inside-supply-management-magazine/blog/2026/2026-03/disruption-has-become-the-name-of-the-game",
+                      "source_title": "Iran War Shows Disruption Has Become the Name of the Game",
+                      "source_domain": "ismworld.org",
+                      "reliability": "medium",
+                      "confidence": "medium",
+                      "tags": [
+                        "supplier_resilience",
+                        "sanctions_screening",
+                        "payment_disruption",
+                        "supply_chain_disruption"
+                      ],
+                      "text": "The Iran war is disrupting supply chains, driving up oil prices and causing shipments to be rerouted. But it is not the only dynamic",
+                      "created_at": "2026-06-28T06:26:31.502835+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "c8fc20b1-a272-525d-b156-c16dafbab115",
+                    "score": 0.47938544,
+                    "payload": {
+                      "client_id": "demo_client",
+                      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                      "source_type": "web",
+                      "mode": "evidence",
+                      "asset_id": null,
+                      "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_001",
+                      "document_id": null,
+                      "source_url": "https://home.treasury.gov/news/press-releases/sb0477",
+                      "source_title": "Economic Fury Targets Iran Shadow Banking Facilitators | U.S. Department of the Treasury",
+                      "source_domain": "home.treasury.gov",
+                      "reliability": "high",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier_resilience",
+                        "sanctions_screening",
+                        "payment_disruption",
+                        "supply_chain_disruption"
+                      ],
+                      "text": "**WASHINGTON**—Today, as part of Economic Fury, the U.S. Department of the Treasury’s Office of Foreign Assets Control (OFAC) designated 35 entities and individuals that oversee Iran’s shadow banking architecture, facilitating the movement of the equivalent of tens of billions of dollars tied to sanctions evasion and Iran’s sponsorship of terrorism. Today’s action is being taken pursuant to E.O. 13902, which targets persons operating in Iran’s financial sector, and E.O. 13224, as amended, a counterterrorism authority. These designations build on OFAC’s January 15, 2026 shadow banking action, which targeted the rahbar networks of Bank Melli and Bank-e Shahr (Shahr Bank). The rahbar companies closely coordinate with Iranian exchange houses and a myriad of front companies in multiple jurisdictions to facilitate payments for Iran’s sanctioned trade, including on behalf of the IRGC, Iran’s Armed Forces General Staff (AFGS), Iran’s National Iranian Oil Company (NIOC), and other sanctioned entities. Farab Soroush Afagh Qeshm Company is being designated pursuant to E.O. 13902 for operating in the financial sector of the Iranian economy.",
+                      "created_at": "2026-06-28T06:26:26.367803+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "7ffc1dc5-9f4d-5187-b96e-783d41b271b3",
+                    "score": 0.47168133,
+                    "payload": {
+                      "client_id": "demo_client",
+                      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                      "source_type": "web",
+                      "mode": "evidence",
+                      "asset_id": null,
+                      "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_003",
+                      "document_id": null,
+                      "source_url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions",
+                      "source_title": "Iran Sanctions | Office of Foreign Assets Control",
+                      "source_domain": "ofac.treasury.gov",
+                      "reliability": "high",
+                      "confidence": "medium",
+                      "tags": [
+                        "supplier_resilience",
+                        "sanctions_screening",
+                        "payment_disruption",
+                        "supply_chain_disruption"
+                      ],
+                      "text": "*   [91 FR 24722-26](https://ofac.treasury.gov/media/935616/download?inline \"fr91_24722iran.pdf\") - Iranian Transactions and Sanctions Regulations Web General Licenses. *   [90 FR 47230-25](https://ofac.treasury.gov/media/934666/download?inline \"fr90_47230_iran.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License R. *   [90 FR 43559-25](https://ofac.treasury.gov/media/934611/download?inline \"fr90_43559.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License Q. *   [88 FR 46688-23](https://ofac.treasury.gov/media/932006/download?inline \"fr88_46688.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License P. *   [88 FR 32105-23](https://ofac.treasury.gov/media/931856/download?inline \"fr88_32105.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License O. *   [87 FR 62003-22](https://ofac.treasury.gov/media/928871/download?inline \"fr87_62003.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License D–2. *   [79 FR 18990-14](https://ofac.treasury.gov/media/7986/download?inline \"fr79_18990.pdf\") - Final Rule Amending the I",
+                      "created_at": "2026-06-28T06:26:29.889949+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "a35a355f-eaff-58c6-b2b6-5d5fefa56832",
+                    "score": 0.45269254,
+                    "payload": {
+                      "client_id": "demo_client",
+                      "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                      "source_type": "web",
+                      "mode": "evidence",
+                      "asset_id": null,
+                      "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_002",
+                      "document_id": null,
+                      "source_url": "https://www.govinfo.gov/content/pkg/CFR-2022-title31-vol3/pdf/CFR-2022-title31-vol3-part561.pdf",
+                      "source_title": "[PDF] 460 PART 561—IRANIAN FINANCIAL SANCTIONS REGULATIONS",
+                      "source_domain": "govinfo.gov",
+                      "reliability": "high",
+                      "confidence": "medium",
+                      "tags": [
+                        "supplier_resilience",
+                        "sanctions_screening",
+                        "payment_disruption",
+                        "supply_chain_disruption"
+                      ],
+                      "text": "VerDate Sep<11>2014 16:17 Dec 01, 2022 Jkt 256131 PO 00000 Frm 00476 Fmt 8010 Sfmt 8010 Q:\\31\\31V3.TXT PC31 kpayne on VMOFRWIN702 with $$_JOB 467 Office of Foreign Assets Control, Treasury § 561.203 (j) A financial transaction conducted or facilitated by a foreign financial in-stitution is described in this paragraph (j) if: (1) The financial transaction is only for trade in goods or services that ei-ther originate in the country with pri-mary jurisdiction over the foreign fi-nancial institution and are exported and sold directly to Iran or originate in Iran and are exported and sold directly to the country with primary jurisdic-tion over the foreign financial institu-tion; (2) Any funds owed to the country with primary jurisdiction over the for-eign financial institution as a result of such trade are paid to: (i) Individuals who are citizens, na-tionals, or permanent residents of the country with primary jurisdiction over the foreign financial institution; or (ii) Entities organized under the laws of the country with primary jurisdic-tion over the foreign financial institu-tion that are not the Government of Iran, as defined in § 561.321; (3) Any funds owed to Iran as a result of ",
+                      "created_at": "2026-06-28T06:26:28.184897+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  }
+                ],
+                "issue_exploration": {
+                  "issues": [
+                    "Payment route, correspondent bank, and currency controls may change the cash mobility conclusion.",
+                    "Near-term invoice timing may require CFO approval before any hold or reroute option."
+                  ],
+                  "missing_data": [],
+                  "recheck_conditions": [],
+                  "exploration_questions": [],
+                  "deepagent_tool_invoked": false,
+                  "safe_tool_results": [],
+                  "synthesis": ""
+                }
+              }
+            },
+            {
+              "agent_name": "legal-risk-agent",
+              "mode": "legal",
+              "summary": "Legal review found 2 contracts with sanctions or force majeure clauses.",
+              "risk_score": 75,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "Beneficial ownership and current sanctions list match require confirmation."
+              ],
+              "recommended_actions": [
+                "Review notice, termination, sanctions, and force majeure clauses before payment decision."
+              ],
+              "review_required": true,
+              "rationale": "Legal Agent is separated from Accounting and uses structured contract data via MCP.",
+              "metadata": {
+                "contract_issue_ids": [
+                  "CTR-9001",
+                  "CTR-9002"
+                ],
+                "contract_exposure_safe": {
+                  "contract_count": 2,
+                  "features": [
+                    {
+                      "feature_id": "contracts_feature_001",
+                      "dataset": "contracts",
+                      "governing_law": "England",
+                      "notice_days_bucket": "0_7_days",
+                      "has_force_majeure_clause": true,
+                      "has_sanctions_clause": true,
+                      "has_termination_right": true,
+                      "risk_signals": [
+                        "sanctions_clause",
+                        "force_majeure_clause",
+                        "termination_right"
+                      ]
+                    },
+                    {
+                      "feature_id": "contracts_feature_002",
+                      "dataset": "contracts",
+                      "governing_law": "Japan",
+                      "notice_days_bucket": "8_30_days",
+                      "has_force_majeure_clause": true,
+                      "has_sanctions_clause": false,
+                      "has_termination_right": false,
+                      "risk_signals": [
+                        "force_majeure_clause"
+                      ]
+                    }
+                  ],
+                  "summary": {
+                    "dataset": "contracts",
+                    "row_count": 2,
+                    "countries": [],
+                    "currencies": [],
+                    "critical_count": 0,
+                    "near_term_due_count": 0,
+                    "amount_buckets": {},
+                    "risk_signals": [
+                      "force_majeure_clause",
+                      "sanctions_clause",
+                      "termination_right"
+                    ]
+                  },
+                  "redaction_policy": {
+                    "omitted_fields": [
+                      "contract_id",
+                      "supplier_id"
+                    ],
+                    "amounts": "bucketed",
+                    "identifiers": "omitted",
+                    "names": "omitted"
+                  }
+                },
+                "issue_exploration": {
+                  "issues": [
+                    "{'issue_id': 'ISS-001', 'hypothesis': 'England-governed contract sanctions clause may be triggered by Iran escalation, enabling termination or renegotiation of payment terms', 'evidence': 'Contract with sanctions clause, force majeure clause, and termination right under England law; notice period 0-7 days', 'severity': 'high', 'status': 'open'}",
+                    "{'issue_id': 'ISS-002', 'hypothesis': 'Japan-governed contract lacks sanctions clause but force majeure provision may provide limited relief for performance delays', 'evidence': 'Contract with force majeure clause only; no sanctions clause or termination right; notice period 8-30 days', 'severity': 'medium', 'status': 'open'}"
+                  ],
+                  "missing_data": [
+                    "Supplier identity and criticality mapping for England-contract counterparty",
+                    "Supplier identity and criticality mapping for Japan-contract counterparty",
+                    "Payment corridor details — whether any pending payments route through Iran or Iranian-linked jurisdictions",
+                    "Contract currency exposure and bucketed amounts for both contracts",
+                    "Specific sanctions clause triggers and notice requirements under England law",
+                    "Force majeure definition scope under Japan law (does it cover sanctions/regional conflict?)",
+                    "Whether Noveria or other high-criticality suppliers are parties to either contract",
+                    "Treasury payment pipeline exposure — volume and timing of affected payments"
+                  ],
+                  "recheck_conditions": [
+                    "New OFAC or UK sanctions designations affecting Iranian entities or regional trade corridors",
+                    "Supplier insolvency or payment default notifications",
+                    "Counterparty notice of force majeure invocation under either contract",
+                    "Regulatory guidance changes on Iran-related payment processing"
+                  ],
+                  "exploration_questions": [
+                    "Which contract(s) involve suppliers or payment corridors directly exposed to Iran sanctions risk?",
+                    "Does the England contract's sanctions clause require immediate notice or allow suspension of performance upon sanctions events?",
+                    "Can the Japan contract's force majeure clause be invoked for sanctions-related disruption, or is it limited to natural disasters/pandemics?",
+                    "What is the aggregate payment exposure across both contracts, and are any payments imminent within the 0-7 day notice window?",
+                    "Are there alternative suppliers for Noveria or other high-criticality vendors identified in the risk event?",
+                    "Does the client have obligations to disclose sanctions exposure to regulators or counterparties under England law?"
+                  ],
+                  "deepagent_tool_invoked": true,
+                  "synthesis": "Issues recorded. Summary:\n\n**2 bounded hypotheses logged:**\n\n| ID | Contract | Hypothesis | Severity |\n|---|---|---|---|\n| ISS-001 | England-governed | Sanctions clause may be triggered, enabling termination or renegotiation of payment terms | High |\n| ISS-002 | Japan-governed | Force majeure may offer limited relief; no sanctions clause or termination right | Medium |\n\n**8 missing data items identified**, including:\n- Supplier identity/criticality mapping for both contract counterparties\n- Payment corridor routing (Iran exposure)\n- Contract currency/amount exposure\n- Specific clause trigger l",
+                  "safe_tool_results": []
+                }
+              }
+            },
+            {
+              "agent_name": "accounting-risk-agent",
+              "mode": "accounting",
+              "summary": "Accounting triage found payment exposure of 2,250,000 for provision/disclosure review.",
+              "risk_score": 47,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "Materiality threshold and auditor view are not yet confirmed."
+              ],
+              "recommended_actions": [
+                "Prepare auditor evidence pack if disruption becomes probable."
+              ],
+              "review_required": false,
+              "rationale": "Accounting Agent is separate and maps operational/payment disruption to reporting pressure.",
+              "metadata": {
+                "payment_exposure": {
+                  "payment_count": 3,
+                  "total_amount": 2250000.0,
+                  "items": [
+                    {
+                      "payment_id": "PAY-1001",
+                      "supplier_id": "SUP-001",
+                      "due_date": "2026-07-05",
+                      "amount": "1250000",
+                      "currency": "USD",
+                      "bank_country": "Noveria",
+                      "bank_name": "Noveria National Bank",
+                      "status": "pending"
+                    },
+                    {
+                      "payment_id": "PAY-1002",
+                      "supplier_id": "SUP-001",
+                      "due_date": "2026-07-20",
+                      "amount": "780000",
+                      "currency": "USD",
+                      "bank_country": "",
+                      "bank_name": "Unknown correspondent bank",
+                      "status": "pending"
+                    },
+                    {
+                      "payment_id": "PAY-1003",
+                      "supplier_id": "SUP-002",
+                      "due_date": "2026-07-08",
+                      "amount": "220000",
+                      "currency": "JPY",
+                      "bank_country": "Japan",
+                      "bank_name": "Tokyo Trust Bank",
+                      "status": "pending"
+                    }
+                  ]
+                },
+                "payment_exposure_safe": {
+                  "payment_count": 3,
+                  "features": [
+                    {
+                      "feature_id": "payments_feature_001",
+                      "dataset": "payments",
+                      "country": "Noveria",
+                      "currency": "USD",
+                      "status": "pending",
+                      "amount_bucket": "1m_5m",
+                      "due_bucket": "0_7_days",
+                      "near_term_due": true,
+                      "risk_signals": [
+                        "material_payment",
+                        "near_term_due"
+                      ]
+                    },
+                    {
+                      "feature_id": "payments_feature_002",
+                      "dataset": "payments",
+                      "currency": "USD",
+                      "status": "pending",
+                      "amount_bucket": "250k_1m",
+                      "due_bucket": "8_30_days",
+                      "near_term_due": true,
+                      "risk_signals": [
+                        "near_term_due"
+                      ]
+                    },
+                    {
+                      "feature_id": "payments_feature_003",
+                      "dataset": "payments",
+                      "country": "Japan",
+                      "currency": "JPY",
+                      "status": "pending",
+                      "amount_bucket": "lt_250k",
+                      "due_bucket": "8_30_days",
+                      "near_term_due": true,
+                      "risk_signals": [
+                        "near_term_due"
+                      ]
+                    }
+                  ],
+                  "summary": {
+                    "dataset": "payments",
+                    "row_count": 3,
+                    "countries": [
+                      "Japan",
+                      "Noveria"
+                    ],
+                    "currencies": [
+                      "JPY",
+                      "USD"
+                    ],
+                    "critical_count": 0,
+                    "near_term_due_count": 3,
+                    "amount_buckets": {
+                      "1m_5m": 1,
+                      "250k_1m": 1,
+                      "lt_250k": 1
+                    },
+                    "risk_signals": [
+                      "material_payment",
+                      "near_term_due"
+                    ]
+                  },
+                  "redaction_policy": {
+                    "omitted_fields": [
+                      "amount",
+                      "bank_name",
+                      "payment_id",
+                      "supplier_id"
+                    ],
+                    "amounts": "bucketed",
+                    "identifiers": "omitted",
+                    "names": "omitted"
+                  }
+                },
+                "issue_exploration": {
+                  "issues": [
+                    "{'hypothesis_id': 'H1', 'description': 'Near-term payment to Noveria ($1m-$5m USD, pending, due within 7 days) may be disrupted by Iran-related sanctions escalation affecting regional trade corridors or payment channels, despite Noveria not being Iran.', 'evidence': 'payments_feature_001: Noveria, USD, pending, $1m-$5m, due 0-7 days, risk_signals=[material_payment, near_term_due]', 'confidence': 'medium', 'impact': 'material_payment, near_term_due', 'status': 'open'}",
+                    "{'hypothesis_id': 'H2', 'description': 'Second pending payment ($250k-$1m USD, due 8-30 days) may involve indirect exposure via regional trade partners or payment routing through Iran-adjacent corridors.', 'evidence': 'payments_feature_002: USD, pending, $250k-$1m, due 8-30 days, risk_signals=[near_term_due]', 'confidence': 'low', 'impact': 'near_term_due', 'status': 'open'}",
+                    "{'hypothesis_id': 'H3', 'description': 'Japan-denominated payment (JPY, <$250k, due 8-30 days) may face secondary disruption if regional supply chain or payment infrastructure is affected by Iran conflict escalation.', 'evidence': 'payments_feature_003: Japan, JPY, pending, <$250k, due 8-30 days, risk_signals=[near_term_due]', 'confidence': 'low', 'impact': 'near_term_due', 'status': 'open'}",
+                    "{'hypothesis_id': 'H4', 'description': 'No invoice data found; potential gap in understanding supplier obligations, contract terms, or payables exposure that could compound payment disruption risk.', 'evidence': 'invoice summary: row_count=0, no features', 'confidence': 'medium', 'impact': 'unknown', 'status': 'open'}"
+                  ],
+                  "missing_data": [
+                    "Invoice/payables data: zero records found; cannot assess supplier obligations or contract payment terms",
+                    "Supplier criticality details: scenario references Noveria as high-criticality with no alternative, but payment summary shows critical_count=0",
+                    "Sanctions screening results: no data on whether any payments or suppliers flagged against Iran-related sanctions lists",
+                    "Payment routing details: cannot determine if any payments route through Iran-adjacent corridors or involve Iranian entities",
+                    "Contract terms: sanctions clauses (England-governed) referenced in scenario but no contract data available",
+                    "Supplier relationship data: alternatives, substitution timelines, and dependency mapping unavailable"
+                  ],
+                  "recheck_conditions": [
+                    "New invoice records appear in system (indicates payables data now available)",
+                    "Payment status changes from pending to failed/rejected (confirms disruption)",
+                    "Sanctions screening flags added to any payment or supplier record",
+                    "Payment amount or country fields updated with more granular data",
+                    "Critical supplier count increases from 0 (confirms high-criticality supplier exposure)"
+                  ],
+                  "exploration_questions": [
+                    "Are any of the 3 pending payments routed through or involving Iranian entities, banks, or regional corridors?",
+                    "What are the contract terms for the Noveria supplier, and have sanctions clauses been triggered?",
+                    "Is the absence of invoice data a system gap or genuine zero-payables state?",
+                    "Which suppliers are classified as high-criticality with no alternatives, and what is their payment exposure?",
+                    "Have any payments been flagged by sanctions screening systems since the escalation event on 2026-06-28?",
+                    "What is the total aggregate exposure across all 3 pending payments when bucketed amounts are estimated?"
+                  ],
+                  "deepagent_tool_invoked": true,
+                  "synthesis": "Exploration recorded for `demo_client` under scenario `scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001`.\n\n**4 hypotheses captured:**\n- **H1** (medium confidence): Noveria payment $1m-$5m USD due within 7 days may be disrupted by sanctions escalation affecting regional corridors.\n- **H2** (low confidence): $250k-$1m USD payment due 8-30 days may involve indirect Iran-adjacent routing exposure.\n- **H3** (low confidence): Japan JPY payment <$250k may face secondary disruption from regional supply chain effects.\n- **H4** (medium confidence): Zero invoice re",
+                  "safe_tool_results": [
+                    {
+                      "server": "mcp-structured-data",
+                      "tool": "summarize_invoice_exposure_safe",
+                      "result": {
+                        "invoice_count": 0,
+                        "features": [],
+                        "summary": {
+                          "dataset": "invoices",
+                          "row_count": 0,
+                          "countries": [],
+                          "currencies": [],
+                          "critical_count": 0,
+                          "near_term_due_count": 0,
+                          "amount_buckets": {},
+                          "risk_signals": []
+                        },
+                        "redaction_policy": {
+                          "omitted_fields": [],
+                          "amounts": "bucketed",
+                          "identifiers": "omitted",
+                          "names": "omitted"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "agent_name": "procurement-risk-agent",
+              "mode": "procurement",
+              "summary": "Procurement exposure includes 0 critical suppliers in the target country filter.",
+              "risk_score": 30,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "Alternative qualification status must be validated with procurement owner."
+              ],
+              "recommended_actions": [
+                "Start alternative sourcing and inventory runway validation."
+              ],
+              "review_required": false,
+              "rationale": "Procurement Agent uses supplier exposure MCP tools and remains separate from Treasury.",
+              "metadata": {
+                "supplier_exposure": {
+                  "supplier_count": 0,
+                  "critical_count": 0,
+                  "items": []
+                }
+              }
+            },
+            {
+              "agent_name": "expert-as-code-agent",
+              "mode": "expert_as_code",
+              "summary": "Indexed expert knowledge and case bank; retrieved 10 objects and 10 similar cases.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [],
+              "recommended_actions": [
+                "Apply payment action language guardrails and joint review triggers."
+              ],
+              "review_required": true,
+              "rationale": "Expert-as-Code uses structured Knowledge Objects and case bank entries indexed into Qdrant via MCP.",
+              "metadata": {
+                "indexed": {
+                  "collection": "expert_knowledge",
+                  "upserted": 65
+                },
+                "indexed_cases": {
+                  "collection": "expert_cases",
+                  "upserted": 14
+                },
+                "knowledge_object_ids": [
+                  "XFN-PAT-001",
+                  "DECISION-CONSOLIDATION-SANCTIONS-001",
+                  "LEG-RF-001",
+                  "LEG-ESTD-001",
+                  "P-TRE-TH-001",
+                  "TRE-RF-002",
+                  "TRE-PLAY-001",
+                  "TRE-PAT-001",
+                  "PRC-PLAY-001",
+                  "DECISION-CONSOLIDATION-SUPPLIER-001"
+                ],
+                "case_ids": [
+                  "CASE-XFN-001",
+                  "CASE-TRE-002",
+                  "CASE-PRC-002",
+                  "CASE-PRC-001",
+                  "CASE-LEG-003",
+                  "a8da351d-3446-5b13-a8eb-ec0638f8e186",
+                  "e9dc9ad8-342f-513b-8e05-7e6a53f72076",
+                  "df1a3556-26eb-51b9-8af0-6da1db3ccad7",
+                  "CASE-TRE-001",
+                  "CASE-LEG-001"
+                ],
+                "question_count": 24,
+                "cta_note_count": 22,
+                "hits": [
+                  {
+                    "id": "d653a38c-3075-5936-b8aa-ec92efe3966f",
+                    "score": 0.6613069,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "cross_functional",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "XFN-PAT-001",
+                      "confidence": "high",
+                      "tags": [
+                        "geopolitical event",
+                        "supplier or bank exposure",
+                        "near-term payment or shipment dependency"
+                      ],
+                      "domain": "cross_functional",
+                      "object_type": "pattern",
+                      "text": "Geopolitical shock to payment-to-supply disruption cascade\nA geopolitical or sanctions shock may first appear as a payment-routing issue, then create supplier non-payment, shipment hold, inventory run-down, production delay, customer contract exposure, and accounting/disclosure pressure.",
+                      "created_at": "2026-06-28T06:28:02.771789+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "f578bdf8-fc8c-5492-ae5d-0340a458c8ea",
+                    "score": 0.58749163,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "executive",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "DECISION-CONSOLIDATION-SANCTIONS-001",
+                      "confidence": "high",
+                      "tags": [
+                        "sanction",
+                        "restricted party",
+                        "screening",
+                        "beneficial ownership",
+                        "export control"
+                      ],
+                      "domain": "executive",
+                      "object_type": "decision_consolidation_rule",
+                      "text": "sanctions_review\nSanctions-related decisions require Legal ownership, with execution support from the affected function.\nsanction restricted party screening beneficial ownership export control",
+                      "created_at": "2026-06-28T06:28:55.916822+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "bec371df-e61f-5673-8d2c-427420f04ee8",
+                    "score": 0.53706115,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "legal",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "LEG-RF-001",
+                      "confidence": "high",
+                      "tags": [
+                        "counterparty in high-risk jurisdiction",
+                        "beneficial owner unknown",
+                        "ownership chain missing",
+                        "sanctions lists updated or suspected match"
+                      ],
+                      "domain": "legal",
+                      "object_type": "red_flag",
+                      "text": "Sanctions proximity through ownership and beneficial owner uncertainty\nA counterparty not named on a sanctions list can still create high sanctions risk if ownership, aggregate blocked-person ownership, or beneficial ownership is unknown or close to a blocked party.",
+                      "created_at": "2026-06-28T06:28:10.935045+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "cfc14d40-3da4-54cf-bf17-57462a378e32",
+                    "score": 0.49516243,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "legal",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "LEG-ESTD-001",
+                      "confidence": "high",
+                      "tags": [
+                        "sanctions screening or sanctions proximity is used in finding"
+                      ],
+                      "domain": "legal",
+                      "object_type": "evidence_standard",
+                      "text": "Sanctions evidence hierarchy\nFor sanctions conclusions, rank official lists and regulator guidance above media, vendor screening summaries, or commentary. Vendor screening output is supporting evidence but not final authority.",
+                      "created_at": "2026-06-28T06:28:17.114893+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "6ffcee67-d19b-550d-9b28-ddcd16c8731a",
+                    "score": 0.4903813,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "P-TRE-TH-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "payment due soon",
+                        "supplier criticality high"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "threshold",
+                      "text": "threshold\nPayment due within 14 days to a critical supplier should trigger joint treasury/legal/procurement review in high-risk contexts.",
+                      "created_at": "2026-06-28T06:28:40.221783+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "62fe5286-e20b-5d43-86ea-f94cd073dd5b",
+                    "score": 0.48793915,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "TRE-RF-002",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier criticality high",
+                        "payment due within 14 days",
+                        "country/bank/sanctions/logistics risk present"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "red_flag",
+                      "text": "Near-term critical supplier payment exposure\nPayment due within 14 days to a critical supplier in an affected country creates a decision conflict between payment control risk and operational continuity risk.",
+                      "created_at": "2026-06-28T06:28:05.460159+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "88c451b6-83fa-5909-9295-954ce5f56fc2",
+                    "score": 0.48189706,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "TRE-PLAY-001",
+                      "confidence": "high",
+                      "tags": [
+                        "Cash Mobility Score >=4 or Payment Disruption Score >=4",
+                        "decision deadline under 72 hours"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "playbook",
+                      "text": "Emergency treasury review within 0-72 hours\nFor high cash mobility or payment disruption risk, treasury should build a 72-hour action view: cash available now, payments at risk, banks/routes affected, critical supplier payments, alternative funding, and approvals required.",
+                      "created_at": "2026-06-28T06:28:09.187387+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "0fd4961f-8ea6-52e8-8368-858fa2a5afb3",
+                    "score": 0.47511935,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "TRE-PAT-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "bank disruption, correspondent banking issue, sanctions screening delay, payment rejected or at risk"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "pattern",
+                      "text": "Banking disruption to payment rerouting pattern\nIf a bank or correspondent route is impaired, the issue is not only whether cash exists, but whether payment can be executed in compliant time through an alternative bank, currency, entity or settlement route.",
+                      "created_at": "2026-06-28T06:28:10.090762+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "a10a103a-4372-51de-ad79-7d075d0726d2",
+                    "score": 0.4692987,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "PRC-PLAY-001",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier or logistics disruption medium-high or higher"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "playbook",
+                      "text": "0-72h procurement disruption response\nWithin 72 hours, procurement should confirm affected suppliers and parts, inventory runway, alternative sources, expedited logistics, customer priority, and contractual levers.",
+                      "created_at": "2026-06-28T06:28:29.056122+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "8f9e69f3-5a89-5dc3-870a-014eb3b53fc2",
+                    "score": 0.46191347,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "executive",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "DECISION-CONSOLIDATION-SUPPLIER-001",
+                      "confidence": "high",
+                      "tags": [
+                        "supplier",
+                        "procurement",
+                        "alternative",
+                        "inventory",
+                        "sourcing",
+                        "logistics",
+                        "shipment"
+                      ],
+                      "domain": "executive",
+                      "object_type": "decision_consolidation_rule",
+                      "text": "supplier_continuity\nSupplier continuity decisions should be consolidated into procurement and operations actions, not split across isolated risk memos.\nsupplier procurement alternative inventory sourcing logistics shipment",
+                      "created_at": "2026-06-28T06:28:58.160125+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  }
+                ],
+                "case_hits": [
+                  {
+                    "id": "a8da351d-3446-5b13-a8eb-ec0638f8e186",
+                    "score": 0.6712629,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "cross_functional",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-XFN-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "sanctions",
+                        "supplier_payment",
+                        "cross_mode_conflict",
+                        "decision_queue"
+                      ],
+                      "domain": "cross_functional",
+                      "object_type": "expert_case",
+                      "text": "Sanctions-adjacent supplier payment hold creates supply disruption\nGeopolitical shock increases sanctions risk. Treasury considers payment hold. Supplier threatens shipment hold. Legal requires ownership screening. Procurement has short inventory runway. Accounting may need disclosure if disruption crosses materiality.\nDecision should be framed as payment/legal/supply trade-off, not isolated sanctions or treasury issue.",
+                      "created_at": "2026-06-28T06:29:00.706371+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "e9dc9ad8-342f-513b-8e05-7e6a53f72076",
+                    "score": 0.6255542,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-TRE-002",
+                      "confidence": "medium",
+                      "tags": [
+                        "payment_disruption",
+                        "critical_supplier",
+                        "cash_mobility"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "expert_case",
+                      "text": "Critical supplier payment due within 10 days during bank disruption\nPayment is due soon to a critical supplier. Beneficiary bank is in an affected country. Payment could be delayed by sanctions screening or bank closure; supplier may stop shipment if unpaid.\nEscalate Treasury/Legal/Procurement joint review; do not issue single-mode payment recommendation.",
+                      "created_at": "2026-06-28T06:29:02.726321+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "a5d7c3fe-9868-5156-90a5-a24bf713f87e",
+                    "score": 0.5720129,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-PRC-002",
+                      "confidence": "medium",
+                      "tags": [
+                        "sub_tier",
+                        "hidden_dependency",
+                        "export_restriction"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "expert_case",
+                      "text": "Tier-1 supplier unaffected but sub-tier material concentrated\nTier-1 supplier reports no disruption, but underlying material is likely sourced from a region affected by export restrictions.\nSub-tier unknown should be treated as significant; generate hypotheses and ask procurement for BOM/sub-tier confirmation.",
+                      "created_at": "2026-06-28T06:29:12.042775+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "c232722d-5aed-5ad2-b79a-c6e188fc2cd3",
+                    "score": 0.45353287,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "procurement",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-PRC-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "sole_source",
+                        "inventory_runway",
+                        "qualification"
+                      ],
+                      "domain": "procurement",
+                      "object_type": "expert_case",
+                      "text": "Single-source component disrupted by natural disaster\nA critical component is sourced from one supplier in an affected region. Alternative source exists but is not approved and qualification takes months.\nSupplier substitution friction is high; decision should focus on inventory runway, customer prioritization and qualification acceleration.",
+                      "created_at": "2026-06-28T06:29:11.116675+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "df1a3556-26eb-51b9-8af0-6da1db3ccad7",
+                    "score": 0.4303258,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "legal",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-LEG-003",
+                      "confidence": "medium",
+                      "tags": [
+                        "payment_change",
+                        "red_flag",
+                        "export_control",
+                        "fraud"
+                      ],
+                      "domain": "legal",
+                      "object_type": "expert_case",
+                      "text": "Last-minute bank account change before payment\nSupplier requests last-minute change in payment bank, route and beneficiary details during geopolitical event.\nTreat as red flag for sanctions/fraud/export-control review; pause automated payment advice pending review.",
+                      "created_at": "2026-06-28T06:29:07.323204+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "a8da351d-3446-5b13-a8eb-ec0638f8e186",
+                    "score": 0.63051224,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "cross_functional",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-XFN-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "sanctions",
+                        "supplier_payment",
+                        "cross_mode_conflict",
+                        "decision_queue"
+                      ],
+                      "domain": "cross_functional",
+                      "object_type": "expert_case",
+                      "text": "Sanctions-adjacent supplier payment hold creates supply disruption\nGeopolitical shock increases sanctions risk. Treasury considers payment hold. Supplier threatens shipment hold. Legal requires ownership screening. Procurement has short inventory runway. Accounting may need disclosure if disruption crosses materiality.\nDecision should be framed as payment/legal/supply trade-off, not isolated sanctions or treasury issue.",
+                      "created_at": "2026-06-28T06:29:00.706371+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "e9dc9ad8-342f-513b-8e05-7e6a53f72076",
+                    "score": 0.53041553,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-TRE-002",
+                      "confidence": "medium",
+                      "tags": [
+                        "payment_disruption",
+                        "critical_supplier",
+                        "cash_mobility"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "expert_case",
+                      "text": "Critical supplier payment due within 10 days during bank disruption\nPayment is due soon to a critical supplier. Beneficiary bank is in an affected country. Payment could be delayed by sanctions screening or bank closure; supplier may stop shipment if unpaid.\nEscalate Treasury/Legal/Procurement joint review; do not issue single-mode payment recommendation.",
+                      "created_at": "2026-06-28T06:29:02.726321+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "df1a3556-26eb-51b9-8af0-6da1db3ccad7",
+                    "score": 0.48671383,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "legal",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-LEG-003",
+                      "confidence": "medium",
+                      "tags": [
+                        "payment_change",
+                        "red_flag",
+                        "export_control",
+                        "fraud"
+                      ],
+                      "domain": "legal",
+                      "object_type": "expert_case",
+                      "text": "Last-minute bank account change before payment\nSupplier requests last-minute change in payment bank, route and beneficiary details during geopolitical event.\nTreat as red flag for sanctions/fraud/export-control review; pause automated payment advice pending review.",
+                      "created_at": "2026-06-28T06:29:07.323204+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "0c8ed99a-0a42-5db2-8074-437df427ffab",
+                    "score": 0.47263747,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "treasury",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-TRE-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "cash_mobility",
+                        "trapped_cash",
+                        "liquidity_at_risk"
+                      ],
+                      "domain": "treasury",
+                      "object_type": "expert_case",
+                      "text": "Cash trapped in affected subsidiary after capital control announcement\nA subsidiary holds book cash in a jurisdiction where capital controls are announced. Group treasury wants to fund another region but transfer route and local permission are unknown.\nTreat cash as uncertain availability until transfer route is confirmed; exclude from unrestricted liquidity in stress case.",
+                      "created_at": "2026-06-28T06:29:01.787413+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  },
+                  {
+                    "id": "65106a7d-e65f-57e2-a2d9-4253e991cf4e",
+                    "score": 0.4614975,
+                    "payload": {
+                      "client_id": null,
+                      "scenario_id": null,
+                      "source_type": "expert_knowledge",
+                      "mode": "legal",
+                      "asset_id": null,
+                      "evidence_id": null,
+                      "document_id": "CASE-LEG-001",
+                      "confidence": "medium",
+                      "tags": [
+                        "sanctions",
+                        "beneficial_ownership",
+                        "ofac_50_rule"
+                      ],
+                      "domain": "legal",
+                      "object_type": "expert_case",
+                      "text": "Counterparty ownership chain incomplete in sanctions-exposed jurisdiction\nCounterparty is not on an official sanctions list, but beneficial ownership data is incomplete and one upstream owner resembles a blocked person name.\nHigh-confidence clearance is not appropriate; beneficial ownership and official list screening are required.",
+                      "created_at": "2026-06-28T06:29:05.335441+00:00",
+                      "embedding_provider": "openrouter"
+                    }
+                  }
+                ],
+                "deepagent_tool_invoked": true,
+                "knowledge_application_finding": {
+                  "similar_case_ids": [
+                    "CASE-XFN-001",
+                    "CASE-TRE-002",
+                    "CASE-PRC-002",
+                    "CASE-PRC-001",
+                    "CASE-LEG-003",
+                    "a8da351d-3446-5b13-a8eb-ec0638f8e186",
+                    "e9dc9ad8-342f-513b-8e05-7e6a53f72076",
+                    "df1a3556-26eb-51b9-8af0-6da1db3ccad7",
+                    "CASE-TRE-001",
+                    "CASE-LEG-001"
+                  ],
+                  "rubric_ids": [
+                    "XFN-PAT-001",
+                    "DECISION-CONSOLIDATION-SANCTIONS-001",
+                    "LEG-RF-001",
+                    "LEG-ESTD-001",
+                    "P-TRE-TH-001",
+                    "TRE-RF-002",
+                    "TRE-PLAY-001",
+                    "TRE-PAT-001",
+                    "PRC-PLAY-001",
+                    "DECISION-CONSOLIDATION-SUPPLIER-001"
+                  ],
+                  "red_flags": [
+                    "Official-source-first evidence standard",
+                    "Separate support, contradiction and background evidence",
+                    "Official-source-first evidence standard",
+                    "Separate support, contradiction and background evidence"
+                  ],
+                  "cta_note_ids": [
+                    "CTA-XFN-001",
+                    "CTA-XFN-002",
+                    "CTA-TRE-001",
+                    "CTA-TRE-002",
+                    "CTA-LEG-001",
+                    "CTA-LEG-002",
+                    "CTA-ACC-001",
+                    "CTA-ACC-002",
+                    "CTA-PRC-001",
+                    "CTA-PRC-002",
+                    "CTA-EXE-001",
+                    "CTA-XFN-001",
+                    "CTA-XFN-002",
+                    "CTA-TRE-001",
+                    "CTA-TRE-002",
+                    "CTA-LEG-001",
+                    "CTA-LEG-002",
+                    "CTA-ACC-001",
+                    "CTA-ACC-002",
+                    "CTA-PRC-001",
+                    "CTA-PRC-002",
+                    "CTA-EXE-001"
+                  ],
+                  "cta_notes": [
+                    "Do not collapse the issue into one risk score. Senior decision makers need an explicit trade-off with options.",
+                    "The right response is not to ignore the risk, but to lower confidence and request official-source confirmation.",
+                    "Treasury experts distinguish accounting cash from usable cash; practical mobility determines crisis value.",
+                    "Timing mismatch creates urgency even before the legal conclusion is known.",
+                    "Specialists focus on ownership and aggregation, not only exact name matches.",
+                    "Experts avoid doctrine-level conclusions until clause, causation, notice and governing law are reviewed."
+                  ],
+                  "counterfactuals": [
+                    "What if the supplier is outside Iran but its bank route is exposed?",
+                    "What if public evidence describes sector risk but not this client's product category?",
+                    "What if contract continuity risk is lower because alternate supply is already qualified?"
+                  ],
+                  "recommended_guardrails": [
+                    "LEG-ESTD-001"
+                  ],
+                  "additional_questions": [
+                    "What claim would be unsafe to make without an official source or specialist review?",
+                    "Which missing data point would most change the decision, and who owns it?",
+                    "If the current risk rating is wrong, is it more likely overstated or understated, and why?",
+                    "What is the most plausible cascade from external event to cash, contract, accounting and customer impact?",
+                    "Which cash balances are book cash but not practically available within the decision window?",
+                    "Which payments are due before the risk can be clarified, and which of them support critical suppliers or operations?"
+                  ],
+                  "review_required": true,
+                  "rationale": "Expert-as-Code selected bounded comparable cases, rubrics, red flags, CTA notes, and counterfactual checks."
+                }
+              }
+            },
+            {
+              "agent_name": "evidence-redteam-agent",
+              "mode": "evidence_red_team",
+              "summary": "Red team reviewed 5 evidence items.",
+              "risk_score": null,
+              "confidence": "medium",
+              "evidence_ids": [],
+              "assumptions": [],
+              "unknowns": [
+                "{'field': 'payments', 'detail': '0 payments found in structured dataset for Iran despite scenario describing payment disruptions through Iranian corridors or regional trade partners', 'severity': 'high', 'impact': 'Cannot validate payment exposure amounts, currencies, or near-term due dates'}",
+                "{'field': 'suppliers', 'detail': '0 suppliers found in structured dataset for Iran despite scenario referencing high-criticality suppliers (Noveria, no alternative) facing shipping and payment channel disruptions', 'severity': 'high', 'impact': 'Cannot validate supplier criticality, sub-tier dependencies, or alternative sourcing options'}"
+              ],
+              "recommended_actions": [
+                "Separate facts, assumptions, and inferred risk paths in the final output."
+              ],
+              "review_required": true,
+              "rationale": "Evidence / Red Team Agent reads Evidence Ledger through MCP and challenges confidence.",
+              "metadata": {
+                "evidence_count": 5,
+                "contradiction_searches": [
+                  {
+                    "query": "Iran sanctions payment disruption supply chain",
+                    "results": [
+                      {
+                        "id": "43acf8a7-3ab2-5206-9154-0a854d34b7c9",
+                        "score": 0.6102545,
+                        "payload": {
+                          "client_id": "demo_client",
+                          "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_004",
+                          "document_id": null,
+                          "source_url": "https://www.ismworld.org/supply-management-news-and-reports/news-publications/inside-supply-management-magazine/blog/2026/2026-03/disruption-has-become-the-name-of-the-game",
+                          "source_title": "Iran War Shows Disruption Has Become the Name of the Game",
+                          "source_domain": "ismworld.org",
+                          "reliability": "medium",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "sanctions_screening",
+                            "payment_disruption",
+                            "supply_chain_disruption"
+                          ],
+                          "text": "The Iran war is disrupting supply chains, driving up oil prices and causing shipments to be rerouted. But it is not the only dynamic",
+                          "created_at": "2026-06-28T06:26:31.502835+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "6ea84492-13c9-5591-acb4-303af665b2fc",
+                        "score": 0.60861635,
+                        "payload": {
+                          "client_id": "demo_client",
+                          "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_005",
+                          "document_id": null,
+                          "source_url": "https://www.oxfordcollegeofprocurementandsupply.com/how-the-iran-conflict-is-disrupting-global-supply-chains",
+                          "source_title": "How the Iran Conflict Is Disrupting Global Supply Chains - Oxford College of Procurement and Supply",
+                          "source_domain": "oxfordcollegeofprocurementandsupply.com",
+                          "reliability": "medium",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "sanctions_screening",
+                            "payment_disruption",
+                            "supply_chain_disruption"
+                          ],
+                          "text": "[Skip to content](#content)\n\n**Call Us Today!**  [**+44 (0)1865 515255**](tel:+441865515255)\n\n# How the Iran Conflict Is Disrupting Global Supply Chains\n\nHow the Iran Conflict Is Disrupting Global Supply Chains\n\nThe ongoing Iran conflict has the potential to significantly disrupt global supply chains. As the Middle East is a key hub for energy production and international shipping routes, instability in the region can have widespread economic consequences.\n\nFrom rising energy prices to disrupted shipping routes, the Iran conflict could create major challenges for supply chain professionals, procurement teams and global businesses.\n\n## Why the Strait of Hormuz Matters for Global Trade\n\nOne of the most critical factors is the Strait of Hormuz, a narrow shipping route between Iran and Oman. It is one of the world’s most important maritime chokepoints, with around a quarter of global crude oil shipments passing through it daily.\n\nIf conflict restricts traffic through this route, global energy supply can be affected almost immediately. Military escalation in the region has already led to disruptions in oil and natural gas shipments, contributing to rising energy prices.\n\n## Rising Energ",
+                          "created_at": "2026-06-28T06:26:33.128718+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "7ffc1dc5-9f4d-5187-b96e-783d41b271b3",
+                        "score": 0.46651578,
+                        "payload": {
+                          "client_id": "demo_client",
+                          "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_003",
+                          "document_id": null,
+                          "source_url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions",
+                          "source_title": "Iran Sanctions | Office of Foreign Assets Control",
+                          "source_domain": "ofac.treasury.gov",
+                          "reliability": "high",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "sanctions_screening",
+                            "payment_disruption",
+                            "supply_chain_disruption"
+                          ],
+                          "text": "*   [91 FR 24722-26](https://ofac.treasury.gov/media/935616/download?inline \"fr91_24722iran.pdf\") - Iranian Transactions and Sanctions Regulations Web General Licenses. *   [90 FR 47230-25](https://ofac.treasury.gov/media/934666/download?inline \"fr90_47230_iran.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License R. *   [90 FR 43559-25](https://ofac.treasury.gov/media/934611/download?inline \"fr90_43559.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License Q. *   [88 FR 46688-23](https://ofac.treasury.gov/media/932006/download?inline \"fr88_46688.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License P. *   [88 FR 32105-23](https://ofac.treasury.gov/media/931856/download?inline \"fr88_32105.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License O. *   [87 FR 62003-22](https://ofac.treasury.gov/media/928871/download?inline \"fr87_62003.pdf\") - Publication of Iranian Transactions and Sanctions Regulations Web General License D–2. *   [79 FR 18990-14](https://ofac.treasury.gov/media/7986/download?inline \"fr79_18990.pdf\") - Final Rule Amending the I",
+                          "created_at": "2026-06-28T06:26:29.889949+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "c8fc20b1-a272-525d-b156-c16dafbab115",
+                        "score": 0.44967055,
+                        "payload": {
+                          "client_id": "demo_client",
+                          "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_001",
+                          "document_id": null,
+                          "source_url": "https://home.treasury.gov/news/press-releases/sb0477",
+                          "source_title": "Economic Fury Targets Iran Shadow Banking Facilitators | U.S. Department of the Treasury",
+                          "source_domain": "home.treasury.gov",
+                          "reliability": "high",
+                          "confidence": "high",
+                          "tags": [
+                            "supplier_resilience",
+                            "sanctions_screening",
+                            "payment_disruption",
+                            "supply_chain_disruption"
+                          ],
+                          "text": "**WASHINGTON**—Today, as part of Economic Fury, the U.S. Department of the Treasury’s Office of Foreign Assets Control (OFAC) designated 35 entities and individuals that oversee Iran’s shadow banking architecture, facilitating the movement of the equivalent of tens of billions of dollars tied to sanctions evasion and Iran’s sponsorship of terrorism. Today’s action is being taken pursuant to E.O. 13902, which targets persons operating in Iran’s financial sector, and E.O. 13224, as amended, a counterterrorism authority. These designations build on OFAC’s January 15, 2026 shadow banking action, which targeted the rahbar networks of Bank Melli and Bank-e Shahr (Shahr Bank). The rahbar companies closely coordinate with Iranian exchange houses and a myriad of front companies in multiple jurisdictions to facilitate payments for Iran’s sanctioned trade, including on behalf of the IRGC, Iran’s Armed Forces General Staff (AFGS), Iran’s National Iranian Oil Company (NIOC), and other sanctioned entities. Farab Soroush Afagh Qeshm Company is being designated pursuant to E.O. 13902 for operating in the financial sector of the Iranian economy.",
+                          "created_at": "2026-06-28T06:26:26.367803+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      },
+                      {
+                        "id": "a35a355f-eaff-58c6-b2b6-5d5fefa56832",
+                        "score": 0.41663998,
+                        "payload": {
+                          "client_id": "demo_client",
+                          "scenario_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001",
+                          "source_type": "web",
+                          "mode": "evidence",
+                          "asset_id": null,
+                          "evidence_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_002",
+                          "document_id": null,
+                          "source_url": "https://www.govinfo.gov/content/pkg/CFR-2022-title31-vol3/pdf/CFR-2022-title31-vol3-part561.pdf",
+                          "source_title": "[PDF] 460 PART 561—IRANIAN FINANCIAL SANCTIONS REGULATIONS",
+                          "source_domain": "govinfo.gov",
+                          "reliability": "high",
+                          "confidence": "medium",
+                          "tags": [
+                            "supplier_resilience",
+                            "sanctions_screening",
+                            "payment_disruption",
+                            "supply_chain_disruption"
+                          ],
+                          "text": "VerDate Sep<11>2014 16:17 Dec 01, 2022 Jkt 256131 PO 00000 Frm 00476 Fmt 8010 Sfmt 8010 Q:\\31\\31V3.TXT PC31 kpayne on VMOFRWIN702 with $$_JOB 467 Office of Foreign Assets Control, Treasury § 561.203 (j) A financial transaction conducted or facilitated by a foreign financial in-stitution is described in this paragraph (j) if: (1) The financial transaction is only for trade in goods or services that ei-ther originate in the country with pri-mary jurisdiction over the foreign fi-nancial institution and are exported and sold directly to Iran or originate in Iran and are exported and sold directly to the country with primary jurisdic-tion over the foreign financial institu-tion; (2) Any funds owed to the country with primary jurisdiction over the for-eign financial institution as a result of such trade are paid to: (i) Individuals who are citizens, na-tionals, or permanent residents of the country with primary jurisdiction over the foreign financial institution; or (ii) Entities organized under the laws of the country with primary jurisdic-tion over the foreign financial institu-tion that are not the Government of Iran, as defined in § 561.321; (3) Any funds owed to Iran as a result of ",
+                          "created_at": "2026-06-28T06:26:28.184897+00:00",
+                          "embedding_provider": "openrouter"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "missing_data": [
+                  "{'field': 'payments', 'detail': '0 payments found in structured dataset for Iran despite scenario describing payment disruptions through Iranian corridors or regional trade partners', 'severity': 'high', 'impact': 'Cannot validate payment exposure amounts, currencies, or near-term due dates'}",
+                  "{'field': 'suppliers', 'detail': '0 suppliers found in structured dataset for Iran despite scenario referencing high-criticality suppliers (Noveria, no alternative) facing shipping and payment channel disruptions', 'severity': 'high', 'impact': 'Cannot validate supplier criticality, sub-tier dependencies, or alternative sourcing options'}"
+                ],
+                "overclaims": [
+                  "{'claim': 'Scenario describes payment disruptions and supplier impacts involving Iran', 'issue': 'Structured payments and suppliers datasets contain 0 rows for Iran, making it impossible to substantiate the described payment disruption and supplier impact claims', 'severity': 'high', 'recommendation': 'Flag for review — either data is missing from structured sources or scenario claims are unsubstantiated'}"
+                ],
+                "deepagent_tool_invoked": true,
+                "decision_queue_written": false
+              }
+            },
+            {
+              "agent_name": "decision-synthesis-agent",
+              "mode": "decision_synthesis",
+              "summary": "Generated Decision Queue, Executive Brief, Evidence Summary, Red Team Review, Unknowns, and Trace Metadata.",
+              "risk_score": 75,
+              "confidence": "medium",
+              "evidence_ids": [
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_001",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_002",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_003",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_004",
+                "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_005"
+              ],
+              "assumptions": [],
+              "unknowns": [],
+              "recommended_actions": [
+                "Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval."
+              ],
+              "review_required": true,
+              "rationale": "Decision Synthesis Agent writes final artifacts via MCP filesystem and uses Evidence Ledger through MCP.",
+              "metadata": {
+                "decision": {
+                  "decision_id": "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_decision_001",
+                  "decision": "Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval.",
+                  "owner": "CFO / Legal / Procurement",
+                  "deadline": "24 hours",
+                  "rationale": "Treasury, legal, accounting, and procurement findings converge on payment and supplier continuity risk.",
+                  "options": [
+                    "Proceed after screening",
+                    "Hold pending legal review",
+                    "Prepare approved alternative route"
+                  ],
+                  "evidence_ids": [
+                    "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_001",
+                    "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_002",
+                    "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_003",
+                    "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_004",
+                    "scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001_tavily_005"
+                  ],
+                  "expert_knowledge_ids": [
+                    "XFN-PAT-001",
+                    "DECISION-CONSOLIDATION-SANCTIONS-001",
+                    "LEG-RF-001",
+                    "LEG-ESTD-001",
+                    "P-TRE-TH-001",
+                    "TRE-RF-002",
+                    "TRE-PLAY-001",
+                    "TRE-PAT-001",
+                    "PRC-PLAY-001",
+                    "DECISION-CONSOLIDATION-SUPPLIER-001",
+                    "CASE-XFN-001",
+                    "CASE-TRE-002",
+                    "CASE-PRC-002",
+                    "CASE-PRC-001",
+                    "CASE-LEG-003",
+                    "a8da351d-3446-5b13-a8eb-ec0638f8e186",
+                    "e9dc9ad8-342f-513b-8e05-7e6a53f72076",
+                    "df1a3556-26eb-51b9-8af0-6da1db3ccad7",
+                    "CASE-TRE-001",
+                    "CASE-LEG-001"
+                  ],
+                  "risk_if_delayed": "Uncontrolled payment or delayed supplier action can worsen sanctions, liquidity, and supply risk.",
+                  "review_required": true,
+                  "priority": 1
+                },
+                "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_demo_client_iran_war_escalation_affecting_supplier_payments_disc_001"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

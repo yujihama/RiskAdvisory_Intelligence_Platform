@@ -1,0 +1,392 @@
+{
+  "request": {
+    "event_title": "Regional conflict escalation affecting manufacturing continuity",
+    "event_description": "Conflict escalation may disrupt logistics, energy costs, supplier continuity, payment routes, and executive-level trade-off decisions.",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_type": "company",
+      "scope_name": "FUJIFILM Executive Management",
+      "department": "Executive",
+      "region": null,
+      "site_id": null,
+      "metadata": {
+        "industry": "manufacturing"
+      }
+    },
+    "countries": [
+      "Iran"
+    ],
+    "event_date": null,
+    "max_risks": 3
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "Iran supplier disruption due to conflict escalation",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Geopolitical Conflict",
+        "Supplier Continuity",
+        "Logistics Disruption"
+      ],
+      "affected_categories": [
+        "Operations",
+        "Procurement"
+      ],
+      "description": "FUJIFILM has a high-criticality supplier located in Iran with no alternative source and only 8–30 days of inventory. Escalation of regional conflict directly threatens the continuity of supply from this supplier, with no immediate fallback available.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "suppliers_feature_001",
+        "SCOPE-IND-MANUFACTURING-001:primary",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Direct scope match: high-criticality Iran supplier with no alternative and limited inventory buffer. Conflict escalation in Iran creates immediate supply continuity risk for Executive Management overseeing manufacturing operations.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-AUG-EXEC",
+      "title": "Cross-functional executive decision urgency: Regional conflict escalation affecting manufacturing continuity",
+      "risk_type": "executive_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "decision_urgency",
+        "operational_resilience",
+        "cross_mode_conflict"
+      ],
+      "affected_categories": [
+        "critical_services",
+        "decision_queue",
+        "specialist_review"
+      ],
+      "description": "The event may require an executive trade-off across treasury, legal, accounting, procurement, and operations. Event: Conflict escalation may disrupt logistics, energy costs, supplier continuity, payment routes, and executive-level trade-off decisions.",
+      "urgency": "high",
+      "relevance_score": 97,
+      "scope_matches": [
+        "coverage_augmentation:executive_scope",
+        "Executive",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Added by deterministic coverage augmentation for company or executive scope.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-003",
+      "title": "Contractual force majeure and sanctions clause activation across multi-jurisdiction portfolio",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Force Majeure",
+        "Sanctions Compliance",
+        "Cross-Border Contract Risk"
+      ],
+      "affected_categories": [
+        "Legal",
+        "Procurement",
+        "Operations"
+      ],
+      "description": "FUJIFILM holds contracts governed by England, Singapore, Japan, Germany, and New York law, many with both force majeure and sanctions clauses. Conflict escalation in Iran may trigger force majeure events or sanctions-related termination rights across these jurisdictions, requiring coordinated executive response.",
+      "urgency": "medium",
+      "relevance_score": 77,
+      "scope_matches": [
+        "contracts_feature_001",
+        "contracts_feature_002",
+        "contracts_feature_003",
+        "contracts_feature_004",
+        "contracts_feature_005",
+        "Executive"
+      ],
+      "rationale": "Scope match: multi-jurisdiction contract portfolio with sanctions and force majeure clauses. Executive Management must evaluate cross-border contractual exposures, termination rights, and renegotiation strategies as conflict impacts logistics, energy costs, and supplier continuity.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-002",
+      "title": "Near-term payment exposure to Iran under sanctions risk",
+      "risk_type": "payment_disruption",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Sanctions Compliance",
+        "Payment Disruption",
+        "Geopolitical Conflict"
+      ],
+      "affected_categories": [
+        "Finance",
+        "Treasury"
+      ],
+      "description": "A pending material payment of $1M–$5M to Iran is due within 0–7 days. Conflict escalation increases the risk of payment blockage, regulatory enforcement actions, or secondary sanctions exposure on counterparties facilitating the transaction.",
+      "urgency": "high",
+      "relevance_score": 65,
+      "scope_matches": [
+        "payments_feature_001"
+      ],
+      "rationale": "Direct scope match: near-term material payment to Iran. Conflict escalation heightens sanctions enforcement risk and payment routing disruption, requiring executive-level trade-off decisions on compliance vs. operational continuity.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_fujifilm_dummy_regional_conflict_escalation_affecting_manufacturing_continuity_d",
+    "client_id": "fujifilm_dummy",
+    "title": "Iran supplier disruption due to conflict escalation",
+    "risk_type": "supplier_resilience",
+    "countries": [
+      "Iran"
+    ],
+    "risk_themes": [
+      "Geopolitical Conflict",
+      "Supplier Continuity",
+      "Logistics Disruption"
+    ],
+    "affected_categories": [
+      "Operations",
+      "Procurement"
+    ],
+    "description": "FUJIFILM has a high-criticality supplier located in Iran with no alternative source and only 8–30 days of inventory. Escalation of regional conflict directly threatens the continuity of supply from this supplier, with no immediate fallback available.",
+    "event_date": "2026-06-28",
+    "urgency": "high"
+  },
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_regional_conflict_escalation_affecting_manufacturing_continuity_d",
+      "client_id": "fujifilm_dummy",
+      "title": "Iran supplier disruption due to conflict escalation",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Geopolitical Conflict",
+        "Supplier Continuity",
+        "Logistics Disruption"
+      ],
+      "affected_categories": [
+        "Operations",
+        "Procurement"
+      ],
+      "description": "FUJIFILM has a high-criticality supplier located in Iran with no alternative source and only 8–30 days of inventory. Escalation of regional conflict directly threatens the continuity of supply from this supplier, with no immediate fallback available.",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_regional_conflict_escalation_affecting_manufacturing_continuity_d",
+      "client_id": "fujifilm_dummy",
+      "title": "Cross-functional executive decision urgency: Regional conflict escalation affecting manufacturing continuity",
+      "risk_type": "executive_resilience",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "decision_urgency",
+        "operational_resilience",
+        "cross_mode_conflict"
+      ],
+      "affected_categories": [
+        "critical_services",
+        "decision_queue",
+        "specialist_review"
+      ],
+      "description": "The event may require an executive trade-off across treasury, legal, accounting, procurement, and operations. Event: Conflict escalation may disrupt logistics, energy costs, supplier continuity, payment routes, and executive-level trade-off decisions.",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_regional_conflict_escalation_affecting_manufacturing_continuity_d",
+      "client_id": "fujifilm_dummy",
+      "title": "Contractual force majeure and sanctions clause activation across multi-jurisdiction portfolio",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Force Majeure",
+        "Sanctions Compliance",
+        "Cross-Border Contract Risk"
+      ],
+      "affected_categories": [
+        "Legal",
+        "Procurement",
+        "Operations"
+      ],
+      "description": "FUJIFILM holds contracts governed by England, Singapore, Japan, Germany, and New York law, many with both force majeure and sanctions clauses. Conflict escalation in Iran may trigger force majeure events or sanctions-related termination rights across these jurisdictions, requiring coordinated executive response.",
+      "event_date": "2026-06-28",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_regional_conflict_escalation_affecting_manufacturing_continuity_d",
+      "client_id": "fujifilm_dummy",
+      "title": "Near-term payment exposure to Iran under sanctions risk",
+      "risk_type": "payment_disruption",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Sanctions Compliance",
+        "Payment Disruption",
+        "Geopolitical Conflict"
+      ],
+      "affected_categories": [
+        "Finance",
+        "Treasury"
+      ],
+      "description": "A pending material payment of $1M–$5M to Iran is due within 0–7 days. Conflict escalation increases the risk of payment blockage, regulatory enforcement actions, or secondary sanctions exposure on counterparties facilitating the transaction.",
+      "event_date": "2026-06-28",
+      "urgency": "high"
+    }
+  ],
+  "generated_at": "2026-06-28T06:56:23.489974Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "payments": {
+        "dataset": "payments",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [
+          "EUR",
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 5,
+        "amount_buckets": {
+          "1m_5m": 2,
+          "gte_50m": 1,
+          "250k_1m": 2
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      },
+      "regions": {
+        "dataset": "regions",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 5,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      },
+      "segments": {
+        "dataset": "segments",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 5,
+        "countries": [
+          "Japan",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      }
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 3,
+    "coverage_augmented_candidate_count": 1,
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which pending payments are near term and routed through affected bank countries?",
+      "Which alternate payment routes are available without increasing sanctions risk?",
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?",
+      "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+      "Which counterparties require beneficial ownership or restricted party review?",
+      "Which selected risks require executive cross-functional decision ownership?",
+      "Which evidence gaps block immediate mitigation decisions?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring.",
+      "Near-term payment route availability and sanctions-screening ownership are not yet validated.",
+      "Counterparty restricted-party status and contract notice obligations require legal validation."
+    ],
+    "scope_relevance_rule_count": 10
+  }
+}

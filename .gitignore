@@ -8,7 +8,11 @@ __pycache__/
 data/scenarios/*
 !data/scenarios/*.json
 data/evidence/
-outputs/
+outputs/*
+!outputs/evaluation/
+!outputs/evaluation/**
+!outputs/risk_discovery/
+!outputs/risk_discovery/**
 dist/
 build/
 *.egg-info/

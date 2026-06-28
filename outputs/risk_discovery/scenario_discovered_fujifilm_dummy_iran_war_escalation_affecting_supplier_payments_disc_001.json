@@ -1,0 +1,114 @@
+{
+  "request": {
+    "event_title": "Iran war escalation affecting supplier payments",
+    "event_description": "Shipping, sanctions screening, energy prices, and supplier payments may be disrupted.",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_type": "department",
+      "scope_name": "Healthcare",
+      "department": "Healthcare",
+      "region": null,
+      "site_id": null,
+      "metadata": {}
+    },
+    "countries": [
+      "Iran"
+    ],
+    "event_date": null,
+    "max_risks": 1
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "Disruption of Iranian medical-service-partner payments due to sanctions escalation",
+      "risk_type": "Supply Chain Disruption",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Sanctions Compliance",
+        "Supplier Payment Failure",
+        "Geopolitical Escalation"
+      ],
+      "affected_categories": [
+        "Procurement",
+        "Healthcare Operations",
+        "Treasury"
+      ],
+      "description": "Escalation of the Iran conflict may trigger enhanced sanctions screening, blocking or delaying payments to SUP-FJ-IR-001 (Tehran Medical Service Partner), a high-criticality supplier with no alternative source. The $2.4M pending payment (PAY-FJ-IR-1001) routed through a Tehran correspondent bank is at immediate risk of being frozen. This could halt supply of medical systems field-service parts to the Healthcare department's Japan site (SITE-FJ-HEALTH-JP-01), disrupting service operations and patient care equipment maintenance.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "client_id: fujifilm_dummy",
+        "department: Healthcare",
+        "country: Iran",
+        "department",
+        "Healthcare",
+        "SITE-FJ-HEALTH-JP-01",
+        "Japan",
+        "high",
+        "SCOPE-SEG-HEALTHCARE-001:term",
+        "regions:Healthcare",
+        "segments:Healthcare",
+        "sites:Healthcare"
+      ],
+      "rationale": "Direct exposure: high-criticality Iran-based supplier with no alternative, pending payment through Iranian bank, and Healthcare department reliance on medical service parts. Sanctions escalation and shipping disruption compound the risk of immediate payment failure and downstream supply halt.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_fujifilm_dummy_iran_war_escalation_affecting_supplier_payments_disc_001",
+    "client_id": "fujifilm_dummy",
+    "title": "Disruption of Iranian medical-service-partner payments due to sanctions escalation",
+    "risk_type": "Supply Chain Disruption",
+    "countries": [
+      "Iran"
+    ],
+    "risk_themes": [
+      "Sanctions Compliance",
+      "Supplier Payment Failure",
+      "Geopolitical Escalation"
+    ],
+    "affected_categories": [
+      "Procurement",
+      "Healthcare Operations",
+      "Treasury"
+    ],
+    "description": "Escalation of the Iran conflict may trigger enhanced sanctions screening, blocking or delaying payments to SUP-FJ-IR-001 (Tehran Medical Service Partner), a high-criticality supplier with no alternative source. The $2.4M pending payment (PAY-FJ-IR-1001) routed through a Tehran correspondent bank is at immediate risk of being frozen. This could halt supply of medical systems field-service parts to the Healthcare department's Japan site (SITE-FJ-HEALTH-JP-01), disrupting service operations and patient care equipment maintenance.",
+    "event_date": "2026-06-28",
+    "urgency": "high"
+  },
+  "generated_at": "2026-06-28T04:13:16.384374Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 1,
+    "fallback_used": false,
+    "scope_relevance_rule_count": 10
+  }
+}

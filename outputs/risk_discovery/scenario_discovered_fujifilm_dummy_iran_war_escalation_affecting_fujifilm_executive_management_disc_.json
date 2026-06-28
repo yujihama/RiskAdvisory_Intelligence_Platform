@@ -1,0 +1,167 @@
+{
+  "request": {
+    "event_title": "Iran war escalation affecting FUJIFILM executive management",
+    "event_description": "Iran war escalation may disrupt sanctions screening, Middle East shipping routes, energy prices, supplier continuity, payments, and executive-level decisions for FUJIFILM healthcare, electronics, imaging, and business innovation operations.",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_type": "company",
+      "scope_name": "FUJIFILM Executive Management",
+      "department": "Executive",
+      "region": null,
+      "site_id": null,
+      "metadata": {
+        "industry": "manufacturing"
+      }
+    },
+    "countries": [
+      "Iran"
+    ],
+    "event_date": null,
+    "max_risks": 3
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-003",
+      "title": "Executive decision paralysis from geopolitical uncertainty",
+      "risk_type": "Strategic",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Geopolitical",
+        "Governance",
+        "Business Continuity"
+      ],
+      "affected_categories": [
+        "Executive",
+        "Strategy",
+        "Corporate Development"
+      ],
+      "description": "Iran war escalation creates cascading uncertainty across FUJIFILM's diversified operations — healthcare, electronics, imaging, and business innovation — potentially delaying or derailing executive-level strategic decisions on capital allocation, M&A, and market expansion. Energy price volatility and sanctions complexity compound decision-making risk at the executive tier.",
+      "urgency": "medium",
+      "relevance_score": 97,
+      "scope_matches": [
+        "Executive management decision-making",
+        "FUJIFILM corporate strategy",
+        "Cross-business unit coordination",
+        "Executive",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Direct scope match: The event explicitly affects executive management. The scope is defined as 'FUJIFILM Executive Management' in the Executive department, making strategic decision disruption the most directly relevant risk to this scope.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-001",
+      "title": "Sanctions compliance breach via Iranian supplier and payment channels",
+      "risk_type": "Compliance",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Sanctions",
+        "Regulatory",
+        "Trade Controls"
+      ],
+      "affected_categories": [
+        "Legal",
+        "Procurement",
+        "Finance"
+      ],
+      "description": "Escalation of Iran war increases risk of inadvertent sanctions violations through existing supplier relationship with Tehran Medical Service Partner (SUP-FJ-IR-001), a high-criticality supplier with no alternative available, and pending USD payment of $2.4M routed through a Tehran correspondent bank. Sanctions clauses exist in contract CTR-FJ-IR-9001 but enforcement under active conflict is uncertain.",
+      "urgency": "high",
+      "relevance_score": 85,
+      "scope_matches": [
+        "Executive oversight of sanctions exposure",
+        "FUJIFILM healthcare operations dependent on Iranian medical service parts",
+        "Executive-level compliance governance",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Direct scope match: Executive management is responsible for sanctions compliance and supplier continuity. The Iranian supplier is high-criticality with no alternative, and a pending payment exists through an Iranian bank — both directly threatened by Iran war escalation.",
+      "selected_for_analysis": false
+    },
+    {
+      "candidate_id": "DISC-002",
+      "title": "Middle East logistics disruption to healthcare supply chain",
+      "risk_type": "Operational",
+      "countries": [
+        "Iran"
+      ],
+      "risk_themes": [
+        "Supply Chain",
+        "Geopolitical",
+        "Logistics"
+      ],
+      "affected_categories": [
+        "Operations",
+        "Procurement",
+        "Healthcare"
+      ],
+      "description": "Iran war escalation disrupts Middle East shipping routes, directly impacting Gulf Logistics Corridor (SUP-FJ-GULF-002), a high-criticality UAE-based supplier providing cold-chain and spare-parts logistics for FUJIFILM healthcare operations in Japan. While an alternative is available, rerouting and contract transition under active conflict could cause significant delays to medical systems field-service operations.",
+      "urgency": "high",
+      "relevance_score": 85,
+      "scope_matches": [
+        "Executive oversight of supply chain resilience",
+        "FUJIFILM healthcare business unit operations",
+        "Middle East route dependency",
+        "SCOPE-IND-MANUFACTURING-001:term"
+      ],
+      "rationale": "Direct scope match: Executive management must ensure healthcare supply continuity. The UAE logistics supplier is critical to medical systems service delivery, and war escalation in Iran directly threatens adjacent Middle East shipping corridors.",
+      "selected_for_analysis": false
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_fujifilm_dummy_iran_war_escalation_affecting_fujifilm_executive_management_disc_",
+    "client_id": "fujifilm_dummy",
+    "title": "Executive decision paralysis from geopolitical uncertainty",
+    "risk_type": "Strategic",
+    "countries": [
+      "Iran"
+    ],
+    "risk_themes": [
+      "Geopolitical",
+      "Governance",
+      "Business Continuity"
+    ],
+    "affected_categories": [
+      "Executive",
+      "Strategy",
+      "Corporate Development"
+    ],
+    "description": "Iran war escalation creates cascading uncertainty across FUJIFILM's diversified operations — healthcare, electronics, imaging, and business innovation — potentially delaying or derailing executive-level strategic decisions on capital allocation, M&A, and market expansion. Energy price volatility and sanctions complexity compound decision-making risk at the executive tier.",
+    "event_date": "2026-06-28",
+    "urgency": "medium"
+  },
+  "generated_at": "2026-06-28T04:17:11.704126Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 3,
+    "fallback_used": false,
+    "scope_relevance_rule_count": 10
+  }
+}

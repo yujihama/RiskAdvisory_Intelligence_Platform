@@ -1,0 +1,300 @@
+{
+  "summary": {
+    "case_count": 4,
+    "passed": false,
+    "average_recall": 0.4375,
+    "average_question_match": 0.5191761363636364,
+    "average_question_semantic_match": 0.5191761363636364,
+    "average_missing_data_category_match": 0.5,
+    "average_reason_quality": 1.0,
+    "average_expert_rubric_coverage": 1.0,
+    "forbidden_top_violation_count": 0,
+    "failed_case_ids": [
+      "rdc_treasury_iran_payment_001",
+      "rdc_legal_sanctions_contract_001"
+    ],
+    "min_recall": 0.75,
+    "min_question_match": 0.25,
+    "min_missing_data_match": 0.5,
+    "min_reason_quality": 0.75,
+    "min_rubric_coverage": 0.5
+  },
+  "cases": [
+    {
+      "case_id": "rdc_treasury_iran_payment_001",
+      "passed": false,
+      "recall": 0.0,
+      "expected_selected_risk_types": [
+        "payment_disruption"
+      ],
+      "selected_risk_types": [
+        "supplier_resilience",
+        "supplier_resilience",
+        "supplier_resilience"
+      ],
+      "expected_hits": [],
+      "top_risk_types": [
+        "supplier_resilience",
+        "supplier_resilience",
+        "supplier_resilience"
+      ],
+      "should_not_prioritize": [
+        "accounting_disclosure"
+      ],
+      "forbidden_in_top": [],
+      "question_match": 0.03125,
+      "question_semantic_match": 0.03125,
+      "expected_questions": [
+        "Which pending payments are near term and routed through affected bank countries?",
+        "Which alternate payment routes are available without increasing sanctions risk?"
+      ],
+      "actual_questions": [
+        "Which critical suppliers have low inventory runway or no qualified alternative source?",
+        "Which logistics lanes or sites need immediate continuity validation?",
+        "Validated external evidence is still required before final risk scoring."
+      ],
+      "expected_missing_data_categories": [
+        "payment_route",
+        "sanctions_screening"
+      ],
+      "actual_missing_data_categories": [
+        "evidence_gap",
+        "materiality_reporting",
+        "supplier_continuity"
+      ],
+      "missing_data_category_hits": [],
+      "missing_data_category_match": 0.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-DEPT-TREASURY-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-DEPT-TREASURY-001",
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-DEPT-TREASURY-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "rejected_count": 0
+    },
+    {
+      "case_id": "rdc_legal_sanctions_contract_001",
+      "passed": false,
+      "recall": 0.0,
+      "expected_selected_risk_types": [
+        "legal_compliance"
+      ],
+      "selected_risk_types": [
+        "supplier_resilience",
+        "supplier_resilience",
+        "accounting_disclosure"
+      ],
+      "expected_hits": [],
+      "top_risk_types": [
+        "supplier_resilience",
+        "supplier_resilience",
+        "accounting_disclosure"
+      ],
+      "should_not_prioritize": [
+        "payment_disruption"
+      ],
+      "forbidden_in_top": [],
+      "question_match": 0.045454545454545456,
+      "question_semantic_match": 0.045454545454545456,
+      "expected_questions": [
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?"
+      ],
+      "actual_questions": [
+        "Which critical suppliers have low inventory runway or no qualified alternative source?",
+        "Which logistics lanes or sites need immediate continuity validation?",
+        "Which exposures could become material for impairment, provision, or disclosure?",
+        "What evidence package is required for auditor review?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Materiality and auditor evidence sufficiency require accounting validation."
+      ],
+      "expected_missing_data_categories": [
+        "contract_terms",
+        "sanctions_screening"
+      ],
+      "actual_missing_data_categories": [
+        "evidence_gap",
+        "materiality_reporting",
+        "supplier_continuity"
+      ],
+      "missing_data_category_hits": [],
+      "missing_data_category_match": 0.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-DEPT-LEGAL-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-DEPT-LEGAL-001",
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-DEPT-LEGAL-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "rejected_count": 0
+    },
+    {
+      "case_id": "rdc_accounting_disclosure_001",
+      "passed": true,
+      "recall": 1.0,
+      "expected_selected_risk_types": [
+        "accounting_disclosure"
+      ],
+      "selected_risk_types": [
+        "accounting_disclosure",
+        "accounting_disclosure",
+        "accounting_disclosure"
+      ],
+      "expected_hits": [
+        "accounting_disclosure"
+      ],
+      "top_risk_types": [
+        "accounting_disclosure",
+        "accounting_disclosure",
+        "accounting_disclosure"
+      ],
+      "should_not_prioritize": [
+        "supplier_resilience"
+      ],
+      "forbidden_in_top": [],
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
+      "expected_questions": [
+        "Which exposures could become material for impairment, provision, or disclosure?",
+        "What evidence package is required for auditor review?"
+      ],
+      "actual_questions": [
+        "Which exposures could become material for impairment, provision, or disclosure?",
+        "What evidence package is required for auditor review?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Materiality and auditor evidence sufficiency require accounting validation."
+      ],
+      "expected_missing_data_categories": [
+        "materiality_reporting",
+        "evidence_gap"
+      ],
+      "actual_missing_data_categories": [
+        "evidence_gap",
+        "materiality_reporting"
+      ],
+      "missing_data_category_hits": [
+        "evidence_gap",
+        "materiality_reporting"
+      ],
+      "missing_data_category_match": 1.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-DEPT-ACCOUNTING-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-DEPT-ACCOUNTING-001",
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-DEPT-ACCOUNTING-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "rejected_count": 0
+    },
+    {
+      "case_id": "rdc_executive_manufacturing_portfolio_001",
+      "passed": true,
+      "recall": 0.75,
+      "expected_selected_risk_types": [
+        "supplier_resilience",
+        "payment_disruption",
+        "legal_compliance",
+        "executive_resilience"
+      ],
+      "selected_risk_types": [
+        "supplier_resilience",
+        "supplier_resilience",
+        "executive_resilience",
+        "payment_disruption"
+      ],
+      "expected_hits": [
+        "supplier_resilience",
+        "payment_disruption",
+        "executive_resilience"
+      ],
+      "top_risk_types": [
+        "supplier_resilience",
+        "supplier_resilience",
+        "executive_resilience"
+      ],
+      "should_not_prioritize": [],
+      "forbidden_in_top": [],
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
+      "expected_questions": [
+        "Which selected risks require executive cross-functional decision ownership?",
+        "Which evidence gaps block immediate mitigation decisions?"
+      ],
+      "actual_questions": [
+        "Which pending payments are near term and routed through affected bank countries?",
+        "Which alternate payment routes are available without increasing sanctions risk?",
+        "Which critical suppliers have low inventory runway or no qualified alternative source?",
+        "Which logistics lanes or sites need immediate continuity validation?",
+        "Which selected risks require executive cross-functional decision ownership?",
+        "Which evidence gaps block immediate mitigation decisions?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Near-term payment route availability and sanctions-screening ownership are not yet validated."
+      ],
+      "expected_missing_data_categories": [
+        "supplier_continuity",
+        "payment_route",
+        "executive_ownership",
+        "evidence_gap"
+      ],
+      "actual_missing_data_categories": [
+        "evidence_gap",
+        "executive_ownership",
+        "materiality_reporting",
+        "payment_route",
+        "sanctions_screening",
+        "supplier_continuity"
+      ],
+      "missing_data_category_hits": [
+        "evidence_gap",
+        "executive_ownership",
+        "payment_route",
+        "supplier_continuity"
+      ],
+      "missing_data_category_match": 1.0,
+      "reason_quality": 1.0,
+      "expected_rubric_ids": [
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "actual_rubric_ids": [
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "rubric_hits": [
+        "SCOPE-IND-MANUFACTURING-001"
+      ],
+      "expert_rubric_coverage": 1.0,
+      "fallback_used": false,
+      "discovery_confidence": "agent_recorded_candidates",
+      "rejected_count": 0
+    }
+  ],
+  "thresholds": {
+    "top_n": 3,
+    "min_recall": 0.75,
+    "min_question_match": 0.25,
+    "min_missing_data_match": 0.5,
+    "min_reason_quality": 0.75,
+    "min_rubric_coverage": 0.5
+  }
+}
