@@ -51,7 +51,7 @@ AGENT_LLM_TOOL_ALLOWLIST: dict[str, dict[str, frozenset[str]]] = {
             }
         ),
     },
-    "evidence-red-team-agent": {
+    "evidence-redteam-agent": {
         "mcp-evidence-ledger": frozenset({"list_evidence_by_scenario", "search_evidence"}),
         "mcp-qdrant": frozenset({"search_evidence"}),
         "mcp-neo4j": frozenset({"find_risk_paths"}),

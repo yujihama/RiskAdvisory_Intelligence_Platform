@@ -30,7 +30,7 @@ Discovery quality verification:
 
 - Command: `risk-agent-platform evaluate-discovery --embedded-services`
 - case_count=4
-- average_recall=1.000
+- average_recall=0.938
 - average_question_match=1.000
 - average_question_semantic_match=1.000
 - average_missing_data_category_match=1.000

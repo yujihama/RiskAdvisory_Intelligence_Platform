@@ -303,6 +303,8 @@ def test_deepagent_tool_policy_keeps_raw_structured_tools_out_of_llm_slots():
         assert allowed
         assert not (allowed & RAW_STRUCTURED_DATA_TOOLS)
         assert all(tool_name.endswith("_safe") for tool_name in allowed)
+    assert "search_evidence" in agent_llm_tools("evidence-redteam-agent", "mcp-evidence-ledger")
+    assert "find_risk_paths" in agent_llm_tools("evidence-redteam-agent", "mcp-neo4j")
 
 
 def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_path, monkeypatch):
