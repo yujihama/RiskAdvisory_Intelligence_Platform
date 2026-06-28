@@ -7,7 +7,7 @@ This document shows the implemented target architecture. The normal execution pa
 ```mermaid
 flowchart TB
     user["CLI / API Caller"] --> discovery["Risk Discovery DeepAgent"]
-    discovery -- "selected RiskEvent" --> orch["Orchestrator DeepAgent"]
+    discovery -- "selected RiskEvents" --> orch["Orchestrator DeepAgent"]
 
     subgraph a2a["A2A Agent Layer"]
         orch
@@ -71,6 +71,7 @@ flowchart TB
         qdrant["Qdrant Vector Store"]
         neo4j["Neo4j Client Asset Graph"]
         files["outputs/<scenario_id>/ artifacts"]
+        portfolio["outputs/risk_discovery/ portfolio summary"]
         data["data/clients and data/expert_knowledge"]
         langfuse["Self-hosted Langfuse"]
     end
@@ -84,6 +85,7 @@ flowchart TB
     expert_mcp --> data
     expert_mcp --> qdrant
     filesystem --> files
+    discovery --> portfolio
 
     orch --> openrouter
     src --> openrouter
@@ -205,7 +207,8 @@ sequenceDiagram
 
     CLI->>RD: Submit event + scope
     RD->>M: sample structured data and load Expert-as-Code seed pack
-    RD-->>CLI: selected/rejected candidates and selected RiskEvent
+    RD-->>CLI: selected/rejected candidates and selected RiskEvents
+    loop each selected RiskEvent
     CLI->>O: Submit selected RiskEvent
     O->>LF: trace event
     O->>O: Generate analysis_plan JSON or fixed-order fallback
@@ -234,6 +237,8 @@ sequenceDiagram
     D->>M: evidence-ledger, neo4j, and filesystem tools
     D-->>O: Decision-first output finding
     O-->>CLI: Final status and output directory
+    end
+    CLI-->>CLI: Write portfolio summary across analyzed risks
 ```
 
 ## 4. Output Artifact Map
@@ -246,6 +251,9 @@ flowchart LR
     scenario --> red["red_team_review.md"]
     scenario --> unknowns["assumptions_and_unknowns.json"]
     scenario --> trace_meta["trace_metadata.json"]
+    portfolio_dir["outputs/risk_discovery/"] --> discovery_json["<scenario_id>.json"]
+    portfolio_dir --> portfolio_json["<top_scenario_id>_portfolio_summary.json"]
+    portfolio_dir --> portfolio_md["<top_scenario_id>_portfolio_summary.md"]
     traces["outputs/_traces/"] --> trace_jsonl["<trace_id>.jsonl"]
 
     queue --> neo4j["Neo4j Decision node and MITIGATES relation"]

@@ -357,6 +357,7 @@ class RiskDiscoveryResult(StrictModel):
     selected_candidates: list[DiscoveredRisk]
     rejected_candidates: list[RejectedRiskCandidate] = Field(default_factory=list)
     selected_event: RiskEvent | None = None
+    selected_events: list[RiskEvent] = Field(default_factory=list)
     generated_at: datetime = Field(default_factory=now_utc)
     metadata: dict[str, Any] = Field(default_factory=dict)
 

@@ -4,11 +4,12 @@ import argparse
 import json
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from risk_agent_platform.config import Settings
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
 from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
-from risk_agent_platform.schemas import AgentTaskRequest, RiskDiscoveryRequest, RiskDiscoveryScope
+from risk_agent_platform.schemas import AgentTaskRequest, RiskDiscoveryRequest, RiskDiscoveryResult, RiskDiscoveryScope, RiskEvent
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -24,9 +25,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--site-id")
     parser.add_argument("--country", action="append", default=[])
     parser.add_argument("--event-date", type=date.fromisoformat)
-    parser.add_argument("--max-risks", type=int, default=3)
+    parser.add_argument(
+        "--max-risks",
+        type=int,
+        default=3,
+        help="Guidance for discovery candidate generation; threshold-selected candidates are not capped by this value.",
+    )
     parser.add_argument("--scenario-output", type=Path)
     parser.add_argument("--run-analysis", action="store_true")
+    parser.add_argument(
+        "--analysis-mode",
+        choices=["all-selected", "top", "top-n"],
+        default="all-selected",
+        help="Choose which selected RiskEvents are passed to scenario analysis.",
+    )
+    parser.add_argument(
+        "--top-n",
+        type=int,
+        default=3,
+        help="Number of selected RiskEvents to analyze when --analysis-mode top-n is used.",
+    )
     parser.add_argument("--embedded-services", action="store_true", help="Use A2A/MCP endpoints in-process for local verification.")
     args = parser.parse_args(argv)
 
@@ -54,6 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"selected_candidate_count={len(result.selected_candidates)}")
     print(f"rejected_candidate_count={len(result.rejected_candidates)}")
     print(f"selected_scenario_id={result.selected_event.scenario_id if result.selected_event else ''}")
+    print(f"selected_scenario_ids={','.join(event.scenario_id for event in result.selected_events)}")
     print(f"discovery_output={output_path}")
 
     if not result.selected_event:
@@ -69,18 +88,31 @@ def main(argv: list[str] | None = None) -> int:
         print("analysis_status=skipped")
         return 0
 
+    events_to_analyze = _events_for_analysis(result, args.analysis_mode, args.top_n)
+    if not events_to_analyze:
+        print("analysis_status=skipped:no_events_to_analyze")
+        return 1
+
     embedded_apps = create_embedded_a2a_apps(settings, embedded_mcp=True) if args.embedded_services else None
     orchestrator = create_orchestrator_service(settings, embedded_apps=embedded_apps)
-    task = new_root_task(result.selected_event)
-    analysis_result = orchestrator.run_task(AgentTaskRequest(task=task))
-    output_dir = settings.project_root / "outputs" / result.selected_event.scenario_id
-    print(f"analysis_status={analysis_result.status}")
-    print(f"analysis_trace_id={analysis_result.trace_id}")
-    print(f"analysis_output_dir={output_dir}")
-    if analysis_result.error:
-        print(f"analysis_error={analysis_result.error.code}: {analysis_result.error.message}")
-        return 1
-    return 0
+    records: list[dict[str, Any]] = []
+    for idx, event in enumerate(events_to_analyze, start=1):
+        task = new_root_task(event)
+        analysis_result = orchestrator.run_task(AgentTaskRequest(task=task))
+        record = _analysis_record(settings, event, analysis_result)
+        records.append(record)
+        print(f"analysis_{idx}_scenario_id={event.scenario_id}")
+        print(f"analysis_{idx}_status={analysis_result.status}")
+        print(f"analysis_{idx}_trace_id={analysis_result.trace_id}")
+        print(f"analysis_{idx}_output_dir={record['output_dir']}")
+        if analysis_result.error:
+            print(f"analysis_{idx}_error={analysis_result.error.code}: {analysis_result.error.message}")
+    portfolio_paths = _write_portfolio_summary(settings, result, records)
+    print(f"analysis_status={'completed' if all(record['status'] == 'completed' for record in records) else 'failed'}")
+    print(f"analysis_count={len(records)}")
+    print(f"portfolio_summary_json={portfolio_paths['json']}")
+    print(f"portfolio_summary_md={portfolio_paths['markdown']}")
+    return 0 if all(record["status"] == "completed" for record in records) else 1
 
 
 def _write_discovery_output(settings: Settings, data: dict[str, object], scenario_output: Path | None) -> Path:
@@ -91,6 +123,200 @@ def _write_discovery_output(settings: Settings, data: dict[str, object], scenari
     output_path = output_dir / f"{scenario_id or 'discovery'}.json"
     output_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     return output_path
+
+
+def _events_for_analysis(result: RiskDiscoveryResult, mode: str, top_n: int) -> list[RiskEvent]:
+    events = result.selected_events or ([result.selected_event] if result.selected_event else [])
+    events = [event for event in events if event is not None]
+    if mode == "top":
+        return events[:1]
+    if mode == "top-n":
+        return events[: max(1, top_n)]
+    return events
+
+
+def _analysis_record(settings: Settings, event: RiskEvent, analysis_result: Any) -> dict[str, Any]:
+    output_dir = settings.project_root / "outputs" / event.scenario_id
+    decisions = _read_json_file(output_dir / "decision_queue.json").get("decisions", [])
+    evidence = _read_json_file(output_dir / "evidence_summary.json").get("evidence", [])
+    finding = analysis_result.finding.model_dump(mode="json") if analysis_result.finding else None
+    return {
+        "scenario_id": event.scenario_id,
+        "title": event.title,
+        "risk_type": event.risk_type,
+        "risk_themes": event.risk_themes,
+        "urgency": event.urgency,
+        "status": analysis_result.status,
+        "trace_id": analysis_result.trace_id,
+        "output_dir": str(output_dir),
+        "error": analysis_result.error.model_dump(mode="json") if analysis_result.error else None,
+        "decision_count": len(decisions),
+        "decisions": decisions,
+        "evidence_count": len(evidence),
+        "evidence_domains": sorted(
+            {str(item.get("source_domain")) for item in evidence if item.get("source_domain")}
+        ),
+        "orchestrator_finding": finding,
+    }
+
+
+def _write_portfolio_summary(
+    settings: Settings,
+    result: RiskDiscoveryResult,
+    records: list[dict[str, Any]],
+) -> dict[str, str]:
+    portfolio_id = result.selected_event.scenario_id if result.selected_event else "discovery"
+    output_dir = settings.project_root / "outputs" / "risk_discovery"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    data = {
+        "request": result.request.model_dump(mode="json"),
+        "selected_candidates": [candidate.model_dump(mode="json") for candidate in result.selected_candidates],
+        "rejected_candidates": [candidate.model_dump(mode="json") for candidate in result.rejected_candidates],
+        "selected_events": [event.model_dump(mode="json") for event in result.selected_events],
+        "portfolio_overview": _portfolio_overview(records),
+        "analyses": records,
+    }
+    json_path = output_dir / f"{portfolio_id}_portfolio_summary.json"
+    md_path = output_dir / f"{portfolio_id}_portfolio_summary.md"
+    json_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    md_path.write_text(_portfolio_markdown(data), encoding="utf-8")
+    return {"json": str(json_path), "markdown": str(md_path)}
+
+
+def _portfolio_overview(records: list[dict[str, Any]]) -> dict[str, Any]:
+    status_counts: dict[str, int] = {}
+    risk_types: set[str] = set()
+    evidence_domains: set[str] = set()
+    review_required_scenarios: list[str] = []
+    priority_decisions: list[dict[str, Any]] = []
+    total_decisions = 0
+    total_evidence = 0
+
+    for record in records:
+        status = str(record.get("status") or "unknown")
+        status_counts[status] = status_counts.get(status, 0) + 1
+        if record.get("risk_type"):
+            risk_types.add(str(record["risk_type"]))
+        total_decisions += int(record.get("decision_count") or 0)
+        total_evidence += int(record.get("evidence_count") or 0)
+        evidence_domains.update(str(domain) for domain in record.get("evidence_domains", []) if domain)
+
+        decisions = record.get("decisions") or []
+        finding = record.get("orchestrator_finding") or {}
+        decision_review_required = any(
+            bool(decision.get("review_required"))
+            for decision in decisions
+            if isinstance(decision, dict)
+        )
+        finding_review_required = bool(finding.get("review_required")) if isinstance(finding, dict) else False
+        if decision_review_required or finding_review_required:
+            review_required_scenarios.append(str(record.get("scenario_id") or ""))
+
+        for decision in decisions:
+            if not isinstance(decision, dict):
+                continue
+            priority = decision.get("priority")
+            priority_value = priority if isinstance(priority, int) else 999
+            if priority_value <= 3 or bool(decision.get("review_required")):
+                priority_decisions.append(
+                    {
+                        "scenario_id": record.get("scenario_id"),
+                        "risk_type": record.get("risk_type"),
+                        "decision": decision.get("decision"),
+                        "owner": decision.get("owner"),
+                        "priority": priority,
+                        "review_required": bool(decision.get("review_required")),
+                    }
+                )
+
+    priority_decisions = sorted(
+        priority_decisions,
+        key=lambda item: item.get("priority") if isinstance(item.get("priority"), int) else 999,
+    )
+    return {
+        "analysis_count": len(records),
+        "completed_count": status_counts.get("completed", 0),
+        "failed_count": sum(count for status, count in status_counts.items() if status not in {"completed"}),
+        "status_counts": status_counts,
+        "risk_types": sorted(risk_types),
+        "total_decisions": total_decisions,
+        "total_evidence": total_evidence,
+        "evidence_domains": sorted(evidence_domains),
+        "review_required_scenarios": [scenario_id for scenario_id in review_required_scenarios if scenario_id],
+        "priority_decisions": priority_decisions[:20],
+    }
+
+
+def _portfolio_markdown(data: dict[str, Any]) -> str:
+    request = data["request"]
+    overview = data.get("portfolio_overview") or {}
+    lines = [
+        f"# Risk Discovery Portfolio Summary: {request['event_title']}",
+        "",
+        f"- Client: `{request['scope']['client_id']}`",
+        f"- Scope: `{request['scope']['scope_type']}` `{request['scope'].get('scope_name') or ''}`",
+        f"- Selected candidates: {len(data['selected_candidates'])}",
+        f"- Rejected candidates: {len(data['rejected_candidates'])}",
+        f"- Analyses executed: {len(data['analyses'])}",
+        "",
+        "## Portfolio Overview",
+        f"- Completed analyses: {overview.get('completed_count', 0)} / {overview.get('analysis_count', 0)}",
+        f"- Failed analyses: {overview.get('failed_count', 0)}",
+        f"- Total decisions: {overview.get('total_decisions', 0)}",
+        f"- Total evidence records: {overview.get('total_evidence', 0)}",
+        f"- Risk types: {', '.join(overview.get('risk_types') or []) or 'None'}",
+        f"- Evidence domains: {', '.join(overview.get('evidence_domains') or []) or 'None'}",
+        f"- Review-required scenarios: {len(overview.get('review_required_scenarios') or [])}",
+        "",
+        "## Priority Decisions",
+    ]
+    priority_decisions = overview.get("priority_decisions") or []
+    if priority_decisions:
+        for decision in priority_decisions:
+            lines.append(
+                f"- `{decision.get('scenario_id')}` {decision.get('decision')} "
+                f"(owner={decision.get('owner')}, priority={decision.get('priority')}, review_required={decision.get('review_required')})"
+            )
+    else:
+        lines.append("- None")
+    lines.extend(
+        [
+            "",
+            "## Selected Candidates",
+        ]
+    )
+    for candidate in data["selected_candidates"]:
+        lines.append(
+            f"- `{candidate['candidate_id']}` {candidate['title']} "
+            f"(score={candidate['relevance_score']}, type={candidate['risk_type']})"
+        )
+    lines.extend(["", "## Rejected Candidates"])
+    if data["rejected_candidates"]:
+        for candidate in data["rejected_candidates"]:
+            lines.append(
+                f"- `{candidate['candidate_id']}` {candidate['title']} "
+                f"(score={candidate['relevance_score']}): {candidate['reason']}"
+            )
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Scenario Analyses"])
+    for record in data["analyses"]:
+        lines.append(f"### {record['title']}")
+        lines.append(f"- Scenario ID: `{record['scenario_id']}`")
+        lines.append(f"- Status: `{record['status']}`")
+        lines.append(f"- Trace ID: `{record['trace_id']}`")
+        lines.append(f"- Output: `{record['output_dir']}`")
+        lines.append(f"- Decisions: {record['decision_count']}")
+        lines.append(f"- Evidence: {record['evidence_count']}")
+        for decision in record.get("decisions", []):
+            lines.append(f"- Decision: {decision.get('decision')}")
+    return "\n".join(lines) + "\n"
+
+
+def _read_json_file(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

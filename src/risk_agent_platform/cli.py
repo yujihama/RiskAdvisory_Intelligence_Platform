@@ -28,9 +28,26 @@ def build_parser() -> argparse.ArgumentParser:
     discover.add_argument("--site-id")
     discover.add_argument("--country", action="append", default=[])
     discover.add_argument("--event-date")
-    discover.add_argument("--max-risks", type=int, default=3)
+    discover.add_argument(
+        "--max-risks",
+        type=int,
+        default=3,
+        help="Guidance for discovery candidate generation; threshold-selected candidates are not capped by this value.",
+    )
     discover.add_argument("--scenario-output")
     discover.add_argument("--run-analysis", action="store_true")
+    discover.add_argument(
+        "--analysis-mode",
+        choices=["all-selected", "top", "top-n"],
+        default="all-selected",
+        help="Choose which selected RiskEvents are passed to scenario analysis.",
+    )
+    discover.add_argument(
+        "--top-n",
+        type=int,
+        default=3,
+        help="Number of selected RiskEvents to analyze when --analysis-mode top-n is used.",
+    )
     discover.add_argument("--embedded-services", action="store_true")
 
     sub.add_parser("preflight", help="Check required final architecture configuration.")
@@ -59,6 +76,10 @@ def main(argv: list[str] | None = None) -> int:
             args.scope_type,
             "--max-risks",
             str(args.max_risks),
+            "--analysis-mode",
+            args.analysis_mode,
+            "--top-n",
+            str(args.top_n),
         ]
         if args.event_description:
             argv.extend(["--event-description", args.event_description])

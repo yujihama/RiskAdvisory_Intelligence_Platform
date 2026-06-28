@@ -9,7 +9,7 @@ This checklist maps the implementation instruction to concrete evidence in the c
 - [x] Domain Agents are backed by `create_deep_agent` through `DomainDeepAgentService`.
 - [x] The codebase uses the A2A-compatible HTTP/client boundary as the runtime agent boundary.
 - [x] Orchestrator generates a bounded `analysis_plan` JSON and falls back to fixed agent order if generation or validation fails.
-- [x] Risk Discovery DeepAgent converts an event + client scope into scope-relevant selected/rejected candidates and a selected `RiskEvent`.
+- [x] Risk Discovery DeepAgent converts an event + client scope into scope-relevant selected/rejected candidates and threshold-selected `RiskEvent` items, while preserving the top `selected_event` for compatibility.
 - [x] Source Intelligence, Expert-as-Code, and Evidence / Red Team include DeepAgent tool-use slots; Treasury, Legal, and Accounting include bounded issue-exploration slots while final scoring remains structured.
 
 Evidence:
@@ -169,7 +169,7 @@ Evidence:
 ## E2E
 
 - [x] `pytest` includes a final architecture embedded E2E using dummy client data, mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and output artifact generation.
-- [x] `pytest` includes Risk Discovery fallback coverage for event + department scope intake, selected `RiskEvent` generation, and rejected candidate reasons.
+- [x] `pytest` includes Risk Discovery fallback coverage for event + department scope intake, selected `RiskEvent` generation, all-selected/top/top-n analysis mode selection, rejected candidate reasons, and portfolio summary integration.
 - [x] Langfuse-enabled final E2E passed.
 - [x] Final CLI fails explicitly when Tavily is missing.
 - [x] Full live E2E with real Tavily search, Qdrant, Neo4j, Langfuse, OpenRouter, and output artifacts is verified.

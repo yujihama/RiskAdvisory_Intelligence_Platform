@@ -16,7 +16,7 @@ CLI / API
 ```
 
 The current execution path is `python -m risk_agent_platform.run_scenario` or `risk-agent-platform run-scenario`.
-For event-and-scope intake, use `risk-agent-platform discover-risks`; with `--run-analysis`, the selected discovered risk is converted to a `RiskEvent` and passed into the same scenario analysis path.
+For event-and-scope intake, use `risk-agent-platform discover-risks`; with `--run-analysis`, all threshold-selected discovered risks are converted to `RiskEvent` items by default and passed into the same scenario analysis path. The CLI also writes a portfolio summary that integrates the per-risk outputs.
 
 ## Architecture Diagrams
 
@@ -64,7 +64,7 @@ Agents call tools through `MCPGateway`, which uses FastMCP `Client`.
 
 Bounded Autonomy is implemented in the normal path:
 
-- Risk Discovery accepts an external event and scope, samples client structured data and Expert-as-Code seed knowledge, applies `data/expert_knowledge/scope_relevance_rules.jsonl`, generates `selected_candidates` and `rejected_candidates`, and converts the top selected candidate into a `RiskEvent`.
+- Risk Discovery accepts an external event and scope, samples client structured data and Expert-as-Code seed knowledge, applies `data/expert_knowledge/scope_relevance_rules.jsonl`, generates `selected_candidates` and `rejected_candidates`, and converts every threshold-selected candidate into `selected_events`. `selected_event` remains the top event for compatibility.
 - Orchestrator asks DeepAgent for an `analysis_plan` JSON with `selected_agents`, `skipped_agents`, `recheck_conditions`, and `exploration_questions`; invalid plans fall back to the fixed agent order.
 - Source Intelligence uses DeepAgent tool-use for bounded sanitized search and URL extraction, then Python registers selected `EvidenceItem` records through Evidence Ledger.
 - Expert-as-Code uses DeepAgent tool-use to explore similar cases, rubrics, red flags, CTA notes, and counterfactuals, then emits a structured `KnowledgeApplicationFinding` inside the A2A finding metadata.
@@ -167,7 +167,7 @@ risk-agent-platform discover-risks `
   --embedded-services
 ```
 
-Discovery followed by the current scenario analysis:
+Discovery followed by scenario analysis for all selected candidates:
 
 ```powershell
 risk-agent-platform discover-risks `
@@ -182,6 +182,8 @@ risk-agent-platform discover-risks `
   --run-analysis `
   --embedded-services
 ```
+
+`--analysis-mode all-selected` is the default. Use `--analysis-mode top` for the previous one-risk behavior, or `--analysis-mode top-n --top-n 2` to cap the number of selected risks analyzed. `--max-risks` is treated as discovery candidate-generation guidance; it does not cut threshold-selected candidates from downstream analysis. When multiple risks are analyzed, `outputs/risk_discovery/<top_scenario_id>_portfolio_summary.json` and `.md` integrate the selected/rejected candidates, per-scenario status, Decisions, Evidence counts, review-required scenarios, and priority Decisions.
 
 Local embedded A2A/MCP endpoints:
 

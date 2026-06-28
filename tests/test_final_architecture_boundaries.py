@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from dataclasses import replace
 from pathlib import Path
@@ -13,11 +14,14 @@ from risk_agent_platform.final_agents import _analysis_plan_from_text
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
 from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
+from risk_agent_platform.run_discovery import _events_for_analysis, _write_portfolio_summary
 from risk_agent_platform.schemas import (
     AgentCard,
+    DiscoveredRisk,
     EvidenceItem,
     KnowledgeApplicationFinding,
     RiskDiscoveryRequest,
+    RiskDiscoveryResult,
     RiskDiscoveryScope,
     RiskEvent,
 )
@@ -38,6 +42,14 @@ def _event() -> RiskEvent:
         event_date=date(2026, 6, 27),
         urgency="high",
     )
+
+
+class _NoStructuredCandidateRunner:
+    def __init__(self, *_args, **_kwargs) -> None:
+        pass
+
+    def synthesize(self, *_args, **_kwargs) -> str:
+        return "no structured candidates"
 
 
 def test_query_sanitizer_removes_client_specific_terms():
@@ -179,14 +191,7 @@ def test_expert_pack_exposes_case_question_and_cta_files():
 
 
 def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_path, monkeypatch):
-    class _FakeRunner:
-        def __init__(self, *_args, **_kwargs) -> None:
-            pass
-
-        def synthesize(self, *_args, **_kwargs) -> str:
-            return "no structured candidates"
-
-    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _FakeRunner)
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _NoStructuredCandidateRunner)
     root = Path.cwd()
     shutil.copytree(root / "data" / "clients" / "demo_client", tmp_path / "data" / "clients" / "demo_client")
     shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
@@ -210,12 +215,189 @@ def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_pat
     assert result.selected_event is not None
     assert result.selected_event.client_id == "demo_client"
     assert result.selected_event.risk_type == "payment_disruption"
+    assert len(result.selected_events) == len(result.selected_candidates)
+    assert result.selected_events[0].scenario_id == result.selected_event.scenario_id
+    assert all(candidate.selected_for_analysis for candidate in result.selected_candidates)
     assert result.selected_candidates[0].selected_for_analysis is True
     assert result.selected_candidates[0].relevance_score >= 50
-    assert result.rejected_candidates
-    assert result.rejected_candidates[0].reason
     assert result.metadata["fallback_used"] is True
     assert result.metadata["scope_relevance_rule_count"] >= 10
+
+
+def test_risk_discovery_preserves_rejected_candidate_reasons_without_llm_tools(tmp_path, monkeypatch):
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _NoStructuredCandidateRunner)
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "demo_client", tmp_path / "data" / "clients" / "demo_client")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+    request = RiskDiscoveryRequest(
+        event_title="Localized administrative filing disruption",
+        event_description="A month-end timing issue may affect close work.",
+        countries=[],
+        scope=RiskDiscoveryScope(
+            client_id="demo_client",
+            scope_type="department",
+            scope_name="Investor Relations",
+            department="Investor Relations",
+        ),
+    )
+
+    result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    assert result.selected_event is not None
+    assert result.rejected_candidates
+    assert all("below threshold" in candidate.reason for candidate in result.rejected_candidates)
+
+
+def test_discovery_analysis_modes_default_to_all_selected():
+    request = RiskDiscoveryRequest(
+        event_title="Iran war escalation",
+        event_description="Shipping, sanctions, and payments may be disrupted.",
+        countries=["Iran"],
+        max_risks=3,
+        scope=RiskDiscoveryScope(client_id="demo_client", scope_type="company", scope_name="Demo Company"),
+    )
+    first = _event()
+    second = first.model_copy(
+        update={
+            "scenario_id": "scenario_test_002",
+            "title": "Supplier continuity review",
+            "risk_type": "supplier_resilience",
+        }
+    )
+    result = RiskDiscoveryResult(
+        request=request,
+        selected_candidates=[
+            DiscoveredRisk(
+                candidate_id="DISC-001",
+                title=first.title,
+                risk_type=first.risk_type,
+                description=first.description,
+                relevance_score=90,
+                rationale="test",
+                selected_for_analysis=True,
+            ),
+            DiscoveredRisk(
+                candidate_id="DISC-002",
+                title=second.title,
+                risk_type=second.risk_type,
+                description=second.description,
+                relevance_score=80,
+                rationale="test",
+                selected_for_analysis=True,
+            ),
+        ],
+        selected_event=first,
+        selected_events=[first, second],
+    )
+
+    assert _events_for_analysis(result, "all-selected", top_n=3) == [first, second]
+    assert _events_for_analysis(result, "top", top_n=3) == [first]
+    assert _events_for_analysis(result, "top-n", top_n=1) == [first]
+    assert _events_for_analysis(result, "top-n", top_n=2) == [first, second]
+
+
+def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
+    request = RiskDiscoveryRequest(
+        event_title="Iran war escalation",
+        event_description="Shipping, sanctions, and payments may be disrupted.",
+        countries=["Iran"],
+        max_risks=3,
+        scope=RiskDiscoveryScope(client_id="demo_client", scope_type="company", scope_name="Demo Company"),
+    )
+    first = _event()
+    second = first.model_copy(
+        update={
+            "scenario_id": "scenario_test_002",
+            "title": "Supplier continuity review",
+            "risk_type": "supplier_resilience",
+        }
+    )
+    result = RiskDiscoveryResult(
+        request=request,
+        selected_candidates=[
+            DiscoveredRisk(
+                candidate_id="DISC-001",
+                title=first.title,
+                risk_type=first.risk_type,
+                description=first.description,
+                relevance_score=90,
+                rationale="test",
+                selected_for_analysis=True,
+            ),
+            DiscoveredRisk(
+                candidate_id="DISC-002",
+                title=second.title,
+                risk_type=second.risk_type,
+                description=second.description,
+                relevance_score=80,
+                rationale="test",
+                selected_for_analysis=True,
+            ),
+        ],
+        selected_event=first,
+        selected_events=[first, second],
+    )
+    settings = replace(Settings.load(Path.cwd()), project_root=tmp_path, data_dir=tmp_path / "data")
+    records = [
+        {
+            "scenario_id": first.scenario_id,
+            "title": first.title,
+            "risk_type": first.risk_type,
+            "risk_themes": first.risk_themes,
+            "urgency": first.urgency,
+            "status": "completed",
+            "trace_id": "trace-001",
+            "output_dir": str(tmp_path / "outputs" / first.scenario_id),
+            "decision_count": 1,
+            "decisions": [
+                {
+                    "decision": "Confirm payment route and sanction-screening owner.",
+                    "owner": "Treasury",
+                    "priority": 1,
+                    "review_required": True,
+                }
+            ],
+            "evidence_count": 2,
+            "evidence_domains": ["home.treasury.gov", "www.sec.gov"],
+            "orchestrator_finding": {"review_required": True},
+        },
+        {
+            "scenario_id": second.scenario_id,
+            "title": second.title,
+            "risk_type": second.risk_type,
+            "risk_themes": second.risk_themes,
+            "urgency": second.urgency,
+            "status": "completed",
+            "trace_id": "trace-002",
+            "output_dir": str(tmp_path / "outputs" / second.scenario_id),
+            "decision_count": 1,
+            "decisions": [
+                {
+                    "decision": "Check alternate supplier readiness.",
+                    "owner": "Procurement",
+                    "priority": 4,
+                    "review_required": False,
+                }
+            ],
+            "evidence_count": 3,
+            "evidence_domains": ["www.reuters.com"],
+            "orchestrator_finding": {"review_required": False},
+        },
+    ]
+
+    paths = _write_portfolio_summary(settings, result, records)
+
+    summary = json.loads(Path(paths["json"]).read_text(encoding="utf-8"))
+    markdown = Path(paths["markdown"]).read_text(encoding="utf-8")
+    assert summary["portfolio_overview"]["analysis_count"] == 2
+    assert summary["portfolio_overview"]["completed_count"] == 2
+    assert summary["portfolio_overview"]["total_decisions"] == 2
+    assert summary["portfolio_overview"]["total_evidence"] == 5
+    assert summary["portfolio_overview"]["review_required_scenarios"] == [first.scenario_id]
+    assert summary["portfolio_overview"]["priority_decisions"][0]["decision"].startswith("Confirm payment route")
+    assert "## Portfolio Overview" in markdown
+    assert "## Priority Decisions" in markdown
 
 
 def test_evidence_repository_upserts_by_evidence_id(tmp_path):

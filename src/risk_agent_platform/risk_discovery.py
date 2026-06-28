@@ -108,14 +108,18 @@ class RiskDiscoveryDeepAgent:
         raw_candidates = self._state.get("raw_candidates") or []
         candidates = _normalize_candidates(raw_candidates, request) if raw_candidates else self._fallback_candidates(request)
         selected_candidates, rejected_candidates = self._filter_to_scope(candidates, request)
-        selected_event = _candidate_to_event(selected_candidates[0], request) if selected_candidates else None
-        if selected_candidates and selected_event:
-            selected_candidates[0] = selected_candidates[0].model_copy(update={"selected_for_analysis": True})
+        selected_candidates = [
+            candidate.model_copy(update={"selected_for_analysis": True})
+            for candidate in selected_candidates
+        ]
+        selected_events = [_candidate_to_event(candidate, request) for candidate in selected_candidates]
+        selected_event = selected_events[0] if selected_events else None
         return RiskDiscoveryResult(
             request=request,
             selected_candidates=selected_candidates,
             rejected_candidates=rejected_candidates,
             selected_event=selected_event,
+            selected_events=selected_events,
             metadata={
                 "agent_name": DISCOVERY_AGENT_NAME,
                 "datasets": self._state.get("datasets", []),
@@ -208,12 +212,12 @@ class RiskDiscoveryDeepAgent:
         enriched = [_score_scope_relevance(candidate, request, self._state.get("samples") or {}, rules) for candidate in candidates]
         threshold = 40 if request.scope.scope_type == "company" else 50
         sorted_candidates = sorted(enriched, key=lambda item: item.relevance_score, reverse=True)
-        selected = [candidate for candidate in sorted_candidates if candidate.relevance_score >= threshold][: request.max_risks]
+        selected = [candidate for candidate in sorted_candidates if candidate.relevance_score >= threshold]
         if not selected and sorted_candidates:
             selected = sorted_candidates[:1]
         selected_ids = {candidate.candidate_id for candidate in selected}
         rejected = [
-            _rejection_for_candidate(candidate, request, threshold, "below_threshold" if candidate.relevance_score < threshold else "outside_top_max_risks")
+            _rejection_for_candidate(candidate, request, threshold)
             for candidate in sorted_candidates
             if candidate.candidate_id not in selected_ids
         ]
@@ -261,7 +265,7 @@ def _build_candidate(
         countries=countries,
         risk_themes=themes,
         affected_categories=categories,
-        description=f"{description} Scope: {request.scope.scope_type} {request.scope.scope_name or request.scope.client_id}. Event: {request.event_description or request.event_title}",
+        description=f"{description} Event: {request.event_description or request.event_title}",
         urgency=urgency,
         scope_matches=[],
         rationale="Fallback candidate generated from event terms, scope, and seed Expert-as-Code domains.",
@@ -355,15 +359,11 @@ def _rejection_for_candidate(
     candidate: DiscoveredRisk,
     request: RiskDiscoveryRequest,
     threshold: int,
-    reason_code: str,
 ) -> RejectedRiskCandidate:
-    if reason_code == "below_threshold":
-        reason = (
-            f"Low relevance to {request.scope.scope_name or request.scope.scope_type} scope: "
-            f"score {candidate.relevance_score} below threshold {threshold}."
-        )
-    else:
-        reason = f"Candidate is scope-relevant but outside max_risks={request.max_risks}."
+    reason = (
+        f"Low relevance to {request.scope.scope_name or request.scope.scope_type} scope: "
+        f"score {candidate.relevance_score} below threshold {threshold}."
+    )
     if candidate.scope_matches:
         reason += f" Matched signals: {', '.join(candidate.scope_matches[:5])}."
     else:
