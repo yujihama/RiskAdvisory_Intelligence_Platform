@@ -19,6 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--scope-type", default="company")
     parser.add_argument("--scope-name")
     parser.add_argument("--department")
+    parser.add_argument("--industry")
     parser.add_argument("--region")
     parser.add_argument("--site-id")
     parser.add_argument("--country", action="append", default=[])
@@ -43,13 +44,15 @@ def main(argv: list[str] | None = None) -> int:
             department=args.department,
             region=args.region,
             site_id=args.site_id,
+            metadata={"industry": args.industry} if args.industry else {},
         ),
     )
     discovery = RiskDiscoveryDeepAgent(settings, embedded_mcp=args.embedded_services)
     result = discovery.discover(request)
     output_path = _write_discovery_output(settings, result.model_dump(mode="json"), args.scenario_output)
     print(f"discovery_status=completed")
-    print(f"candidate_count={len(result.candidates)}")
+    print(f"selected_candidate_count={len(result.selected_candidates)}")
+    print(f"rejected_candidate_count={len(result.rejected_candidates)}")
     print(f"selected_scenario_id={result.selected_event.scenario_id if result.selected_event else ''}")
     print(f"discovery_output={output_path}")
 

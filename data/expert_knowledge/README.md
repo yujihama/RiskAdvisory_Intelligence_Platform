@@ -24,6 +24,7 @@ primitives.jsonl
 knowledge_pack_version.json
 source_refs.json
 source_reliability_seed.yaml
+scope_relevance_rules.jsonl
 ```
 
 ## Scope
@@ -61,6 +62,7 @@ data/expert_knowledge/primitives.jsonl
 data/expert_knowledge/knowledge_pack_version.json
 data/expert_knowledge/source_refs.json
 data/expert_knowledge/source_reliability_seed.yaml
+data/expert_knowledge/scope_relevance_rules.jsonl
 ```
 
 Then call:
@@ -77,6 +79,7 @@ mcp-expert-knowledge.index_case_bank
 - ExpertQuestion rows: 24
 - CTANote rows: 11
 - KnowledgePrimitive rows: 20
+- ScopeRelevanceRule rows: 10
 
 ## Provenance
 

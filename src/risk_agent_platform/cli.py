@@ -23,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     discover.add_argument("--scope-type", default="company")
     discover.add_argument("--scope-name")
     discover.add_argument("--department")
+    discover.add_argument("--industry")
     discover.add_argument("--region")
     discover.add_argument("--site-id")
     discover.add_argument("--country", action="append", default=[])
@@ -61,7 +62,7 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if args.event_description:
             argv.extend(["--event-description", args.event_description])
-        for name in ("scope_name", "department", "region", "site_id", "event_date", "scenario_output"):
+        for name in ("scope_name", "department", "industry", "region", "site_id", "event_date", "scenario_output"):
             value = getattr(args, name)
             if value:
                 argv.extend([f"--{name.replace('_', '-')}", str(value)])

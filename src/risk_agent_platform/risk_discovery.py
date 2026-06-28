@@ -12,6 +12,7 @@ from risk_agent_platform.deepagent_runtime import DeepAgentRunner
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.schemas import (
     DiscoveredRisk,
+    RejectedRiskCandidate,
     RiskDiscoveryRequest,
     RiskDiscoveryResult,
     RiskEvent,
@@ -66,6 +67,7 @@ class RiskDiscoveryDeepAgent:
                 "cases": self.mcp.call("mcp-expert-knowledge", "load_case_bank", {}),
                 "questions": self.mcp.call("mcp-expert-knowledge", "load_question_bank", {}),
                 "cta_notes": self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {}),
+                "scope_relevance_rules": self.mcp.call("mcp-expert-knowledge", "load_scope_relevance_rules", {}),
             }
             self._state["expert"] = expert
             return json.dumps({key: len(value) for key, value in expert.items()}, ensure_ascii=False)
@@ -105,13 +107,14 @@ class RiskDiscoveryDeepAgent:
         self._ensure_context(request)
         raw_candidates = self._state.get("raw_candidates") or []
         candidates = _normalize_candidates(raw_candidates, request) if raw_candidates else self._fallback_candidates(request)
-        scoped = self._filter_to_scope(candidates, request)
-        selected_event = _candidate_to_event(scoped[0], request) if scoped else None
-        if scoped and selected_event:
-            scoped[0] = scoped[0].model_copy(update={"selected_for_analysis": True})
+        selected_candidates, rejected_candidates = self._filter_to_scope(candidates, request)
+        selected_event = _candidate_to_event(selected_candidates[0], request) if selected_candidates else None
+        if selected_candidates and selected_event:
+            selected_candidates[0] = selected_candidates[0].model_copy(update={"selected_for_analysis": True})
         return RiskDiscoveryResult(
             request=request,
-            candidates=scoped,
+            selected_candidates=selected_candidates,
+            rejected_candidates=rejected_candidates,
             selected_event=selected_event,
             metadata={
                 "agent_name": DISCOVERY_AGENT_NAME,
@@ -120,6 +123,7 @@ class RiskDiscoveryDeepAgent:
                 "expert_counts": {key: len(value) for key, value in (self._state.get("expert") or {}).items()},
                 "raw_candidate_count": len(raw_candidates),
                 "fallback_used": not bool(raw_candidates),
+                "scope_relevance_rule_count": len(_scope_relevance_rules(self._state)),
             },
         )
 
@@ -141,6 +145,7 @@ class RiskDiscoveryDeepAgent:
                 "cases": self.mcp.call("mcp-expert-knowledge", "load_case_bank", {}),
                 "questions": self.mcp.call("mcp-expert-knowledge", "load_question_bank", {}),
                 "cta_notes": self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {}),
+                "scope_relevance_rules": self.mcp.call("mcp-expert-knowledge", "load_scope_relevance_rules", {}),
             }
 
     def _fallback_candidates(self, request: RiskDiscoveryRequest) -> list[DiscoveredRisk]:
@@ -194,13 +199,25 @@ class RiskDiscoveryDeepAgent:
         ]
         return candidates
 
-    def _filter_to_scope(self, candidates: list[DiscoveredRisk], request: RiskDiscoveryRequest) -> list[DiscoveredRisk]:
-        enriched = [_score_scope_relevance(candidate, request, self._state.get("samples") or {}) for candidate in candidates]
+    def _filter_to_scope(
+        self,
+        candidates: list[DiscoveredRisk],
+        request: RiskDiscoveryRequest,
+    ) -> tuple[list[DiscoveredRisk], list[RejectedRiskCandidate]]:
+        rules = _scope_relevance_rules(self._state)
+        enriched = [_score_scope_relevance(candidate, request, self._state.get("samples") or {}, rules) for candidate in candidates]
         threshold = 40 if request.scope.scope_type == "company" else 50
-        filtered = [candidate for candidate in enriched if candidate.relevance_score >= threshold]
-        if not filtered:
-            filtered = sorted(enriched, key=lambda item: item.relevance_score, reverse=True)[:1]
-        return sorted(filtered, key=lambda item: item.relevance_score, reverse=True)[: request.max_risks]
+        sorted_candidates = sorted(enriched, key=lambda item: item.relevance_score, reverse=True)
+        selected = [candidate for candidate in sorted_candidates if candidate.relevance_score >= threshold][: request.max_risks]
+        if not selected and sorted_candidates:
+            selected = sorted_candidates[:1]
+        selected_ids = {candidate.candidate_id for candidate in selected}
+        rejected = [
+            _rejection_for_candidate(candidate, request, threshold, "below_threshold" if candidate.relevance_score < threshold else "outside_top_max_risks")
+            for candidate in sorted_candidates
+            if candidate.candidate_id not in selected_ids
+        ]
+        return selected, rejected
 
 
 def _datasets_for_scope(datasets: list[str]) -> list[str]:
@@ -251,7 +268,12 @@ def _build_candidate(
     )
 
 
-def _score_scope_relevance(candidate: DiscoveredRisk, request: RiskDiscoveryRequest, samples: dict[str, list[dict[str, str]]]) -> DiscoveredRisk:
+def _score_scope_relevance(
+    candidate: DiscoveredRisk,
+    request: RiskDiscoveryRequest,
+    samples: dict[str, list[dict[str, str]]],
+    rules: list[dict[str, Any]],
+) -> DiscoveredRisk:
     score = 65 if request.scope.scope_type == "company" else 35
     matches: list[str] = []
     candidate_text = " ".join(
@@ -268,34 +290,20 @@ def _score_scope_relevance(candidate: DiscoveredRisk, request: RiskDiscoveryRequ
         if term and term.lower() in candidate_text:
             score += 12
             matches.append(term)
-    department = (request.scope.department or request.scope.scope_name or "").lower()
-    department_map = {
-        "treasury": ["payment", "cash", "liquidity", "bank", "fx"],
-        "legal": ["sanctions", "contract", "export", "beneficial", "force"],
-        "accounting": ["accounting", "provision", "impairment", "disclosure", "auditor"],
-        "procurement": ["supplier", "inventory", "logistics", "sourcing", "sub-tier"],
-        "supply": ["supplier", "inventory", "logistics", "sourcing", "sub-tier"],
-        "healthcare": ["supplier", "payment", "logistics", "critical"],
-        "electronics": ["supplier", "export", "logistics", "energy", "critical"],
-        "imaging": ["logistics", "fx", "distribution", "customer"],
-    }
-    primary_risk_types = {
-        "treasury": {"payment_disruption"},
-        "legal": {"legal_compliance"},
-        "accounting": {"accounting_disclosure"},
-        "procurement": {"supplier_resilience"},
-        "supply": {"supplier_resilience"},
-    }
-    for key, markers in department_map.items():
-        if key in department:
-            if candidate.risk_type in primary_risk_types.get(key, set()):
-                score += 25
-                matches.append(f"primary_scope:{key}")
-            if any(marker in candidate_text for marker in markers):
-                score += 35
-                matches.append(f"department:{key}")
-            else:
-                score -= 10
+    for rule in rules:
+        if not _rule_applies_to_scope(rule, request):
+            continue
+        rule_id = str(rule.get("rule_id") or rule.get("scope_key") or "scope_rule")
+        primary_risk_types = {str(item).lower() for item in rule.get("primary_risk_types") or []}
+        if candidate.risk_type.lower() in primary_risk_types:
+            score += _to_int(rule.get("score_if_primary"), default=0)
+            matches.append(f"{rule_id}:primary")
+        match_terms = [str(item).lower() for item in rule.get("match_terms") or []]
+        if match_terms and any(term in candidate_text for term in match_terms):
+            score += _to_int(rule.get("score_if_term_match"), default=0)
+            matches.append(f"{rule_id}:term")
+        elif match_terms:
+            score += _to_int(rule.get("score_if_no_term_match"), default=0)
     for dataset, rows in samples.items():
         for row in rows:
             row_text = " ".join(str(value) for value in row.values()).lower()
@@ -310,6 +318,71 @@ def _score_scope_relevance(candidate: DiscoveredRisk, request: RiskDiscoveryRequ
     score = max(0, min(100, score))
     merged_matches = list(dict.fromkeys([*candidate.scope_matches, *matches]))
     return candidate.model_copy(update={"relevance_score": score, "scope_matches": merged_matches})
+
+
+def _scope_relevance_rules(state: dict[str, Any]) -> list[dict[str, Any]]:
+    expert = state.get("expert") if isinstance(state.get("expert"), dict) else {}
+    rules = expert.get("scope_relevance_rules") or []
+    return [rule for rule in rules if isinstance(rule, dict)]
+
+
+def _rule_applies_to_scope(rule: dict[str, Any], request: RiskDiscoveryRequest) -> bool:
+    scope_kind = str(rule.get("scope_kind") or "").lower()
+    scope_key = str(rule.get("scope_key") or "").lower()
+    if not scope_key:
+        return False
+    haystacks: list[str] = []
+    if scope_kind == "department":
+        haystacks = [request.scope.department or "", request.scope.scope_name or ""]
+    elif scope_kind in {"business_unit", "segment", "scope_name"}:
+        haystacks = [request.scope.scope_name or "", request.scope.department or ""]
+    elif scope_kind == "industry":
+        haystacks = [str(request.scope.metadata.get("industry") or ""), request.scope.scope_name or "", request.scope.department or ""]
+    elif scope_kind in {"scope_type", "company"}:
+        haystacks = [request.scope.scope_type, request.scope.scope_name or ""]
+    else:
+        haystacks = [
+            request.scope.scope_type,
+            request.scope.scope_name or "",
+            request.scope.department or "",
+            request.scope.region or "",
+            str(request.scope.metadata),
+        ]
+    return any(scope_key in text.lower() for text in haystacks if text)
+
+
+def _rejection_for_candidate(
+    candidate: DiscoveredRisk,
+    request: RiskDiscoveryRequest,
+    threshold: int,
+    reason_code: str,
+) -> RejectedRiskCandidate:
+    if reason_code == "below_threshold":
+        reason = (
+            f"Low relevance to {request.scope.scope_name or request.scope.scope_type} scope: "
+            f"score {candidate.relevance_score} below threshold {threshold}."
+        )
+    else:
+        reason = f"Candidate is scope-relevant but outside max_risks={request.max_risks}."
+    if candidate.scope_matches:
+        reason += f" Matched signals: {', '.join(candidate.scope_matches[:5])}."
+    else:
+        reason += " No strong scope-specific signals were found."
+    return RejectedRiskCandidate(
+        candidate_id=candidate.candidate_id,
+        title=candidate.title,
+        risk_type=candidate.risk_type,
+        relevance_score=candidate.relevance_score,
+        reason=reason,
+        scope_matches=candidate.scope_matches,
+    )
+
+
+def _to_int(value: Any, *, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _candidate_to_event(candidate: DiscoveredRisk, request: RiskDiscoveryRequest) -> RiskEvent:

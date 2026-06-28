@@ -336,9 +336,26 @@ class DiscoveredRisk(StrictModel):
         return value
 
 
+class RejectedRiskCandidate(StrictModel):
+    candidate_id: str
+    title: str
+    risk_type: str
+    relevance_score: int
+    reason: str
+    scope_matches: list[str] = Field(default_factory=list)
+
+    @field_validator("relevance_score")
+    @classmethod
+    def rejected_relevance_score_range(cls, value: int) -> int:
+        if not 0 <= value <= 100:
+            raise ValueError("relevance_score must be between 0 and 100")
+        return value
+
+
 class RiskDiscoveryResult(StrictModel):
     request: RiskDiscoveryRequest
-    candidates: list[DiscoveredRisk]
+    selected_candidates: list[DiscoveredRisk]
+    rejected_candidates: list[RejectedRiskCandidate] = Field(default_factory=list)
     selected_event: RiskEvent | None = None
     generated_at: datetime = Field(default_factory=now_utc)
     metadata: dict[str, Any] = Field(default_factory=dict)

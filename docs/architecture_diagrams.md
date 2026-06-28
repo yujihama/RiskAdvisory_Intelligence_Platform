@@ -205,7 +205,7 @@ sequenceDiagram
 
     CLI->>RD: Submit event + scope
     RD->>M: sample structured data and load Expert-as-Code seed pack
-    RD-->>CLI: risk candidates and selected RiskEvent
+    RD-->>CLI: selected/rejected candidates and selected RiskEvent
     CLI->>O: Submit selected RiskEvent
     O->>LF: trace event
     O->>O: Generate analysis_plan JSON or fixed-order fallback

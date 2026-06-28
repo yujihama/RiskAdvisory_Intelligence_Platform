@@ -163,6 +163,7 @@ def test_expert_pack_exposes_case_question_and_cta_files():
     questions = gateway.call("mcp-expert-knowledge", "load_question_bank", {})
     notes = gateway.call("mcp-expert-knowledge", "load_cta_notes", {})
     primitives = gateway.call("mcp-expert-knowledge", "load_primitives", {})
+    scope_rules = gateway.call("mcp-expert-knowledge", "load_scope_relevance_rules", {})
     version = gateway.call("mcp-expert-knowledge", "load_knowledge_pack_version", {})
     refs = gateway.call("mcp-expert-knowledge", "load_source_refs", {})
     reliability = gateway.call("mcp-expert-knowledge", "load_source_reliability_seed", {})
@@ -171,6 +172,7 @@ def test_expert_pack_exposes_case_question_and_cta_files():
     assert len(questions) >= 24 and questions[0]["question_id"]
     assert len(notes) >= 11 and notes[0]["note_id"]
     assert len(primitives) >= 20 and primitives[0]["id"]
+    assert len(scope_rules) >= 10 and scope_rules[0]["rule_id"]
     assert version["pack_id"]
     assert refs
     assert reliability["high_reliability_domains"]
@@ -194,7 +196,13 @@ def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_pat
         event_description="Shipping, sanctions screening, and supplier payments may be disrupted.",
         countries=["Iran"],
         max_risks=2,
-        scope=RiskDiscoveryScope(client_id="demo_client", scope_type="department", scope_name="Treasury", department="Treasury"),
+        scope=RiskDiscoveryScope(
+            client_id="demo_client",
+            scope_type="department",
+            scope_name="Treasury",
+            department="Treasury",
+            metadata={"industry": "manufacturing"},
+        ),
     )
 
     result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
@@ -202,9 +210,12 @@ def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_pat
     assert result.selected_event is not None
     assert result.selected_event.client_id == "demo_client"
     assert result.selected_event.risk_type == "payment_disruption"
-    assert result.candidates[0].selected_for_analysis is True
-    assert result.candidates[0].relevance_score >= 50
+    assert result.selected_candidates[0].selected_for_analysis is True
+    assert result.selected_candidates[0].relevance_score >= 50
+    assert result.rejected_candidates
+    assert result.rejected_candidates[0].reason
     assert result.metadata["fallback_used"] is True
+    assert result.metadata["scope_relevance_rule_count"] >= 10
 
 
 def test_evidence_repository_upserts_by_evidence_id(tmp_path):

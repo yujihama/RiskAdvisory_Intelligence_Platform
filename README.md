@@ -64,7 +64,7 @@ Agents call tools through `MCPGateway`, which uses FastMCP `Client`.
 
 Bounded Autonomy is implemented in the normal path:
 
-- Risk Discovery accepts an external event and scope, samples client structured data and Expert-as-Code seed knowledge, generates scope-relevant risk candidates, and converts the top candidate into a `RiskEvent`.
+- Risk Discovery accepts an external event and scope, samples client structured data and Expert-as-Code seed knowledge, applies `data/expert_knowledge/scope_relevance_rules.jsonl`, generates `selected_candidates` and `rejected_candidates`, and converts the top selected candidate into a `RiskEvent`.
 - Orchestrator asks DeepAgent for an `analysis_plan` JSON with `selected_agents`, `skipped_agents`, `recheck_conditions`, and `exploration_questions`; invalid plans fall back to the fixed agent order.
 - Source Intelligence uses DeepAgent tool-use for bounded sanitized search and URL extraction, then Python registers selected `EvidenceItem` records through Evidence Ledger.
 - Expert-as-Code uses DeepAgent tool-use to explore similar cases, rubrics, red flags, CTA notes, and counterfactuals, then emits a structured `KnowledgeApplicationFinding` inside the A2A finding metadata.
@@ -162,6 +162,7 @@ risk-agent-platform discover-risks `
   --scope-type department `
   --scope-name Treasury `
   --department Treasury `
+  --industry manufacturing `
   --country Iran `
   --embedded-services
 ```
@@ -176,6 +177,7 @@ risk-agent-platform discover-risks `
   --scope-type department `
   --scope-name Treasury `
   --department Treasury `
+  --industry manufacturing `
   --country Iran `
   --run-analysis `
   --embedded-services
@@ -224,7 +226,9 @@ Initial source reliability scoring is domain-based: government, regulator, inter
 
 ## Expert-as-Code
 
-Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, CTA notes, source references, source reliability seeds, and pack version metadata. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl`, `data/expert_knowledge/primitives.jsonl`, and `data/expert_knowledge/cases.jsonl` into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
+Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, CTA notes, scope relevance rules, source references, source reliability seeds, and pack version metadata. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl`, `data/expert_knowledge/primitives.jsonl`, and `data/expert_knowledge/cases.jsonl` into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
+
+Risk Discovery scope filtering is also Expert-as-Code driven: `data/expert_knowledge/scope_relevance_rules.jsonl` defines what Treasury, Legal, Accounting, Procurement, business units, and industries treat as risk-relevant. Rejected candidates are preserved with a reason and relevance score so specialist reviewers can challenge false negatives.
 
 ## Document Parsing and OCR
 

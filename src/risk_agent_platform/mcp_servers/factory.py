@@ -356,6 +356,13 @@ def create_expert_knowledge_server(settings: Settings) -> FastMCP:
         return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
     @mcp.tool
+    def load_scope_relevance_rules() -> list[dict[str, Any]]:
+        path = settings.data_dir / "expert_knowledge" / "scope_relevance_rules.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    @mcp.tool
     def load_knowledge_pack_version() -> dict[str, Any]:
         path = settings.data_dir / "expert_knowledge" / "knowledge_pack_version.json"
         if not path.exists():
