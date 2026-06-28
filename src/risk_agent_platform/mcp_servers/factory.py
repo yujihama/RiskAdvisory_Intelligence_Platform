@@ -522,7 +522,7 @@ def create_llm_ocr_server(settings: Settings) -> FastMCP:
 
 def _tavily_search(settings: Settings, query: str, query_hash: str, max_results: int = 5) -> dict[str, Any]:
     if not settings.external_apis.tavily_api_key:
-        raise RuntimeError("TAVILY_API_KEY is required; dummy_sources.json is fixture-only and is not used in the normal path")
+        raise RuntimeError("TAVILY_API_KEY is required for web evidence collection; no local fixture fallback is available")
     client = TavilyClient(api_key=settings.external_apis.tavily_api_key)
     result = client.search(query=query, max_results=max_results, include_answer=False, include_raw_content=False)
     return {"query": query, "query_hash": query_hash, "results": result.get("results", [])}

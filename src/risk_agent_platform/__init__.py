@@ -1,4 +1,4 @@
-"""Risk advisory intelligence platform backend PoC."""
+"""Risk advisory intelligence platform backend."""
 
 __all__ = ["__version__"]
 

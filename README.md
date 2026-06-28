@@ -1,6 +1,6 @@
 # Risk Advisory Intelligence Platform
 
-This repository implements a working slice of the target architecture described in `docs/`, beyond the earlier local PoC skeleton. Some target-architecture items are intentionally still partial and are listed under Known Constraints.
+This repository implements a working slice of the target architecture described in `docs/`. Some target-architecture items are intentionally still partial and are listed under Known Constraints.
 
 The normal execution path is:
 
@@ -14,7 +14,7 @@ CLI / API
   -> Decision Queue + Executive Brief + Evidence Summary
 ```
 
-The earlier local PoC classes remain for compatibility tests, but the current target path is `python -m risk_agent_platform.run_scenario` or `risk-agent-platform run-final-scenario`.
+The current execution path is `python -m risk_agent_platform.run_scenario` or `risk-agent-platform run-scenario`.
 
 ## Architecture Diagrams
 
@@ -38,7 +38,6 @@ The following A2A agents are implemented as DeepAgent-backed services:
 Each service exposes:
 
 - `/.well-known/agent-card.json`
-- `/.well-known/agent-card.internal.json`
 - `/a2a`
 - `/healthz`
 
@@ -147,6 +146,7 @@ Local embedded A2A/MCP endpoints:
 
 ```powershell
 python -m risk_agent_platform.run_scenario --scenario data\scenarios\sample_geopolitical_payment_risk.json --embedded-services
+risk-agent-platform run-scenario --scenario data\scenarios\sample_geopolitical_payment_risk.json --embedded-services
 ```
 
 Docker services:
@@ -178,7 +178,7 @@ Expected outputs:
 
 Tavily results are sanitized, assigned an initial source reliability score, normalized into `EvidenceItem`, stored in JSONL, indexed into Qdrant, and linked to scenarios/assets/decisions through Neo4j MCP tools.
 
-`dummy_sources.json` is fixture-only. The final path does not silently fall back to dummy sources. If `TAVILY_API_KEY` is absent, the final path fails explicitly.
+If `TAVILY_API_KEY` is absent, web evidence collection fails explicitly. There is no local fixture fallback in the normal path.
 
 Initial source reliability scoring is domain-based: government, regulator, international organization, and official disclosure sources are scored `high`; general news or research sources are `medium`; blog-like sources are `low`.
 
@@ -212,7 +212,7 @@ python -m risk_agent_platform.run_scenario --scenario data\scenarios\sample_geop
 
 The live E2E path has also been verified with real Tavily search, OpenRouter DeepAgent calls, Qdrant evidence indexing, Neo4j graph registration/path reads, and Langfuse trace readback. The latest verified live trace is `724f0fa5-8e4c-4db7-a19b-2664bf6e901d`.
 
-Without `TAVILY_API_KEY`, the final CLI fails explicitly at Source Intelligence and does not use `dummy_sources.json` as a fallback.
+Without `TAVILY_API_KEY`, the CLI fails explicitly at Source Intelligence and does not use fixture evidence as a fallback.
 
 See [docs/acceptance_checklist.md](docs/acceptance_checklist.md) for the requirement-by-requirement status.
 

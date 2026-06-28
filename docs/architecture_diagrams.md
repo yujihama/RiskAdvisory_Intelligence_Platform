@@ -1,6 +1,6 @@
 # Risk Advisory Intelligence Platform Architecture Diagrams
 
-This document shows the implemented target architecture. The legacy local PoC path remains only for compatibility tests and is not the normal final execution path.
+This document shows the implemented target architecture. The normal execution path is the A2A-compatible HTTP, DeepAgent, FastMCP, Qdrant, Neo4j, and Langfuse flow.
 
 ## 1. Target Runtime Architecture
 

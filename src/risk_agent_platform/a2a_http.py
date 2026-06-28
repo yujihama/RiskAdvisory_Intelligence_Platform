@@ -30,10 +30,6 @@ def create_a2a_app(service: A2AService) -> FastAPI:
     def agent_card(request: Request) -> dict[str, Any]:
         return sdk_agent_card_dict(service.card(), base_url=str(request.base_url).rstrip("/"))
 
-    @app.get("/.well-known/agent-card.internal.json")
-    def internal_agent_card() -> dict[str, Any]:
-        return service.card().model_dump(mode="json")
-
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok", "agent": service.name}

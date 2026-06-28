@@ -118,7 +118,7 @@ Data Layer
   - Langfuse
 
 Runtime Layer
-  - Docker Compose for local / PoC
+  - Docker Compose for local verification
   - ECS-compatible containers for production migration
 ```
 
@@ -1284,4 +1284,3 @@ Langfuse
 - Langfuse Docker Compose: https://langfuse.com/self-hosting/deployment/docker-compose
 - Docling Documentation: https://docling-project.github.io/docling/
 - LangChain Docling Integration: https://docs.langchain.com/oss/python/integrations/document_loaders/docling
-

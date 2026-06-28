@@ -7,14 +7,14 @@ This checklist maps the implementation instruction to concrete evidence in the c
 - [x] `deepagents` and `langgraph` are dependencies.
 - [x] Orchestrator is backed by `create_deep_agent` through `DeepAgentRunner`.
 - [x] Domain Agents are backed by `create_deep_agent` through `DomainDeepAgentService`.
-- [x] Legacy `LocalA2ARegistry` remains only in the previous PoC path; final path uses A2A HTTP/client boundaries.
+- [x] The codebase uses the A2A-compatible HTTP/client boundary as the runtime agent boundary.
 
 Evidence:
 
 - `src/risk_agent_platform/deepagent_runtime.py`
 - `src/risk_agent_platform/final_agents.py`
 - `python -m compileall src tests`
-- `pytest` -> `10 passed`
+- `pytest` -> current suite passes
 
 ## A2A
 
@@ -35,7 +35,7 @@ Evidence:
 - [x] FastMCP servers exist for all required MCP server names.
 - [x] Agents call external capabilities through `MCPGateway` and FastMCP `Client`.
 - [x] Docker HTTP MCP tools were verified for Qdrant, Neo4j, structured data, document parser, expert knowledge, and OCR error handling.
-- [x] Legacy MCP-style classes are not used by `run-final-scenario` / `run_scenario`.
+- [x] Normal execution uses FastMCP servers through `MCPGateway`.
 
 Verified command summary:
 
@@ -48,8 +48,8 @@ Verified command summary:
 - [x] Query Sanitizer redacts IDs, amounts, client/scenario IDs, and domain-specific confidential terms.
 - [x] Tavily results are normalized to `EvidenceItem`.
 - [x] Evidence registration writes JSONL, indexes Qdrant, and registers Evidence/Scenario relations in Neo4j.
-- [x] `dummy_sources.json` is fixture-only and is not used by the final path.
-- [x] Missing `TAVILY_API_KEY` fails explicitly without silent dummy fallback.
+- [x] Web evidence collection uses Tavily through `mcp-web-search`; there is no local fixture fallback in the runtime path.
+- [x] Missing `TAVILY_API_KEY` fails explicitly without silent fallback.
 - [x] Live Tavily E2E verified with a real `TAVILY_API_KEY`.
 
 Verified live run:
@@ -103,7 +103,7 @@ Live scenario verification:
 Evidence:
 
 - HTTP MCP smoke inserted `RiskScenario` node `http_mcp_check`.
-- Dummy final E2E queried affected assets from Neo4j.
+- Mocked-Tavily final E2E queried affected assets from Neo4j.
 - Live final E2E registered `scenario_live_2026_001`, linked 3 affected suppliers, and returned 3 risk paths.
 - Neo4j variable-depth graph reads were verified through `find_affected_assets`, `find_related_assets`, and `find_risk_paths`.
 
@@ -123,7 +123,7 @@ Verified commands:
 - `docker compose up -d langfuse`
 - `curl.exe -I --max-time 20 http://localhost:3300` -> `HTTP/1.1 200 OK`
 - `Langfuse(...).auth_check()` -> `True`
-- Langfuse-enabled dummy final E2E test passed.
+- Langfuse-enabled final E2E test passed.
 - Live trace API readback: `trace_id=724f0fa58e4c4db7a19b2664bf6e901d`, `project_id=risk-advisory-local-project`, `observation_count=144`.
 - Local trace `outputs/_traces/724f0fa5-8e4c-4db7-a19b-2664bf6e901d.jsonl` includes A2A, MCP, and OpenRouter events with `langfuse_enabled=true` and no `langfuse_event_error`.
 
@@ -157,7 +157,7 @@ Evidence:
 ## E2E
 
 - [x] `pytest` includes a final architecture embedded E2E using dummy client data, mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and output artifact generation.
-- [x] Langfuse-enabled dummy final E2E passed.
+- [x] Langfuse-enabled final E2E passed.
 - [x] Final CLI fails explicitly when Tavily is missing.
 - [x] Full live E2E with real Tavily search, Qdrant, Neo4j, Langfuse, OpenRouter, and output artifacts is verified.
 
