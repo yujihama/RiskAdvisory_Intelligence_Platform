@@ -15,6 +15,7 @@ from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
 from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
 import risk_agent_platform.run_discovery as run_discovery
+import risk_agent_platform.run_discovery_evaluation as run_discovery_evaluation
 from risk_agent_platform.schemas import (
     AgentCard,
     DiscoveredRisk,
@@ -268,6 +269,16 @@ def test_structured_data_risk_feature_sample_redacts_raw_identifiers():
     assert "amount" not in first
     assert "bank_name" not in first
     assert {"payment_id", "supplier_id", "amount", "bank_name"}.issubset(set(result["redaction_policy"]["omitted_fields"]))
+
+    safe_summary = gateway.call(
+        "mcp-structured-data",
+        "summarize_payment_exposure_safe",
+        {"client_id": "demo_client", "country": "Noveria"},
+    )
+    assert safe_summary["payment_count"] == 1
+    assert "items" not in safe_summary
+    assert "total_amount" not in safe_summary
+    assert safe_summary["features"][0]["amount_bucket"] == "1m_5m"
 
 
 def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_path, monkeypatch):
@@ -535,7 +546,15 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
                 {
                     "decision": "Confirm payment route and sanction-screening owner.",
                     "owner": "Treasury",
+                    "deadline": "2026-07-02",
                     "priority": 1,
+                    "review_required": True,
+                },
+                {
+                    "decision": "Complete sanctions check before payment release.",
+                    "owner": "Treasury",
+                    "deadline": "2026-07-02",
+                    "priority": 2,
                     "review_required": True,
                 }
             ],
@@ -557,8 +576,16 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
                 {
                     "decision": "Check alternate supplier readiness.",
                     "owner": "Procurement",
+                    "deadline": "2026-07-05",
                     "priority": 4,
                     "review_required": False,
+                },
+                {
+                    "decision": "Perform sanctions check before supplier contract execution.",
+                    "owner": "Legal",
+                    "deadline": "2026-07-04",
+                    "priority": 2,
+                    "review_required": True,
                 }
             ],
             "evidence_count": 3,
@@ -573,26 +600,103 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
     markdown = Path(paths["markdown"]).read_text(encoding="utf-8")
     assert summary["portfolio_overview"]["analysis_count"] == 2
     assert summary["portfolio_overview"]["completed_count"] == 2
-    assert summary["portfolio_overview"]["total_decisions"] == 2
+    assert summary["portfolio_overview"]["total_decisions"] == 4
     assert summary["portfolio_overview"]["total_evidence"] == 5
-    assert summary["portfolio_overview"]["review_required_scenarios"] == [first.scenario_id]
+    assert summary["portfolio_overview"]["review_required_scenarios"] == [first.scenario_id, second.scenario_id]
     assert summary["portfolio_overview"]["priority_decisions"][0]["decision"].startswith("Confirm payment route")
+    sanctions_group = [
+        item
+        for item in summary["portfolio_overview"]["consolidated_decisions"]
+        if item["group_id"] == "sanctions_review"
+    ][0]
+    assert sanctions_group["source_count"] == 3
+    assert summary["portfolio_overview"]["decision_conflicts"]
     assert "## Portfolio Overview" in markdown
     assert "## Priority Decisions" in markdown
+    assert "## Consolidated Decisions" in markdown
 
 
-def test_risk_discovery_evaluation_cases_are_loadable():
+def test_risk_discovery_evaluation_cases_compute_quality_metrics():
+    class _EvaluationDiscovery:
+        def discover(self, request: RiskDiscoveryRequest) -> RiskDiscoveryResult:
+            by_department = {
+                "Treasury": (
+                    ["payment_disruption"],
+                    [
+                        "Which pending payments are near term and routed through affected bank countries?",
+                        "Which alternate payment routes are available without increasing sanctions risk?",
+                    ],
+                ),
+                "Legal": (
+                    ["legal_compliance"],
+                    [
+                        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+                        "Which counterparties require beneficial ownership or restricted party review?",
+                    ],
+                ),
+                "Accounting": (
+                    ["accounting_disclosure"],
+                    [
+                        "Which exposures could become material for impairment, provision, or disclosure?",
+                        "What evidence package is required for auditor review?",
+                    ],
+                ),
+                "Executive": (
+                    ["supplier_resilience", "payment_disruption", "legal_compliance", "executive_resilience"],
+                    [
+                        "Which selected risks require executive cross-functional decision ownership?",
+                        "Which evidence gaps block immediate mitigation decisions?",
+                    ],
+                ),
+            }
+            selected_types, questions = by_department[request.scope.department or "Executive"]
+            candidates = [
+                DiscoveredRisk(
+                    candidate_id=f"DISC-{idx:03d}",
+                    title=f"{risk_type} candidate",
+                    risk_type=risk_type,
+                    description=f"{risk_type} description",
+                    relevance_score=90 - idx,
+                    rationale="evaluation fake",
+                    selected_for_analysis=True,
+                )
+                for idx, risk_type in enumerate(selected_types, start=1)
+            ]
+            event = RiskEvent(
+                scenario_id=f"scenario_eval_{request.scope.department or 'executive'}",
+                client_id=request.scope.client_id,
+                title=candidates[0].title,
+                risk_type=candidates[0].risk_type,
+                description=candidates[0].description,
+                event_date=date(2026, 6, 28),
+                urgency="high",
+            )
+            return RiskDiscoveryResult(
+                request=request,
+                selected_candidates=candidates,
+                selected_event=event,
+                selected_events=[event],
+                metadata={
+                    "fallback_used": False,
+                    "discovery_confidence": "agent_recorded_candidates",
+                    "additional_questions": questions,
+                    "unknowns": [],
+                },
+            )
+
     path = Path("data/evaluation/risk_discovery_cases.jsonl")
-    cases = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    cases = run_discovery_evaluation.load_cases(path)
+    report = run_discovery_evaluation.evaluate_cases(
+        Settings.load(Path.cwd()),
+        cases,
+        embedded_mcp=True,
+        discovery_factory=lambda *_args: _EvaluationDiscovery(),
+    )
 
-    assert len(cases) >= 4
-    for case in cases:
-        assert case["case_id"]
-        assert case["input"]["event_title"]
-        assert case["input"]["scope"]["client_id"]
-        assert isinstance(case["expected_selected_risk_types"], list)
-        assert isinstance(case["should_not_prioritize"], list)
-        assert isinstance(case["expected_questions"], list)
+    assert report["summary"]["passed"] is True
+    assert report["summary"]["average_recall"] == 1.0
+    assert report["summary"]["forbidden_top_violation_count"] == 0
+    assert report["summary"]["average_question_match"] > 0.9
 
 
 def test_evidence_repository_upserts_by_evidence_id(tmp_path):

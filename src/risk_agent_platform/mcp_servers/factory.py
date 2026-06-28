@@ -243,6 +243,13 @@ def create_structured_data_server(settings: Settings) -> FastMCP:
         return {"payment_count": len(payments), "total_amount": total, "items": payments}
 
     @mcp.tool
+    def summarize_payment_exposure_safe(client_id: str, country: str | None = None) -> dict[str, Any]:
+        payments = _read_rows(settings, client_id, "payments")
+        if country:
+            payments = [row for row in payments if row.get("bank_country", "").lower() == country.lower()]
+        return _safe_exposure_summary("payments", payments, "payment_count")
+
+    @mcp.tool
     def summarize_supplier_exposure(client_id: str, country: str | None = None) -> dict[str, Any]:
         suppliers = _read_rows(settings, client_id, "suppliers")
         if country:
@@ -251,10 +258,22 @@ def create_structured_data_server(settings: Settings) -> FastMCP:
         return {"supplier_count": len(suppliers), "critical_count": len(critical), "items": suppliers}
 
     @mcp.tool
+    def summarize_supplier_exposure_safe(client_id: str, country: str | None = None) -> dict[str, Any]:
+        suppliers = _read_rows(settings, client_id, "suppliers")
+        if country:
+            suppliers = [row for row in suppliers if row.get("country", "").lower() == country.lower()]
+        return _safe_exposure_summary("suppliers", suppliers, "supplier_count")
+
+    @mcp.tool
     def summarize_invoice_exposure(client_id: str) -> dict[str, Any]:
         invoices = _read_rows(settings, client_id, "invoices")
         total = sum(_to_float(row.get("amount")) for row in invoices)
         return {"invoice_count": len(invoices), "total_amount": total, "items": invoices}
+
+    @mcp.tool
+    def summarize_invoice_exposure_safe(client_id: str) -> dict[str, Any]:
+        invoices = _read_rows(settings, client_id, "invoices")
+        return _safe_exposure_summary("invoices", invoices, "invoice_count")
 
     return mcp
 
@@ -634,6 +653,22 @@ def _risk_feature_summary(dataset: str, rows: list[dict[str, str]]) -> dict[str,
         "near_term_due_count": near_term_due_count,
         "amount_buckets": amount_buckets,
         "risk_signals": risk_signals,
+    }
+
+
+def _safe_exposure_summary(dataset: str, rows: list[dict[str, str]], count_key: str) -> dict[str, Any]:
+    features = [_risk_feature_row(dataset, row, idx) for idx, row in enumerate(rows, start=1)]
+    summary = _risk_feature_summary(dataset, rows)
+    return {
+        count_key: len(rows),
+        "features": features[:25],
+        "summary": summary,
+        "redaction_policy": {
+            "omitted_fields": _sensitive_fields_present(rows),
+            "amounts": "bucketed",
+            "identifiers": "omitted",
+            "names": "omitted",
+        },
     }
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -202,7 +203,8 @@ def _portfolio_overview(records: list[dict[str, Any]]) -> dict[str, Any]:
     evidence_domains: set[str] = set()
     review_required_scenarios: list[str] = []
     priority_decisions: list[dict[str, Any]] = []
-    total_decisions = 0
+    decision_rows = _decision_rows(records)
+    consolidated_decisions = _consolidated_decisions(decision_rows)
     total_evidence = 0
 
     for record in records:
@@ -210,7 +212,6 @@ def _portfolio_overview(records: list[dict[str, Any]]) -> dict[str, Any]:
         status_counts[status] = status_counts.get(status, 0) + 1
         if record.get("risk_type"):
             risk_types.add(str(record["risk_type"]))
-        total_decisions += int(record.get("decision_count") or 0)
         total_evidence += int(record.get("evidence_count") or 0)
         evidence_domains.update(str(domain) for domain in record.get("evidence_domains", []) if domain)
 
@@ -252,12 +253,106 @@ def _portfolio_overview(records: list[dict[str, Any]]) -> dict[str, Any]:
         "failed_count": sum(count for status, count in status_counts.items() if status not in {"completed"}),
         "status_counts": status_counts,
         "risk_types": sorted(risk_types),
-        "total_decisions": total_decisions,
+        "total_decisions": len(decision_rows),
         "total_evidence": total_evidence,
         "evidence_domains": sorted(evidence_domains),
         "review_required_scenarios": [scenario_id for scenario_id in review_required_scenarios if scenario_id],
         "priority_decisions": priority_decisions[:20],
+        "consolidated_decisions": consolidated_decisions,
+        "decisions_by_owner": _group_decisions(decision_rows, "owner"),
+        "decisions_by_deadline": _group_decisions(decision_rows, "deadline"),
+        "decision_conflicts": _decision_conflicts(consolidated_decisions),
     }
+
+
+def _decision_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        for decision in record.get("decisions", []):
+            if not isinstance(decision, dict):
+                continue
+            rows.append(
+                {
+                    "scenario_id": record.get("scenario_id"),
+                    "risk_type": record.get("risk_type"),
+                    "decision": decision.get("decision"),
+                    "owner": decision.get("owner") or "Unassigned",
+                    "deadline": decision.get("deadline") or "Unspecified",
+                    "priority": decision.get("priority") if isinstance(decision.get("priority"), int) else 999,
+                    "review_required": bool(decision.get("review_required")),
+                }
+            )
+    return rows
+
+
+def _consolidated_decisions(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        groups.setdefault(_decision_group_key(str(row.get("decision") or "")), []).append(row)
+    consolidated = []
+    for group_key, items in groups.items():
+        owners = sorted({str(item.get("owner") or "Unassigned") for item in items})
+        deadlines = sorted({str(item.get("deadline") or "Unspecified") for item in items})
+        priorities = [int(item.get("priority") or 999) for item in items]
+        representative = min((str(item.get("decision") or "") for item in items), key=len, default=group_key)
+        consolidated.append(
+            {
+                "group_id": group_key,
+                "decision": representative,
+                "owners": owners,
+                "deadlines": deadlines,
+                "scenario_ids": sorted({str(item.get("scenario_id") or "") for item in items if item.get("scenario_id")}),
+                "risk_types": sorted({str(item.get("risk_type") or "") for item in items if item.get("risk_type")}),
+                "source_count": len(items),
+                "priority": min(priorities) if priorities else 999,
+                "review_required": any(bool(item.get("review_required")) for item in items),
+            }
+        )
+    return sorted(consolidated, key=lambda item: (item["priority"], -item["source_count"], item["group_id"]))
+
+
+def _decision_group_key(text: str) -> str:
+    lowered = text.lower()
+    if "sanction" in lowered or "restricted" in lowered:
+        return "sanctions_review"
+    if "payment" in lowered or "cash" in lowered or "bank" in lowered:
+        return "payment_execution"
+    if "supplier" in lowered or "procurement" in lowered:
+        return "supplier_continuity"
+    if "contract" in lowered or "notice" in lowered or "force majeure" in lowered:
+        return "contract_review"
+    tokens = [
+        token
+        for token in re.sub(r"[^a-z0-9]+", " ", lowered).split()
+        if len(token) >= 4 and token not in {"confirm", "review", "check", "required", "owner"}
+    ]
+    return "_".join(tokens[:5]) if tokens else "decision_review"
+
+
+def _group_decisions(rows: list[dict[str, Any]], field: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        key = str(row.get(field) or "Unspecified")
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _decision_conflicts(consolidated: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    conflicts = []
+    for item in consolidated:
+        owners = item.get("owners") or []
+        deadlines = item.get("deadlines") or []
+        if len(owners) > 1 or len(deadlines) > 1:
+            conflicts.append(
+                {
+                    "group_id": item["group_id"],
+                    "issue": "Potential duplicate decision with different owner or deadline.",
+                    "owners": owners,
+                    "deadlines": deadlines,
+                    "scenario_ids": item.get("scenario_ids", []),
+                }
+            )
+    return conflicts
 
 
 def _portfolio_markdown(data: dict[str, Any]) -> str:
@@ -291,6 +386,29 @@ def _portfolio_markdown(data: dict[str, Any]) -> str:
             lines.append(
                 f"- `{decision.get('scenario_id')}` {decision.get('decision')} "
                 f"(owner={decision.get('owner')}, priority={decision.get('priority')}, review_required={decision.get('review_required')})"
+            )
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Consolidated Decisions"])
+    consolidated_decisions = overview.get("consolidated_decisions") or []
+    if consolidated_decisions:
+        for decision in consolidated_decisions:
+            lines.append(
+                f"- `{decision.get('group_id')}` {decision.get('decision')} "
+                f"(owners={', '.join(decision.get('owners') or [])}, "
+                f"deadlines={', '.join(decision.get('deadlines') or [])}, "
+                f"sources={decision.get('source_count')})"
+            )
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Decision Conflicts"])
+    conflicts = overview.get("decision_conflicts") or []
+    if conflicts:
+        for conflict in conflicts:
+            lines.append(
+                f"- `{conflict.get('group_id')}` {conflict.get('issue')} "
+                f"(owners={', '.join(conflict.get('owners') or [])}, "
+                f"deadlines={', '.join(conflict.get('deadlines') or [])})"
             )
     else:
         lines.append("- None")

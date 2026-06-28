@@ -5,6 +5,7 @@ from pathlib import Path
 
 from risk_agent_platform.config import Settings
 from risk_agent_platform.run_discovery import main as run_discovery_main
+from risk_agent_platform.run_discovery_evaluation import main as run_discovery_evaluation_main
 from risk_agent_platform.run_scenario import main as run_scenario_main
 
 
@@ -55,6 +56,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     discover.add_argument("--embedded-services", action="store_true")
 
+    evaluate = sub.add_parser("evaluate-discovery", help="Evaluate Risk Discovery quality against JSONL cases.")
+    evaluate.add_argument("--cases", default="data/evaluation/risk_discovery_cases.jsonl")
+    evaluate.add_argument("--output")
+    evaluate.add_argument("--embedded-services", action="store_true")
+    evaluate.add_argument("--top-n", type=int, default=3)
+    evaluate.add_argument("--min-recall", type=float, default=0.75)
+    evaluate.add_argument("--min-question-match", type=float, default=0.25)
+
     sub.add_parser("preflight", help="Check required final architecture configuration.")
 
     return parser
@@ -101,6 +110,23 @@ def main(argv: list[str] | None = None) -> int:
         if args.embedded_services:
             argv.append("--embedded-services")
         return run_discovery_main(argv)
+
+    if args.command == "evaluate-discovery":
+        argv = [
+            "--cases",
+            args.cases,
+            "--top-n",
+            str(args.top_n),
+            "--min-recall",
+            str(args.min_recall),
+            "--min-question-match",
+            str(args.min_question_match),
+        ]
+        if args.output:
+            argv.extend(["--output", args.output])
+        if args.embedded_services:
+            argv.append("--embedded-services")
+        return run_discovery_evaluation_main(argv)
 
     if args.command == "preflight":
         checks = {

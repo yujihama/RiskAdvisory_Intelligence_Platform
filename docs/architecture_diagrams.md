@@ -241,7 +241,7 @@ sequenceDiagram
     D-->>O: Decision-first output finding
     O-->>CLI: Final status and output directory
     end
-    CLI-->>CLI: Write portfolio summary across analyzed risks
+    CLI-->>CLI: Write portfolio summary with consolidated Decisions and conflict hints
     end
 ```
 
@@ -256,8 +256,8 @@ flowchart LR
     scenario --> unknowns["assumptions_and_unknowns.json"]
     scenario --> trace_meta["trace_metadata.json"]
     portfolio_dir["outputs/risk_discovery/"] --> discovery_json["<scenario_id>.json"]
-    portfolio_dir --> portfolio_json["<top_scenario_id>_portfolio_summary.json"]
-    portfolio_dir --> portfolio_md["<top_scenario_id>_portfolio_summary.md"]
+    portfolio_dir --> portfolio_json["<top_scenario_id>_portfolio_summary.json / consolidated Decisions"]
+    portfolio_dir --> portfolio_md["<top_scenario_id>_portfolio_summary.md / owner-deadline groups"]
     traces["outputs/_traces/"] --> trace_jsonl["<trace_id>.jsonl"]
 
     queue --> neo4j["Neo4j Decision node and MITIGATES relation"]

@@ -128,6 +128,8 @@ class RiskDiscoveryDeepAgent:
         selected_events = [_candidate_to_event(candidate, request) for candidate in selected_candidates]
         selected_event = selected_events[0] if selected_events else None
         fallback_used = not bool(raw_candidates)
+        additional_questions = _discovery_questions(selected_candidates, request)
+        unknowns = _discovery_unknowns(selected_candidates, request)
         return RiskDiscoveryResult(
             request=request,
             selected_candidates=selected_candidates,
@@ -144,6 +146,8 @@ class RiskDiscoveryDeepAgent:
                 "raw_candidate_count": len(raw_candidates),
                 "fallback_used": fallback_used,
                 "discovery_confidence": "template_fallback" if fallback_used else "agent_recorded_candidates",
+                "additional_questions": additional_questions,
+                "unknowns": unknowns,
                 "scope_relevance_rule_count": len(_scope_relevance_rules(self._state)),
             },
         )
@@ -420,6 +424,58 @@ def _candidate_to_event(candidate: DiscoveredRisk, request: RiskDiscoveryRequest
         event_date=request.event_date or date.today(),
         urgency=candidate.urgency,
     )
+
+
+def _discovery_questions(candidates: list[DiscoveredRisk], request: RiskDiscoveryRequest) -> list[str]:
+    risk_types = {candidate.risk_type for candidate in candidates}
+    questions: list[str] = []
+    if "payment_disruption" in risk_types:
+        questions.extend(
+            [
+                "Which pending payments are near term and routed through affected bank countries?",
+                "Which alternate payment routes are available without increasing sanctions risk?",
+            ]
+        )
+    if "supplier_resilience" in risk_types:
+        questions.extend(
+            [
+                "Which critical suppliers have low inventory runway or no qualified alternative source?",
+                "Which logistics lanes or sites need immediate continuity validation?",
+            ]
+        )
+    if "legal_compliance" in risk_types:
+        questions.extend(
+            [
+                "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+                "Which counterparties require beneficial ownership or restricted party review?",
+            ]
+        )
+    if "accounting_disclosure" in risk_types:
+        questions.extend(
+            [
+                "Which exposures could become material for impairment, provision, or disclosure?",
+                "What evidence package is required for auditor review?",
+            ]
+        )
+    if request.scope.scope_type == "company" or request.scope.department == "Executive" or "executive_resilience" in risk_types:
+        questions.extend(
+            [
+                "Which selected risks require executive cross-functional decision ownership?",
+                "Which evidence gaps block immediate mitigation decisions?",
+            ]
+        )
+    return list(dict.fromkeys(questions))
+
+
+def _discovery_unknowns(candidates: list[DiscoveredRisk], request: RiskDiscoveryRequest) -> list[str]:
+    unknowns = ["Validated external evidence is still required before final risk scoring."]
+    if any(candidate.risk_type == "payment_disruption" for candidate in candidates):
+        unknowns.append("Near-term payment route availability and sanctions-screening ownership are not yet validated.")
+    if any(candidate.risk_type == "legal_compliance" for candidate in candidates):
+        unknowns.append("Counterparty restricted-party status and contract notice obligations require legal validation.")
+    if any(candidate.risk_type == "accounting_disclosure" for candidate in candidates):
+        unknowns.append("Materiality and auditor evidence sufficiency require accounting validation.")
+    return unknowns
 
 
 def _scenario_id(request: RiskDiscoveryRequest, candidate: DiscoveredRisk) -> str:

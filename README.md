@@ -183,7 +183,17 @@ risk-agent-platform discover-risks `
   --embedded-services
 ```
 
-`--analysis-mode all-selected` is the default. Use `--analysis-mode top` for the previous one-risk behavior, or `--analysis-mode top-n --top-n 2` to cap the number of selected risks analyzed. `--max-risks` is treated as discovery candidate-generation guidance; it does not cut threshold-selected candidates from downstream analysis. If Discovery uses template fallback candidates, `--run-analysis` is blocked unless `--allow-fallback-analysis` is explicitly supplied. When multiple risks are analyzed, `outputs/risk_discovery/<top_scenario_id>_portfolio_summary.json` and `.md` integrate the selected/rejected candidates, Discovery metadata, per-scenario status, Decisions, Evidence counts, review-required scenarios, and priority Decisions.
+`--analysis-mode all-selected` is the default. Use `--analysis-mode top` for the previous one-risk behavior, or `--analysis-mode top-n --top-n 2` to cap the number of selected risks analyzed. `--max-risks` is guidance to the DeepAgent for candidate generation, not the final selected count. Final selected candidates are determined by the scope relevance threshold, so more than `--max-risks` can be selected. The number of analyzed risks is controlled by `--analysis-mode` and `--top-n`. If Discovery uses template fallback candidates, `--run-analysis` is blocked unless `--allow-fallback-analysis` is explicitly supplied. When multiple risks are analyzed, `outputs/risk_discovery/<top_scenario_id>_portfolio_summary.json` and `.md` integrate the selected/rejected candidates, Discovery metadata, per-scenario status, Decisions, Evidence counts, review-required scenarios, priority Decisions, consolidated similar Decisions, owner/deadline grouping, and potential owner/deadline conflicts.
+
+Discovery quality evaluation:
+
+```powershell
+risk-agent-platform evaluate-discovery `
+  --cases data\evaluation\risk_discovery_cases.jsonl `
+  --embedded-services
+```
+
+This runs each evaluation case through Risk Discovery, calculates expected risk-type recall, checks whether `should_not_prioritize` risk types appear in the top results, and compares expected questions against Discovery `additional_questions` / `unknowns`.
 
 Local embedded A2A/MCP endpoints:
 
@@ -233,6 +243,8 @@ Expert knowledge is represented as structured Knowledge Objects, Knowledge Primi
 Risk Discovery scope filtering is also Expert-as-Code driven: `data/expert_knowledge/scope_relevance_rules.jsonl` defines what Treasury, Legal, Accounting, Procurement, business units, and industries treat as risk-relevant. Rejected candidates are preserved with a reason and relevance score so specialist reviewers can challenge false negatives.
 
 Risk Discovery evaluation cases live in `data/evaluation/risk_discovery_cases.jsonl`. Each case includes input event/scope, expected selected risk types, risk types that should not be prioritized, and expected follow-up questions.
+
+Structured-data MCP tools include LLM-safe summaries: `summarize_payment_exposure_safe`, `summarize_supplier_exposure_safe`, and `summarize_invoice_exposure_safe`. They return bucketed features and aggregate signals instead of raw rows.
 
 ## Document Parsing and OCR
 

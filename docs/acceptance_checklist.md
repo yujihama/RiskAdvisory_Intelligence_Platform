@@ -12,6 +12,8 @@ This checklist maps the implementation instruction to concrete evidence in the c
 - [x] Risk Discovery DeepAgent converts an event + client scope into scope-relevant selected/rejected candidates and threshold-selected `RiskEvent` items, while preserving the top `selected_event` for compatibility.
 - [x] Risk Discovery passes structured client data to DeepAgent as `risk_feature_sample` views rather than raw rows, and records `discovery_confidence`.
 - [x] `--run-analysis` blocks template fallback Discovery results unless `--allow-fallback-analysis` is explicitly supplied.
+- [x] `evaluate-discovery` runs evaluation cases, computes expected risk-type recall, forbidden top-result violations, and expected-question matching.
+- [x] Portfolio summary consolidates similar Decisions, groups them by owner/deadline, and flags potential duplicate owner/deadline conflicts.
 - [x] Source Intelligence, Expert-as-Code, and Evidence / Red Team include DeepAgent tool-use slots; Treasury, Legal, and Accounting include bounded issue-exploration slots while final scoring remains structured.
 
 Evidence:
@@ -39,6 +41,7 @@ Evidence:
 
 - [x] FastMCP servers exist for all required MCP server names.
 - [x] Agents call external capabilities through `MCPGateway` and FastMCP `Client`.
+- [x] Structured-data MCP exposes LLM-safe summary tools for payment, supplier, and invoice exposure.
 - [x] Docker HTTP MCP tools were verified for Qdrant, Neo4j, structured data, document parser, expert knowledge, and OCR error handling.
 - [x] Normal execution uses FastMCP servers through `MCPGateway`.
 
@@ -171,7 +174,7 @@ Evidence:
 ## E2E
 
 - [x] `pytest` includes a final architecture embedded E2E using dummy client data, mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and output artifact generation.
-- [x] `pytest` includes Risk Discovery fallback coverage for event + department scope intake, selected `RiskEvent` generation, all-selected/top/top-n analysis mode selection, fallback analysis blocking, normal non-fallback candidate recording, scope-specific selection, rejected candidate reasons, feature-view redaction, evaluation dataset loading, and portfolio summary integration.
+- [x] `pytest` includes Risk Discovery fallback coverage for event + department scope intake, selected `RiskEvent` generation, all-selected/top/top-n analysis mode selection, fallback analysis blocking, normal non-fallback candidate recording, scope-specific selection, rejected candidate reasons, feature-view redaction, safe summaries, evaluation quality metrics, and portfolio summary integration with Decision consolidation.
 - [x] Langfuse-enabled final E2E passed.
 - [x] Final CLI fails explicitly when Tavily is missing.
 - [x] Full live E2E with real Tavily search, Qdrant, Neo4j, Langfuse, OpenRouter, and output artifacts is verified.
