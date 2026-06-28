@@ -28,10 +28,10 @@
         "payment_disruption"
       ],
       "selected_candidate_titles": [
-        "Correspondent bank restrictions delay Iran-adjacent supplier payments"
+        "Correspondent Bank Restrictions Delaying Cross-Border Supplier Payments"
       ],
       "selected_candidate_rationales": [
-        "Scope is Treasury, which owns payment execution and correspondent banking relationships. Event explicitly describes correspondent bank restrictions delaying urgent supplier payments. Event facts confirm SWIFT payment delays and correspondent bank holdbacks in Iran-adjacent corridors with immediate time horizon (0-2 weeks). This is a direct payment disruption risk to Treasury operations."
+        "Scope is Treasury department focused on payment operations. Event explicitly describes correspondent bank restrictions and sanctions screening causing payment delays. FinCEN identified $9B in shadow banking through US correspondent accounts, prompting enhanced screening. Treasury directly manages payment execution and supplier disbursements."
       ],
       "selected_candidate_scope_matches": [
         [
@@ -41,7 +41,6 @@
           "correspondent banking",
           "scope_text:primary",
           "scope_text:treasury",
-          "department",
           "treasury",
           "SCOPE-DEPT-TREASURY-001:primary",
           "SCOPE-DEPT-TREASURY-001:term",
@@ -123,14 +122,15 @@
         "legal_compliance"
       ],
       "selected_candidate_titles": [
-        "Sanctions violation exposure from Iran-related transactions or supply chain"
+        "Failure to screen counterparties against updated OFAC and BIS restricted parties lists"
       ],
       "selected_candidate_rationales": [
-        "Direct legal compliance obligation triggered by new sanctions. Legal department must assess contract performance, update screening procedures, and advise on export license requirements. Manufacturing sector faces heightened risk through dual-use component exposure and re-export pathways."
+        "The Legal department must ensure the company's sanctions screening program captures all newly designated Iranian entities and individuals. The 50% ownership rule means entities owned by designated parties are also blocked. Manufacturing clients with global supply chains face heightened risk of indirect Iran exposure through tier-2 or tier-3 suppliers."
       ],
       "selected_candidate_scope_matches": [
         [
-          "legal_compliance",
+          "Legal department responsible for sanctions compliance oversight",
+          "Counterparty due diligence procedures must be updated",
           "scope_text:primary",
           "scope_text:legal",
           "Legal",
@@ -182,7 +182,8 @@
         "SCOPE-DEPT-LEGAL-001"
       ],
       "actual_rubric_ids": [
-        "SCOPE-DEPT-LEGAL-001"
+        "SCOPE-DEPT-LEGAL-001",
+        "SCOPE-IND-MANUFACTURING-001"
       ],
       "rubric_hits": [
         "SCOPE-DEPT-LEGAL-001"
@@ -213,19 +214,21 @@
         "accounting_disclosure"
       ],
       "selected_candidate_titles": [
-        "Impairment indicators triggered by Iran conflict on manufacturing assets"
+        "Impairment of long-lived assets due to Iran-related supply chain disruption"
       ],
       "selected_candidate_rationales": [
-        "The event directly references impairment indicators. The scope is Accounting. Manufacturing industry with energy input cost escalation creates plausible triggering events for asset impairment testing. Deloitte and Grant Thornton reporting alerts confirm financial reporting implications including impairment considerations."
+        "Scope is Accounting; event explicitly references impairment indicators. Iran conflict disrupts manufacturing supply chains and energy costs, creating potential triggering events for long-lived asset impairment testing at reporting close."
       ],
       "selected_candidate_scope_matches": [
         [
-          "accounting",
-          "financial_reporting",
-          "impairment",
+          "accounting_disclosure",
+          "impairment indicators",
+          "asset recoverability",
+          "manufacturing operations",
           "scope_text:primary",
           "scope_text:accounting",
           "Accounting",
+          "accounting",
           "SCOPE-DEPT-ACCOUNTING-001:primary",
           "SCOPE-DEPT-ACCOUNTING-001:term",
           "SCOPE-IND-MANUFACTURING-001:term"
@@ -304,27 +307,27 @@
       ],
       "selected_risk_types": [
         "executive_resilience",
-        "payment_disruption",
+        "supplier_resilience",
         "legal_compliance",
-        "supplier_resilience"
+        "payment_disruption"
       ],
       "selected_candidate_titles": [
-        "Executive decision paralysis on Iran supplier continuity vs. sanctions compliance",
-        "Payment route disruption to Iran and UAE corridors amid conflict escalation",
-        "Legal compliance exposure from continued Iran manufacturing sector engagement under OFAC sanctions",
-        "Supplier continuity coverage: Regional conflict escalation affecting manufacturing continuity"
+        "Executive trade-off decisions on manufacturing continuity amid logistics disruption",
+        "Energy cost escalation impacting manufacturing input costs and margin pressure",
+        "Sanctions and trade compliance exposure from conflict-related regulatory changes",
+        "Treasury payment disruption coverage: Regional conflict escalation affecting manufacturing continuity"
       ],
       "selected_candidate_rationales": [
-        "Scope is Executive Management; event creates a strategic trade-off requiring executive judgment. Client has a high-criticality Iran supplier with no alternative and near-term payment obligations ($1m-$5m due within 0-7 days). OFAC sanctions explicitly cover Iranian manufacturing. Executive resilience is the primary scope risk type.",
-        "Client has material near-term payments to Iran and UAE. Event facts confirm SWIFT access restrictions for Iranian financial institutions and payment route disruptions. Payment risks are scope-relevant as they require executive oversight of liquidity and counterparty risk. Do not collapse into supplier_resilience because the payment mechanism failure is distinct from supplier performance.",
-        "Scope is Executive Management; legal compliance is a distinct risk type requiring executive oversight. Event facts confirm OFAC sanctions on Iranian manufacturing. Do not collapse into accounting_disclosure because the primary risk is sanctions violation exposure, not disclosure obligations.",
-        "Deterministic coverage augmentation added this candidate because applicable scope rule SCOPE-BROAD-EXECUTIVE lists `supplier_resilience` or its aliases as primary, matched terms were present, and no candidate of this risk type was recorded by the LLM."
+        "Scope is Executive Management; the event directly creates strategic trade-off decisions requiring executive judgment on manufacturing continuity, supplier rerouting, and cost absorption. Executive resilience is the primary risk type per scope relevance rules.",
+        "Event facts confirm energy price volatility and oil/gas market disruption. Financial impact is a distinct risk type from executive_resilience; it represents the economic consequence that executives must manage, not a collapse into supplier_resilience.",
+        "Event facts include regulatory and sanctions signals from the multi-nation conflict. Legal compliance is a separate risk type per scope relevance rules; it must not be collapsed into accounting_disclosure even if disclosure may later be required.",
+        "Deterministic coverage augmentation added this candidate because applicable scope rule SCOPE-BROAD-EXECUTIVE lists `payment_disruption` or its aliases as primary, matched terms were present, and no candidate of this risk type was recorded by the LLM."
       ],
       "selected_candidate_scope_matches": [
         [
-          "Executive Management",
-          "manufacturing operations",
-          "procurement strategy",
+          "executive_management",
+          "manufacturing_continuity",
+          "strategic_decision_making",
           "scope_text:primary",
           "scope_text:executive",
           "Executive",
@@ -332,17 +335,19 @@
           "SCOPE-IND-MANUFACTURING-001:term"
         ],
         [
-          "Executive Management",
-          "finance operations",
-          "treasury",
-          "scope_text:management",
-          "management",
+          "executive_management",
+          "financial_planning",
+          "manufacturing_cost_management",
+          "scope_text:executive",
+          "Executive",
+          "executive",
+          "SCOPE-IND-MANUFACTURING-001:primary",
           "SCOPE-IND-MANUFACTURING-001:term"
         ],
         [
-          "Executive Management",
-          "legal and compliance",
-          "procurement",
+          "executive_management",
+          "legal_compliance",
+          "regulatory_adaptation",
           "scope_text:executive",
           "Executive",
           "executive",
@@ -358,7 +363,6 @@
           "scope_text:executive",
           "Executive",
           "executive",
-          "SCOPE-IND-MANUFACTURING-001:primary",
           "SCOPE-IND-MANUFACTURING-001:term"
         ]
       ],
@@ -370,7 +374,7 @@
       ],
       "top_risk_types": [
         "executive_resilience",
-        "payment_disruption",
+        "supplier_resilience",
         "legal_compliance"
       ],
       "should_not_prioritize": [],

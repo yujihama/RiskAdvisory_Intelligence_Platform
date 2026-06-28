@@ -27,6 +27,7 @@ LLM_SAFE_STRUCTURED_DATA_TOOLS = frozenset(
 AGENT_LLM_TOOL_ALLOWLIST: dict[str, dict[str, frozenset[str]]] = {
     "risk-discovery-agent": {
         "mcp-structured-data": frozenset({"list_datasets", "risk_feature_sample"}),
+        "mcp-web-search": frozenset({"search_authoritative_sources", "extract_url"}),
         "mcp-expert-knowledge": frozenset(
             {
                 "load_knowledge_pack",

@@ -74,6 +74,61 @@ class _RecordingCandidateRunner:
         return ""
 
 
+class _WebDiscoveryRunner:
+    def __init__(self, *_args, tools=None, **_kwargs) -> None:
+        self.tools = {item.name: item for item in tools or []}
+
+    def synthesize(self, *_args, **_kwargs) -> str:
+        search_payload = self.tools["discovery_search_event_context"].invoke(
+            {"query": "Taiwan Strait semiconductor component logistics disruption", "max_results": 3}
+        )
+        search = json.loads(search_payload)
+        self.tools["discovery_extract_event_source"].invoke({"url": search["results"][0]["url"]})
+        self.tools["discovery_record_event_facts"].invoke(
+            {
+                "event_facts_json": json.dumps(
+                    {
+                        "affected_geographies": ["Taiwan Strait"],
+                        "affected_industries": ["semiconductors", "electronics"],
+                        "infrastructure_chokepoints": ["sea freight lanes", "air cargo routes"],
+                        "critical_goods_or_services": ["semiconductor components", "electronic assemblies"],
+                        "regulatory_or_sanctions_signals": [],
+                        "financial_or_payment_signals": [],
+                        "supply_chain_tier_risks": ["sub-tier semiconductor component allocation"],
+                        "time_horizons": ["near-term logistics delay"],
+                        "source_refs": [{"title": "Taiwan semiconductor logistics disruption", "url": search["results"][0]["url"]}],
+                        "uncertainties": ["client-specific component dependency is not yet validated"],
+                    }
+                )
+            }
+        )
+        self.tools["discovery_record_candidates"].invoke(
+            {
+                "candidates_json": json.dumps(
+                    {
+                        "candidates": [
+                            {
+                                "candidate_id": "DISC-WEB-SUP",
+                                "title": "Semiconductor component allocation and logistics delay risk",
+                                "risk_type": "supplier_resilience",
+                                "risk_themes": ["supplier_resilience", "logistics", "semiconductor_components"],
+                                "affected_categories": ["critical_parts", "air_cargo", "sea_freight"],
+                                "description": (
+                                    "Taiwan Strait disruption could delay sea and air freight while sub-tier "
+                                    "semiconductor component allocation affects electronic assemblies."
+                                ),
+                                "urgency": "high",
+                                "scope_matches": ["web:event_facts"],
+                                "rationale": "Discovery web intelligence linked logistics disruption to semiconductor component supply.",
+                            }
+                        ]
+                    }
+                )
+            }
+        )
+        return ""
+
+
 def _recorded_scope_candidates() -> list[dict[str, object]]:
     return [
         {
@@ -331,6 +386,8 @@ def test_deepagent_tool_policy_keeps_raw_structured_tools_out_of_llm_slots():
     discovery_structured = agent_llm_tools("risk-discovery-agent", "mcp-structured-data")
     assert "risk_feature_sample" in discovery_structured
     assert "sample_rows" not in discovery_structured
+    discovery_web = agent_llm_tools("risk-discovery-agent", "mcp-web-search")
+    assert {"search_authoritative_sources", "extract_url"}.issubset(discovery_web)
 
     for agent_name in ("treasury-risk-agent", "legal-risk-agent", "accounting-risk-agent"):
         allowed = agent_llm_tools(agent_name, "mcp-structured-data")
@@ -501,6 +558,64 @@ def test_risk_discovery_uses_natural_language_scope_without_department_mapping(t
     assert result.selected_candidates[0].risk_type == "supplier_resilience"
     assert result.selected_candidates[0].scope_matches[0] == "SCOPE-TEXT-PRIMARY:coverage_primary"
     assert "executive_resilience" not in {candidate.risk_type for candidate in result.selected_candidates}
+
+
+def test_risk_discovery_records_bounded_web_event_facts_for_candidate_generation(tmp_path, monkeypatch):
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _WebDiscoveryRunner)
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "fujifilm_dummy", tmp_path / "data" / "clients" / "fujifilm_dummy")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+    original_call = MCPGateway.call
+
+    def fake_call(self, server_name, tool_name, arguments=None):
+        if server_name == "mcp-web-search" and tool_name == "search_authoritative_sources":
+            assert "fujifilm" not in (arguments or {})["query"].lower()
+            return {
+                "query": (arguments or {})["query"],
+                "query_hash": "test-query-hash",
+                "results": [
+                    {
+                        "title": "Taiwan semiconductor logistics disruption",
+                        "url": "https://example.test/taiwan-semiconductor-logistics",
+                        "content": "Taiwan semiconductor component suppliers depend on sea freight and air cargo lanes.",
+                    }
+                ],
+            }
+        if server_name == "mcp-web-search" and tool_name == "extract_url":
+            return {
+                "url": (arguments or {})["url"],
+                "result": {
+                    "results": [
+                        {
+                            "url": (arguments or {})["url"],
+                            "raw_content": "Semiconductor component disruption can affect electronics manufacturing tiers.",
+                        }
+                    ]
+                },
+            }
+        return original_call(self, server_name, tool_name, arguments)
+
+    monkeypatch.setattr(MCPGateway, "call", fake_call)
+    request = RiskDiscoveryRequest(
+        event_title="Taiwan contingency",
+        event_description="A Taiwan Strait contingency may disrupt sea and air logistics.",
+        countries=["Taiwan"],
+        scope=RiskDiscoveryScope(
+            client_id="fujifilm_dummy",
+            scope_text="Fujifilm logistics including sea freight, air cargo, customs, suppliers, and critical parts.",
+        ),
+    )
+
+    result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    assert result.metadata["fallback_used"] is False
+    assert result.metadata["web_search_count"] == 1
+    assert result.metadata["web_extraction_count"] == 1
+    assert result.metadata["web_searches"][0]["query_hash"] == "test-query-hash"
+    assert "semiconductors" in result.metadata["event_facts"]["affected_industries"]
+    assert "semiconductor" in result.selected_candidates[0].description.lower()
+    assert result.selected_candidates[0].risk_type == "supplier_resilience"
 
 
 def test_risk_discovery_preserves_rejected_candidate_reasons_without_llm_tools(tmp_path, monkeypatch):

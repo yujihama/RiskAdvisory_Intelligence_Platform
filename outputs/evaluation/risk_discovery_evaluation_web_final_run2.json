@@ -25,26 +25,33 @@
         "payment_disruption"
       ],
       "selected_risk_types": [
-        "payment_disruption"
+        "payment_disruption",
+        "supplier_resilience"
       ],
       "selected_candidate_titles": [
-        "Correspondent bank restrictions delay Iran-adjacent supplier payments"
+        "Correspondent bank restrictions delay Iran-linked supplier payments",
+        "Shipping disruption via Strait of Hormuz delays manufacturing supply deliveries"
       ],
       "selected_candidate_rationales": [
-        "Scope is Treasury, which owns payment execution and correspondent banking relationships. Event explicitly describes correspondent bank restrictions delaying urgent supplier payments. Event facts confirm SWIFT payment delays and correspondent bank holdbacks in Iran-adjacent corridors with immediate time horizon (0-2 weeks). This is a direct payment disruption risk to Treasury operations."
+        "Scope is Treasury, which manages payment processing and correspondent banking. The event explicitly describes correspondent bank restrictions and sanctions screening causing payment delays. This is a direct payment_disruption risk to the Treasury function.",
+        "While the primary scope is Treasury, the manufacturing industry context means supply chain disruptions have downstream payment implications. This is a supplier_resilience risk that affects Treasury through payment timing mismatches and potential contract disputes."
       ],
       "selected_candidate_scope_matches": [
         [
-          "Treasury",
-          "cross-border payments",
-          "supplier payments",
-          "correspondent banking",
+          "Treasury department responsible for payment processing and correspondent banking relationships",
+          "Manufacturing supply chain payments may involve suppliers with indirect Iran exposure",
           "scope_text:primary",
           "scope_text:treasury",
-          "department",
+          "Treasury",
           "treasury",
           "SCOPE-DEPT-TREASURY-001:primary",
           "SCOPE-DEPT-TREASURY-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Manufacturing industry operations dependent on imported materials",
+          "Treasury may face payment timing mismatches if deliveries are delayed but payments are contractually due",
+          "SCOPE-IND-MANUFACTURING-001:primary",
           "SCOPE-IND-MANUFACTURING-001:term"
         ]
       ],
@@ -52,7 +59,8 @@
         "payment_disruption"
       ],
       "top_risk_types": [
-        "payment_disruption"
+        "payment_disruption",
+        "supplier_resilience"
       ],
       "should_not_prioritize": [
         "accounting_disclosure"
@@ -67,6 +75,8 @@
       "actual_questions": [
         "Which pending payments are near term and routed through affected bank countries?",
         "Which alternate payment routes are available without increasing sanctions risk?",
+        "Which critical suppliers have low inventory runway or no qualified alternative source?",
+        "Which logistics lanes or sites need immediate continuity validation?",
         "Validated external evidence is still required before final risk scoring.",
         "Near-term payment route availability and sanctions-screening ownership are not yet validated."
       ],
@@ -79,7 +89,8 @@
         "executive_ownership",
         "materiality_reporting",
         "payment_route",
-        "sanctions_screening"
+        "sanctions_screening",
+        "supplier_continuity"
       ],
       "missing_data_category_hits": [
         "payment_route",
@@ -103,14 +114,12 @@
       "coverage_augmented_candidate_count": 0,
       "raw_candidate_count": 3,
       "rejected_risk_types": [
-        "payment_disruption",
         "payment_disruption"
       ],
       "rejected_reasons": [
-        "Moved below threshold by scope diversity pass: duplicate selected risk_type `payment_disruption` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50.",
         "Moved below threshold by scope diversity pass: duplicate selected risk_type `payment_disruption` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50."
       ],
-      "rejected_count": 2
+      "rejected_count": 1
     },
     {
       "case_id": "rdc_legal_sanctions_contract_001",
@@ -123,14 +132,16 @@
         "legal_compliance"
       ],
       "selected_candidate_titles": [
-        "Sanctions violation exposure from Iran-related transactions or supply chain"
+        "UN/EU/UK Sanctions Reimposition on Iran Creates Immediate Compliance Obligations"
       ],
       "selected_candidate_rationales": [
-        "Direct legal compliance obligation triggered by new sanctions. Legal department must assess contract performance, update screening procedures, and advise on export license requirements. Manufacturing sector faces heightened risk through dual-use component exposure and re-export pathways."
+        "The Legal department must address immediate regulatory changes. The snap back reinstates comprehensive sanctions requiring counterparty screening, contract review, and export control implementation. Manufacturing firms are particularly exposed through supply chains containing Iranian-origin components or dual-use goods."
       ],
       "selected_candidate_scope_matches": [
         [
-          "legal_compliance",
+          "Legal department responsible for sanctions compliance monitoring",
+          "Legal review of existing contracts for prohibited Iran exposure",
+          "Export control compliance obligations",
           "scope_text:primary",
           "scope_text:legal",
           "Legal",
@@ -213,19 +224,20 @@
         "accounting_disclosure"
       ],
       "selected_candidate_titles": [
-        "Impairment indicators triggered by Iran conflict on manufacturing assets"
+        "Asset impairment indicators triggered by Iran-related supply disruption"
       ],
       "selected_candidate_rationales": [
-        "The event directly references impairment indicators. The scope is Accounting. Manufacturing industry with energy input cost escalation creates plausible triggering events for asset impairment testing. Deloitte and Grant Thornton reporting alerts confirm financial reporting implications including impairment considerations."
+        "The event directly affects impairment indicators and recoverability assessments for a manufacturing client. Oil price spikes and supply rerouting increase input costs and reduce demand forecasts, creating triggering events for impairment testing. The accounting department must evaluate whether asset carrying amounts exceed recoverable amounts at the reporting date."
       ],
       "selected_candidate_scope_matches": [
         [
-          "accounting",
-          "financial_reporting",
-          "impairment",
+          "accounting_disclosure",
+          "impairment_indicators",
+          "asset_recoverability",
           "scope_text:primary",
           "scope_text:accounting",
           "Accounting",
+          "accounting",
           "SCOPE-DEPT-ACCOUNTING-001:primary",
           "SCOPE-DEPT-ACCOUNTING-001:term",
           "SCOPE-IND-MANUFACTURING-001:term"
@@ -304,45 +316,43 @@
       ],
       "selected_risk_types": [
         "executive_resilience",
+        "supplier_resilience",
         "payment_disruption",
-        "legal_compliance",
-        "supplier_resilience"
+        "legal_compliance"
       ],
       "selected_candidate_titles": [
-        "Executive decision paralysis on Iran supplier continuity vs. sanctions compliance",
-        "Payment route disruption to Iran and UAE corridors amid conflict escalation",
-        "Legal compliance exposure from continued Iran manufacturing sector engagement under OFAC sanctions",
-        "Supplier continuity coverage: Regional conflict escalation affecting manufacturing continuity"
+        "Executive crisis decision-making under supply chain and energy disruption",
+        "Manufacturing continuity risk from energy cost escalation and logistics rerouting",
+        "Payment routing disruption and energy cost margin compression",
+        "Legal compliance and sanctions coverage: Regional conflict escalation affecting manufacturing continuity"
       ],
       "selected_candidate_rationales": [
-        "Scope is Executive Management; event creates a strategic trade-off requiring executive judgment. Client has a high-criticality Iran supplier with no alternative and near-term payment obligations ($1m-$5m due within 0-7 days). OFAC sanctions explicitly cover Iranian manufacturing. Executive resilience is the primary scope risk type.",
-        "Client has material near-term payments to Iran and UAE. Event facts confirm SWIFT access restrictions for Iranian financial institutions and payment route disruptions. Payment risks are scope-relevant as they require executive oversight of liquidity and counterparty risk. Do not collapse into supplier_resilience because the payment mechanism failure is distinct from supplier performance.",
-        "Scope is Executive Management; legal compliance is a distinct risk type requiring executive oversight. Event facts confirm OFAC sanctions on Iranian manufacturing. Do not collapse into accounting_disclosure because the primary risk is sanctions violation exposure, not disclosure obligations.",
-        "Deterministic coverage augmentation added this candidate because applicable scope rule SCOPE-BROAD-EXECUTIVE lists `supplier_resilience` or its aliases as primary, matched terms were present, and no candidate of this risk type was recorded by the LLM."
+        "Scope is executive management; event explicitly references executive-level trade-off decisions. Conflict escalation creates multi-dimensional uncertainty (energy, logistics, sanctions) requiring executive crisis leadership, scenario planning, and strategic prioritization.",
+        "Event description references supplier continuity disruption. Event facts confirm Strait of Hormuz chokepoint affects ~20-30% of global oil trade, with energy-intensive manufacturing directly impacted. Executive scope requires visibility into supply chain resilience risks.",
+        "Event facts confirm SWIFT restrictions on Iranian banks, payment routing risks via shadow banking, and energy cost escalation. Event description explicitly references payment route disruption. Executive scope requires financial risk visibility and treasury decision-making.",
+        "Deterministic coverage augmentation added this candidate because applicable scope rule SCOPE-BROAD-EXECUTIVE lists `legal_compliance` or its aliases as primary, matched terms were present, and no candidate of this risk type was recorded by the LLM."
       ],
       "selected_candidate_scope_matches": [
         [
-          "Executive Management",
-          "manufacturing operations",
-          "procurement strategy",
+          "Executive department scope requires executive_resilience coverage",
+          "Executive management responsible for strategic trade-off decisions during crisis",
           "scope_text:primary",
           "scope_text:executive",
+          "scope_text:management",
           "Executive",
           "executive",
-          "SCOPE-IND-MANUFACTURING-001:term"
-        ],
-        [
-          "Executive Management",
-          "finance operations",
-          "treasury",
-          "scope_text:management",
           "management",
           "SCOPE-IND-MANUFACTURING-001:term"
         ],
         [
-          "Executive Management",
-          "legal and compliance",
-          "procurement",
+          "Manufacturing industry scope (client metadata)",
+          "Executive oversight of supply chain and operational continuity",
+          "SCOPE-IND-MANUFACTURING-001:primary",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Executive oversight of financial risk and treasury operations",
+          "Manufacturing industry exposure to energy cost volatility",
           "scope_text:executive",
           "Executive",
           "executive",
@@ -358,8 +368,8 @@
           "scope_text:executive",
           "Executive",
           "executive",
-          "SCOPE-IND-MANUFACTURING-001:primary",
-          "SCOPE-IND-MANUFACTURING-001:term"
+          "SCOPE-IND-MANUFACTURING-001:term",
+          "contracts:theme_match"
         ]
       ],
       "expected_hits": [
@@ -370,8 +380,8 @@
       ],
       "top_risk_types": [
         "executive_resilience",
-        "payment_disruption",
-        "legal_compliance"
+        "supplier_resilience",
+        "payment_disruption"
       ],
       "should_not_prioritize": [],
       "forbidden_in_top": [],

@@ -23,6 +23,21 @@ from risk_agent_platform.tool_policy import ensure_llm_tool_allowed
 
 DISCOVERY_AGENT_NAME = "risk-discovery-agent"
 DISCOVERY_DATASET_LIMIT = 25
+DISCOVERY_WEB_MAX_QUERIES = 3
+DISCOVERY_WEB_MAX_EXTRACT_URLS = 3
+DISCOVERY_WEB_MAX_RESULTS = 5
+DISCOVERY_EVENT_FACT_KEYS = [
+    "affected_geographies",
+    "affected_industries",
+    "infrastructure_chokepoints",
+    "critical_goods_or_services",
+    "regulatory_or_sanctions_signals",
+    "financial_or_payment_signals",
+    "supply_chain_tier_risks",
+    "time_horizons",
+    "source_refs",
+    "uncertainties",
+]
 CANONICAL_RISK_TYPES = {
     "payment_disruption",
     "supplier_resilience",
@@ -185,6 +200,12 @@ class RiskDiscoveryDeepAgent:
         return (
             "You are the Risk Discovery DeepAgent. Given an external event and a client scope, "
             "identify related risks, filter them to the scope, and record bounded candidate risks. "
+            "Use bounded web search/extraction through discovery tools to build event_facts when event-specific "
+            "facts are needed for realistic scenario discovery. Use at most 3 searches and 3 URL extractions. "
+            "Avoid client-specific names in web queries; search by event, geography, industry, infrastructure, "
+            "product category, regulation, or payment mechanism instead. "
+            "Record event_facts before candidates when web tools are used, and use those facts to expand "
+            "second-order supply, logistics, regulatory, and payment scenarios. "
             "If scope_text is provided, treat that free-form natural-language scope as the primary scope signal; "
             "do not require department or scope_name to classify the scope. "
             "Cover the scope-primary risk types implied by the Expert-as-Code scope relevance rules. "
@@ -249,6 +270,87 @@ class RiskDiscoveryDeepAgent:
             self._state["expert"] = expert
             return json.dumps({key: len(value) for key, value in expert.items()}, ensure_ascii=False)
 
+        @tool("discovery_search_event_context")
+        def discovery_search_event_context(query: str, max_results: int = 3) -> str:
+            """Run one sanitized Tavily search through MCP for Discovery event context."""
+            ensure_llm_tool_allowed(DISCOVERY_AGENT_NAME, "mcp-web-search", "search_authoritative_sources")
+            searches = self._state.setdefault("web_searches", [])
+            if len(searches) >= DISCOVERY_WEB_MAX_QUERIES:
+                return json.dumps(
+                    {
+                        "status": "skipped",
+                        "reason": f"Discovery web search budget exhausted at {DISCOVERY_WEB_MAX_QUERIES} queries.",
+                    },
+                    ensure_ascii=False,
+                )
+            request = RiskDiscoveryRequest.model_validate(self._state["request"])
+            bounded_results = max(1, min(_to_int(max_results, default=3), DISCOVERY_WEB_MAX_RESULTS))
+            try:
+                result = self.mcp.call(
+                    "mcp-web-search",
+                    "search_authoritative_sources",
+                    {
+                        "query": query,
+                        "risk_event": _discovery_context_event(request, self._state),
+                        "max_results": bounded_results,
+                        "confidential_terms": _discovery_confidential_terms(request),
+                    },
+                )
+                summary = _web_search_summary(query, result)
+                summary["status"] = "ok"
+            except RuntimeError as exc:
+                summary = {
+                    "status": "unavailable",
+                    "query": "",
+                    "query_hash": "",
+                    "result_count": 0,
+                    "results": [],
+                    "error": _truncate_text(str(exc), 300),
+                }
+            searches.append(summary)
+            return json.dumps(summary, ensure_ascii=False)
+
+        @tool("discovery_extract_event_source")
+        def discovery_extract_event_source(url: str) -> str:
+            """Extract one selected source URL through Tavily for Discovery event facts."""
+            ensure_llm_tool_allowed(DISCOVERY_AGENT_NAME, "mcp-web-search", "extract_url")
+            extractions = self._state.setdefault("web_extractions", [])
+            if len(extractions) >= DISCOVERY_WEB_MAX_EXTRACT_URLS:
+                return json.dumps(
+                    {
+                        "status": "skipped",
+                        "reason": f"Discovery URL extraction budget exhausted at {DISCOVERY_WEB_MAX_EXTRACT_URLS} URLs.",
+                    },
+                    ensure_ascii=False,
+                )
+            try:
+                result = self.mcp.call("mcp-web-search", "extract_url", {"url": url})
+                summary = _web_extraction_summary(url, result)
+                summary["status"] = "ok"
+            except RuntimeError as exc:
+                summary = {
+                    "status": "unavailable",
+                    "url": url,
+                    "error": _truncate_text(str(exc), 300),
+                }
+            extractions.append(summary)
+            return json.dumps(summary, ensure_ascii=False)
+
+        @tool("discovery_record_event_facts")
+        def discovery_record_event_facts(event_facts_json: str) -> str:
+            """Record external event facts used to broaden Discovery candidates."""
+            data = _json_object_from_text(event_facts_json) or {}
+            facts = _normalize_event_facts(data.get("event_facts") if isinstance(data.get("event_facts"), dict) else data)
+            self._state["event_facts"] = facts
+            self._state["event_facts_source"] = "agent_recorded"
+            return json.dumps(
+                {
+                    "status": "recorded",
+                    "fact_counts": {key: len(value) for key, value in facts.items()},
+                },
+                ensure_ascii=False,
+            )
+
         @tool("discovery_record_candidates")
         def discovery_record_candidates(candidates_json: str) -> str:
             """Record bounded risk candidates as JSON for structured filtering."""
@@ -261,6 +363,9 @@ class RiskDiscoveryDeepAgent:
             discovery_list_datasets,
             discovery_sample_dataset,
             discovery_load_expert_pack,
+            discovery_search_event_context,
+            discovery_extract_event_source,
+            discovery_record_event_facts,
             discovery_record_candidates,
         ]
 
@@ -273,10 +378,19 @@ class RiskDiscoveryDeepAgent:
             "samples": {},
             "feature_summaries": {},
             "expert": {},
+            "web_searches": [],
+            "web_extractions": [],
+            "event_facts": {},
             "raw_candidates": [],
         }
         self.runner.synthesize(
-            "Use discovery tools to inspect client scope and expert knowledge, then record risk candidates. "
+            "Use discovery tools to inspect client scope, expert knowledge, and bounded external event context, "
+            "then record risk candidates. Use discovery_search_event_context when event-specific facts could affect "
+            "industries, infrastructure, logistics lanes, supplier tiers, regulation, sanctions, banking, or payments. "
+            "Use discovery_extract_event_source only for the most useful URLs. Record event_facts with keys "
+            f"{DISCOVERY_EVENT_FACT_KEYS} before candidates when web tools are used. "
+            "Avoid client-specific names in web queries; search by event, geography, industry, infrastructure, "
+            "product category, regulation, or payment mechanism. "
             "If request.scope.scope_text is present, interpret that free-form natural-language scope directly; "
             "do not require department or scope_name values to infer relevant business concerns. "
             "Cover the scope-primary risk types from applicable scope relevance rules. "
@@ -291,6 +405,13 @@ class RiskDiscoveryDeepAgent:
             max_chars=1200,
         )
         self._ensure_context(request)
+        if not _has_event_facts(self._state.get("event_facts")) and (
+            self._state.get("web_searches") or self._state.get("web_extractions")
+        ):
+            derived_facts = _derive_event_facts_from_web(request, self._state)
+            if _has_event_facts(derived_facts):
+                self._state["event_facts"] = derived_facts
+                self._state["event_facts_source"] = "derived_from_web_summaries"
         raw_candidates = self._state.get("raw_candidates") or []
         candidates = _normalize_candidates(raw_candidates, request) if raw_candidates else self._fallback_candidates(request)
         candidates, coverage_augmented_count = _augment_scope_coverage(candidates, request, self._state)
@@ -320,6 +441,12 @@ class RiskDiscoveryDeepAgent:
                 "expert_counts": {key: len(value) for key, value in (self._state.get("expert") or {}).items()},
                 "raw_candidate_count": len(raw_candidates),
                 "coverage_augmented_candidate_count": coverage_augmented_count,
+                "web_search_count": len(self._state.get("web_searches") or []),
+                "web_extraction_count": len(self._state.get("web_extractions") or []),
+                "web_searches": self._state.get("web_searches", []),
+                "web_extractions": self._state.get("web_extractions", []),
+                "event_facts": self._state.get("event_facts", {}),
+                "event_facts_source": self._state.get("event_facts_source", ""),
                 "fallback_used": fallback_used,
                 "discovery_confidence": "template_fallback" if fallback_used else "agent_recorded_candidates",
                 "additional_questions": additional_questions,
@@ -664,6 +791,9 @@ def _coverage_context_text(
         json.dumps(request.scope.metadata, ensure_ascii=False),
         json.dumps(state.get("feature_summaries") or {}, ensure_ascii=False),
         json.dumps(state.get("samples") or {}, ensure_ascii=False),
+        json.dumps(state.get("event_facts") or {}, ensure_ascii=False),
+        json.dumps(state.get("web_searches") or [], ensure_ascii=False),
+        json.dumps(state.get("web_extractions") or [], ensure_ascii=False),
     ]
     for candidate in candidates:
         parts.extend(
@@ -766,6 +896,256 @@ def _diversify_selected_candidates(
         return selected, rejected
     diversified_rejected = [_diversity_rejection(candidate, threshold) for candidate in demoted]
     return diversified, [*rejected, *diversified_rejected]
+
+
+def _discovery_context_event(request: RiskDiscoveryRequest, state: dict[str, Any]) -> dict[str, Any]:
+    scope_interpretation = state.get("scope_interpretation") if isinstance(state.get("scope_interpretation"), dict) else {}
+    matched_domains = [str(item) for item in scope_interpretation.get("matched_domains") or []]
+    primary_types = [str(item) for item in scope_interpretation.get("primary_risk_types") or []]
+    themes = list(dict.fromkeys(["event_context", *primary_types, *matched_domains]))
+    categories = matched_domains or primary_types or ["event_context"]
+    return RiskEvent(
+        scenario_id="discovery_event_context",
+        client_id=request.scope.client_id,
+        title=request.event_title,
+        risk_type="event_context",
+        countries=request.countries or _country_hints(request.event_title, request.event_description),
+        risk_themes=themes,
+        affected_categories=categories,
+        description=request.event_description or request.event_title,
+        event_date=request.event_date or date.today(),
+        urgency="medium",
+    ).model_dump(mode="json")
+
+
+def _discovery_confidential_terms(request: RiskDiscoveryRequest) -> list[str]:
+    terms: list[str] = [
+        request.scope.client_id,
+        request.scope.site_id or "",
+    ]
+    explicit_terms = request.scope.metadata.get("confidential_terms")
+    if isinstance(explicit_terms, list):
+        terms.extend(str(item) for item in explicit_terms)
+    elif isinstance(explicit_terms, str):
+        terms.append(explicit_terms)
+    if request.scope.scope_text:
+        terms.extend(_capitalized_phrases(request.scope.scope_text))
+    return [
+        term
+        for term in dict.fromkeys(term.strip() for term in terms if isinstance(term, str))
+        if len(term) >= 4 and not _is_generic_scope_term(term)
+    ]
+
+
+def _web_search_summary(query: str, result: Any) -> dict[str, Any]:
+    payload = result if isinstance(result, dict) else {}
+    results = payload.get("results") if isinstance(payload.get("results"), list) else []
+    return {
+        "query": str(payload.get("query") or query),
+        "query_hash": str(payload.get("query_hash") or ""),
+        "result_count": len(results),
+        "results": [_web_result_item(item) for item in results[:DISCOVERY_WEB_MAX_RESULTS] if isinstance(item, dict)],
+    }
+
+
+def _web_result_item(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "title": _truncate_text(str(item.get("title") or ""), 160),
+        "url": _truncate_text(str(item.get("url") or ""), 240),
+        "content": _truncate_text(str(item.get("content") or item.get("raw_content") or ""), 320),
+    }
+
+
+def _web_extraction_summary(url: str, result: Any) -> dict[str, Any]:
+    payload = result if isinstance(result, dict) else {}
+    extraction_result = payload.get("result") if isinstance(payload.get("result"), dict) else payload
+    extracted = extraction_result.get("results") if isinstance(extraction_result.get("results"), list) else []
+    return {
+        "url": url,
+        "result_count": len(extracted),
+        "results": [_web_result_item(item) for item in extracted[:2] if isinstance(item, dict)],
+    }
+
+
+def _normalize_event_facts(data: Any) -> dict[str, list[Any]]:
+    source = data if isinstance(data, dict) else {}
+    return {key: _normalize_fact_list(source.get(key)) for key in DISCOVERY_EVENT_FACT_KEYS}
+
+
+def _has_event_facts(facts: Any) -> bool:
+    return isinstance(facts, dict) and any(facts.get(key) for key in DISCOVERY_EVENT_FACT_KEYS)
+
+
+def _derive_event_facts_from_web(request: RiskDiscoveryRequest, state: dict[str, Any]) -> dict[str, list[Any]]:
+    text = " ".join(
+        [
+            request.event_title,
+            request.event_description,
+            json.dumps(state.get("web_searches") or [], ensure_ascii=False),
+            json.dumps(state.get("web_extractions") or [], ensure_ascii=False),
+        ]
+    )
+    lowered = text.lower()
+    source_refs = _source_refs_from_web_state(state)
+    if not source_refs and not lowered.strip():
+        return _normalize_event_facts({})
+    facts = {
+        "affected_geographies": list(
+            dict.fromkeys([*request.countries, *_label_matches(lowered, {"Taiwan Strait": ["taiwan strait"]})])
+        ),
+        "affected_industries": _label_matches(
+            lowered,
+            {
+                "semiconductors": ["semiconductor", "chip", "foundry", "tsmc"],
+                "electronics": ["electronics", "electronic component", "electronic assemblies"],
+                "logistics": ["logistics", "3pl", "shipping", "air cargo", "sea freight"],
+                "pharmaceuticals": ["pharmaceutical", "medical device"],
+                "imaging materials": ["imaging materials", "photomask", "specialty film"],
+            },
+        ),
+        "infrastructure_chokepoints": _label_matches(
+            lowered,
+            {
+                "Taiwan Strait": ["taiwan strait"],
+                "ports": ["port", "harbor", "container terminal"],
+                "air cargo routes": ["air cargo", "airport", "taoyuan"],
+                "sea freight lanes": ["sea freight", "shipping lane", "ocean freight"],
+                "customs clearance": ["customs", "clearance"],
+                "3PL hubs": ["3pl", "third-party logistics", "warehouse"],
+            },
+        ),
+        "critical_goods_or_services": _label_matches(
+            lowered,
+            {
+                "semiconductor components": ["semiconductor", "chip", "foundry"],
+                "electronic assemblies": ["electronic assemblies", "electronics"],
+                "photomasks": ["photomask"],
+                "specialty imaging materials": ["specialty imaging", "imaging materials", "specialty film"],
+                "air freight capacity": ["air freight", "air cargo"],
+                "sea freight capacity": ["sea freight", "ocean freight", "container"],
+            },
+        ),
+        "regulatory_or_sanctions_signals": _label_matches(
+            lowered,
+            {
+                "export controls": ["export control", "export restriction", "dual-use"],
+                "sanctions screening": ["sanction", "restricted party"],
+                "customs restrictions": ["customs restriction", "customs clearance"],
+            },
+        ),
+        "financial_or_payment_signals": _label_matches(
+            lowered,
+            {
+                "cross-border payments": ["cross-border payment", "international payment"],
+                "bank routing": ["bank routing", "correspondent bank", "settlement"],
+                "liquidity planning": ["liquidity", "cash"],
+            },
+        ),
+        "supply_chain_tier_risks": _label_matches(
+            lowered,
+            {
+                "sub-tier semiconductor dependency": ["semiconductor", "chip", "foundry", "sub-tier"],
+                "3PL service dependency": ["3pl", "third-party logistics"],
+                "alternate route capacity dependency": ["alternate route", "rerouting", "diversion"],
+            },
+        ),
+        "time_horizons": _label_matches(
+            lowered,
+            {
+                "near-term disruption": ["near-term", "immediate", "0-2 weeks", "suspension", "delay"],
+                "medium-term rerouting": ["rerouting", "alternate route", "capacity"],
+            },
+        ),
+        "source_refs": source_refs,
+        "uncertainties": ["Client-specific dependency depth and exposure amounts still require validation."],
+    }
+    return _normalize_event_facts(facts)
+
+
+def _source_refs_from_web_state(state: dict[str, Any]) -> list[dict[str, str]]:
+    refs: list[dict[str, str]] = []
+    for bucket in ("web_searches", "web_extractions"):
+        for item in state.get(bucket) or []:
+            if not isinstance(item, dict):
+                continue
+            for result in item.get("results") or []:
+                if not isinstance(result, dict):
+                    continue
+                url = str(result.get("url") or "").strip()
+                if not url:
+                    continue
+                refs.append(
+                    {
+                        "title": _truncate_text(str(result.get("title") or url), 160),
+                        "url": _truncate_text(url, 240),
+                    }
+                )
+    deduped: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for ref in refs:
+        if ref["url"] in seen:
+            continue
+        seen.add(ref["url"])
+        deduped.append(ref)
+    return deduped[:5]
+
+
+def _label_matches(text: str, label_aliases: dict[str, list[str]]) -> list[str]:
+    return [label for label, aliases in label_aliases.items() if any(alias in text for alias in aliases)]
+
+
+def _normalize_fact_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    items = value if isinstance(value, list) else [value]
+    normalized: list[Any] = []
+    for item in items[:10]:
+        if isinstance(item, dict):
+            compact = {
+                str(key): _truncate_text(str(val), 240)
+                for key, val in item.items()
+                if val is not None and str(val).strip()
+            }
+            if compact:
+                normalized.append(compact)
+        else:
+            text = _truncate_text(str(item).strip(), 240)
+            if text:
+                normalized.append(text)
+    return normalized
+
+
+def _capitalized_phrases(text: str) -> list[str]:
+    return re.findall(r"\b[A-Z][A-Za-z0-9&.-]+(?:\s+[A-Z][A-Za-z0-9&.-]+){0,4}\b", text)
+
+
+def _is_generic_scope_term(term: str) -> bool:
+    generic = {
+        "logistics",
+        "supply",
+        "procurement",
+        "treasury",
+        "finance",
+        "legal",
+        "accounting",
+        "manufacturing",
+        "operations",
+        "payment",
+        "payments",
+        "supplier",
+        "suppliers",
+        "shipping",
+        "transport",
+        "transportation",
+        "customs",
+        "warehouse",
+    }
+    return term.strip().lower() in generic
+
+
+def _truncate_text(text: str, limit: int) -> str:
+    normalized = " ".join(text.split())
+    return normalized if len(normalized) <= limit else f"{normalized[: limit - 3]}..."
 
 
 def _diversity_rejection(candidate: DiscoveredRisk, threshold: int) -> RejectedRiskCandidate:

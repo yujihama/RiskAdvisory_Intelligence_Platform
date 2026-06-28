@@ -67,7 +67,7 @@
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: executive_resilience, payment_disruption, legal_compliance, supplier_resilience
+- Selected risk types: executive_resilience, supplier_resilience, legal_compliance, payment_disruption
 - Forbidden in top: None
 - Missing-data category hits: evidence_gap, executive_ownership, payment_route, supplier_continuity
 - Rubric hits: SCOPE-IND-MANUFACTURING-001

@@ -19,14 +19,14 @@
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: payment_disruption
+- Selected risk types: payment_disruption, supplier_resilience
 - Forbidden in top: None
 - Missing-data category hits: payment_route, sanctions_screening
 - Rubric hits: SCOPE-DEPT-TREASURY-001
 - Discovery confidence: `agent_recorded_candidates`
 - Raw candidates: 3
 - Coverage augmented candidates: 0
-- Rejected risk types: payment_disruption, payment_disruption
+- Rejected risk types: payment_disruption
 ### rdc_legal_sanctions_contract_001
 - Passed: `True`
 - Recall: 1.000
@@ -67,7 +67,7 @@
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: executive_resilience, payment_disruption, legal_compliance, supplier_resilience
+- Selected risk types: executive_resilience, supplier_resilience, payment_disruption, legal_compliance
 - Forbidden in top: None
 - Missing-data category hits: evidence_gap, executive_ownership, payment_route, supplier_continuity
 - Rubric hits: SCOPE-IND-MANUFACTURING-001

@@ -64,7 +64,7 @@ Agents call tools through `MCPGateway`, which uses FastMCP `Client`.
 
 Bounded Autonomy is implemented in the normal path:
 
-- Risk Discovery accepts an external event and scope, samples client structured data through `risk_feature_sample` feature views, loads Expert-as-Code seed knowledge, applies `data/expert_knowledge/scope_relevance_rules.jsonl`, generates `selected_candidates` and `rejected_candidates`, and converts every threshold-selected candidate into `selected_events`. `selected_event` remains the top event for compatibility.
+- Risk Discovery accepts an external event and scope, samples client structured data through `risk_feature_sample` feature views, loads Expert-as-Code seed knowledge, can use bounded Tavily search/extraction through `mcp-web-search` to record `event_facts`, applies `data/expert_knowledge/scope_relevance_rules.jsonl`, generates `selected_candidates` and `rejected_candidates`, and converts every threshold-selected candidate into `selected_events`. `selected_event` remains the top event for compatibility.
 - Orchestrator asks DeepAgent for an `analysis_plan` JSON with `selected_agents`, `skipped_agents`, `recheck_conditions`, and `exploration_questions`; invalid plans fall back to the fixed agent order.
 - Source Intelligence uses DeepAgent tool-use for bounded sanitized search and URL extraction, then Python registers selected `EvidenceItem` records through Evidence Ledger.
 - Expert-as-Code uses DeepAgent tool-use to explore similar cases, rubrics, red flags, CTA notes, and counterfactuals, then emits a structured `KnowledgeApplicationFinding` inside the A2A finding metadata.
@@ -181,6 +181,8 @@ risk-agent-platform discover-risks `
 ```
 
 `--scope-text` is the preferred input for generic business scopes. It does not require `--department` or `--scope-name`; Risk Discovery records a `scope_interpretation` and uses it for candidate generation, relevance scoring, coverage augmentation, and debug output. `--department` and `--scope-name` remain available for backward-compatible structured cases.
+
+During Discovery, the DeepAgent may call `discovery_search_event_context` and `discovery_extract_event_source` through the existing `mcp-web-search` Tavily MCP. These calls are bounded to 3 searches and 3 URL extractions, avoid client-specific query terms, and are summarized into `metadata.event_facts`, `metadata.web_searches`, and `metadata.web_extractions` so candidate recall can use real external event context before downstream evidence collection begins.
 
 The default `--analysis-mode auto` keeps broad company or executive runs on all selected risks, but for a natural-language `--scope-text` it analyzes the selected RiskEvents whose `risk_type` matches the interpreted scope-primary risk types. This avoids requiring a mid-run human choice such as manually switching to `top` for narrow functional scopes.
 
