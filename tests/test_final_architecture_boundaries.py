@@ -14,7 +14,7 @@ from risk_agent_platform.final_agents import _analysis_plan_from_text
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
 from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
-from risk_agent_platform.run_discovery import _events_for_analysis, _write_portfolio_summary
+import risk_agent_platform.run_discovery as run_discovery
 from risk_agent_platform.schemas import (
     AgentCard,
     DiscoveredRisk,
@@ -50,6 +50,64 @@ class _NoStructuredCandidateRunner:
 
     def synthesize(self, *_args, **_kwargs) -> str:
         return "no structured candidates"
+
+
+class _RecordingCandidateRunner:
+    candidates: list[dict[str, object]] = []
+    sample_payloads: list[str] = []
+
+    def __init__(self, *_args, tools=None, **_kwargs) -> None:
+        self.tools = {item.name: item for item in tools or []}
+
+    def synthesize(self, *_args, **_kwargs) -> str:
+        self.tools["discovery_list_datasets"].invoke({"client_id": "demo_client"})
+        sample = self.tools["discovery_sample_dataset"].invoke(
+            {"client_id": "demo_client", "dataset": "payments", "limit": 3}
+        )
+        type(self).sample_payloads.append(sample)
+        self.tools["discovery_load_expert_pack"].invoke({})
+        self.tools["discovery_record_candidates"].invoke(
+            {"candidates_json": json.dumps({"candidates": self.candidates})}
+        )
+        return ""
+
+
+def _recorded_scope_candidates() -> list[dict[str, object]]:
+    return [
+        {
+            "candidate_id": "DISC-PAY",
+            "title": "Urgent supplier payment and cash mobility disruption",
+            "risk_type": "payment_disruption",
+            "risk_themes": ["payment", "cash", "liquidity"],
+            "affected_categories": ["cross_border_payments"],
+            "description": "Bank routing, currency, liquidity, and near-term supplier payment execution may be disrupted.",
+            "urgency": "high",
+            "scope_matches": [],
+            "rationale": "Treasury-facing payment execution exposure.",
+        },
+        {
+            "candidate_id": "DISC-LEGAL",
+            "title": "Sanctions export-control and contract obligation review",
+            "risk_type": "legal_compliance",
+            "risk_themes": ["sanctions", "export_control", "contract_obligation"],
+            "affected_categories": ["contracts", "counterparties"],
+            "description": "Sanctions, export, beneficial ownership, contract notice, and force majeure questions may arise.",
+            "urgency": "high",
+            "scope_matches": [],
+            "rationale": "Legal-facing counterparty and contract exposure.",
+        },
+        {
+            "candidate_id": "DISC-ACCT",
+            "title": "Accounting provision impairment and disclosure pressure",
+            "risk_type": "accounting_disclosure",
+            "risk_themes": ["provision_trigger", "impairment_trigger", "disclosure_pressure"],
+            "affected_categories": ["financial_reporting", "auditor_evidence_pack"],
+            "description": "Provision, impairment, disclosure, materiality, and auditor evidence requirements may change.",
+            "urgency": "medium",
+            "scope_matches": [],
+            "rationale": "Accounting-facing reporting exposure.",
+        },
+    ]
 
 
 def test_query_sanitizer_removes_client_specific_terms():
@@ -190,6 +248,28 @@ def test_expert_pack_exposes_case_question_and_cta_files():
     assert reliability["high_reliability_domains"]
 
 
+def test_structured_data_risk_feature_sample_redacts_raw_identifiers():
+    gateway = MCPGateway(Settings.load(Path.cwd()), embedded=True)
+
+    result = gateway.call(
+        "mcp-structured-data",
+        "risk_feature_sample",
+        {"client_id": "demo_client", "dataset": "payments", "limit": 2},
+    )
+
+    assert result["dataset"] == "payments"
+    assert result["features"]
+    first = result["features"][0]
+    assert first["amount_bucket"]
+    assert first["currency"] == "USD"
+    assert first["country"] == "Noveria"
+    assert "payment_id" not in first
+    assert "supplier_id" not in first
+    assert "amount" not in first
+    assert "bank_name" not in first
+    assert {"payment_id", "supplier_id", "amount", "bank_name"}.issubset(set(result["redaction_policy"]["omitted_fields"]))
+
+
 def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_path, monkeypatch):
     monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _NoStructuredCandidateRunner)
     root = Path.cwd()
@@ -222,6 +302,44 @@ def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_pat
     assert result.selected_candidates[0].relevance_score >= 50
     assert result.metadata["fallback_used"] is True
     assert result.metadata["scope_relevance_rule_count"] >= 10
+
+
+def test_risk_discovery_normal_path_records_candidates_and_scope_changes_selection(tmp_path, monkeypatch):
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _RecordingCandidateRunner)
+    _RecordingCandidateRunner.candidates = _recorded_scope_candidates()
+    _RecordingCandidateRunner.sample_payloads = []
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "demo_client", tmp_path / "data" / "clients" / "demo_client")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+
+    selected_by_department: dict[str, RiskDiscoveryResult] = {}
+    for department in ("Treasury", "Legal", "Accounting"):
+        request = RiskDiscoveryRequest(
+            event_title="Geopolitical disruption requiring functional triage",
+            event_description="The event may affect operations and control execution.",
+            countries=["Iran"],
+            scope=RiskDiscoveryScope(
+                client_id="demo_client",
+                scope_type="department",
+                scope_name=department,
+                department=department,
+                metadata={"industry": "services"},
+            ),
+        )
+        selected_by_department[department] = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    assert selected_by_department["Treasury"].metadata["fallback_used"] is False
+    assert selected_by_department["Treasury"].metadata["discovery_confidence"] == "agent_recorded_candidates"
+    assert selected_by_department["Treasury"].metadata["structured_sample_view"] == "risk_feature_sample"
+    assert selected_by_department["Treasury"].selected_candidates[0].risk_type == "payment_disruption"
+    assert selected_by_department["Legal"].selected_candidates[0].risk_type == "legal_compliance"
+    assert selected_by_department["Accounting"].selected_candidates[0].risk_type == "accounting_disclosure"
+    assert selected_by_department["Treasury"].rejected_candidates
+    assert selected_by_department["Treasury"].rejected_candidates[0].reason
+    assert _RecordingCandidateRunner.sample_payloads
+    assert "bank_name" not in _RecordingCandidateRunner.sample_payloads[0]
+    assert "amount_bucket" in _RecordingCandidateRunner.sample_payloads[0]
 
 
 def test_risk_discovery_preserves_rejected_candidate_reasons_without_llm_tools(tmp_path, monkeypatch):
@@ -291,10 +409,73 @@ def test_discovery_analysis_modes_default_to_all_selected():
         selected_events=[first, second],
     )
 
-    assert _events_for_analysis(result, "all-selected", top_n=3) == [first, second]
-    assert _events_for_analysis(result, "top", top_n=3) == [first]
-    assert _events_for_analysis(result, "top-n", top_n=1) == [first]
-    assert _events_for_analysis(result, "top-n", top_n=2) == [first, second]
+    assert run_discovery._events_for_analysis(result, "all-selected", top_n=3) == [first, second]
+    assert run_discovery._events_for_analysis(result, "top", top_n=3) == [first]
+    assert run_discovery._events_for_analysis(result, "top-n", top_n=1) == [first]
+    assert run_discovery._events_for_analysis(result, "top-n", top_n=2) == [first, second]
+
+
+def test_run_analysis_blocks_template_fallback_without_explicit_allow(tmp_path, monkeypatch, capsys):
+    class _FallbackDiscovery:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def discover(self, request: RiskDiscoveryRequest) -> RiskDiscoveryResult:
+            event = _event().model_copy(
+                update={
+                    "scenario_id": "scenario_fallback_blocked",
+                    "client_id": request.scope.client_id,
+                    "title": "Fallback candidate",
+                    "risk_type": "payment_disruption",
+                }
+            )
+            return RiskDiscoveryResult(
+                request=request,
+                selected_candidates=[
+                    DiscoveredRisk(
+                        candidate_id="DISC-FALLBACK",
+                        title=event.title,
+                        risk_type=event.risk_type,
+                        description=event.description,
+                        relevance_score=80,
+                        rationale="template fallback",
+                        selected_for_analysis=True,
+                    )
+                ],
+                selected_event=event,
+                selected_events=[event],
+                metadata={"fallback_used": True, "discovery_confidence": "template_fallback"},
+            )
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(run_discovery, "RiskDiscoveryDeepAgent", _FallbackDiscovery)
+    monkeypatch.setattr(
+        run_discovery,
+        "create_orchestrator_service",
+        lambda *_args, **_kwargs: pytest.fail("fallback analysis should be blocked before orchestrator creation"),
+    )
+
+    status = run_discovery.main(
+        [
+            "--event-title",
+            "Fallback event",
+            "--client-id",
+            "demo_client",
+            "--scope-type",
+            "department",
+            "--scope-name",
+            "Treasury",
+            "--department",
+            "Treasury",
+            "--run-analysis",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert status == 2
+    assert "fallback_used=true" in output
+    assert "discovery_confidence=template_fallback" in output
+    assert "analysis_status=blocked:fallback_used" in output
 
 
 def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
@@ -386,7 +567,7 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
         },
     ]
 
-    paths = _write_portfolio_summary(settings, result, records)
+    paths = run_discovery._write_portfolio_summary(settings, result, records)
 
     summary = json.loads(Path(paths["json"]).read_text(encoding="utf-8"))
     markdown = Path(paths["markdown"]).read_text(encoding="utf-8")
@@ -398,6 +579,20 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
     assert summary["portfolio_overview"]["priority_decisions"][0]["decision"].startswith("Confirm payment route")
     assert "## Portfolio Overview" in markdown
     assert "## Priority Decisions" in markdown
+
+
+def test_risk_discovery_evaluation_cases_are_loadable():
+    path = Path("data/evaluation/risk_discovery_cases.jsonl")
+    cases = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    assert len(cases) >= 4
+    for case in cases:
+        assert case["case_id"]
+        assert case["input"]["event_title"]
+        assert case["input"]["scope"]["client_id"]
+        assert isinstance(case["expected_selected_risk_types"], list)
+        assert isinstance(case["should_not_prioritize"], list)
+        assert isinstance(case["expected_questions"], list)
 
 
 def test_evidence_repository_upserts_by_evidence_id(tmp_path):

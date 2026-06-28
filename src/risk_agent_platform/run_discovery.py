@@ -34,6 +34,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--scenario-output", type=Path)
     parser.add_argument("--run-analysis", action="store_true")
     parser.add_argument(
+        "--allow-fallback-analysis",
+        action="store_true",
+        help="Allow scenario analysis when Risk Discovery used template fallback candidates.",
+    )
+    parser.add_argument(
         "--analysis-mode",
         choices=["all-selected", "top", "top-n"],
         default="all-selected",
@@ -71,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"discovery_status=completed")
     print(f"selected_candidate_count={len(result.selected_candidates)}")
     print(f"rejected_candidate_count={len(result.rejected_candidates)}")
+    print(f"fallback_used={str(bool(result.metadata.get('fallback_used'))).lower()}")
+    print(f"discovery_confidence={result.metadata.get('discovery_confidence', '')}")
     print(f"selected_scenario_id={result.selected_event.scenario_id if result.selected_event else ''}")
     print(f"selected_scenario_ids={','.join(event.scenario_id for event in result.selected_events)}")
     print(f"discovery_output={output_path}")
@@ -87,6 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     if not args.run_analysis:
         print("analysis_status=skipped")
         return 0
+
+    if result.metadata.get("fallback_used") and not args.allow_fallback_analysis:
+        print("discovery_warning=template_fallback_requires_explicit_allow_fallback_analysis")
+        print("analysis_status=blocked:fallback_used")
+        return 2
 
     events_to_analyze = _events_for_analysis(result, args.analysis_mode, args.top_n)
     if not events_to_analyze:
@@ -170,6 +182,7 @@ def _write_portfolio_summary(
     output_dir.mkdir(parents=True, exist_ok=True)
     data = {
         "request": result.request.model_dump(mode="json"),
+        "discovery_metadata": result.metadata,
         "selected_candidates": [candidate.model_dump(mode="json") for candidate in result.selected_candidates],
         "rejected_candidates": [candidate.model_dump(mode="json") for candidate in result.rejected_candidates],
         "selected_events": [event.model_dump(mode="json") for event in result.selected_events],
@@ -255,6 +268,8 @@ def _portfolio_markdown(data: dict[str, Any]) -> str:
         "",
         f"- Client: `{request['scope']['client_id']}`",
         f"- Scope: `{request['scope']['scope_type']}` `{request['scope'].get('scope_name') or ''}`",
+        f"- Discovery confidence: `{(data.get('discovery_metadata') or {}).get('discovery_confidence', '')}`",
+        f"- Fallback used: `{(data.get('discovery_metadata') or {}).get('fallback_used', False)}`",
         f"- Selected candidates: {len(data['selected_candidates'])}",
         f"- Rejected candidates: {len(data['rejected_candidates'])}",
         f"- Analyses executed: {len(data['analyses'])}",

@@ -37,6 +37,11 @@ def build_parser() -> argparse.ArgumentParser:
     discover.add_argument("--scenario-output")
     discover.add_argument("--run-analysis", action="store_true")
     discover.add_argument(
+        "--allow-fallback-analysis",
+        action="store_true",
+        help="Allow scenario analysis when Risk Discovery used template fallback candidates.",
+    )
+    discover.add_argument(
         "--analysis-mode",
         choices=["all-selected", "top", "top-n"],
         default="all-selected",
@@ -91,6 +96,8 @@ def main(argv: list[str] | None = None) -> int:
             argv.extend(["--country", country])
         if args.run_analysis:
             argv.append("--run-analysis")
+        if args.allow_fallback_analysis:
+            argv.append("--allow-fallback-analysis")
         if args.embedded_services:
             argv.append("--embedded-services")
         return run_discovery_main(argv)

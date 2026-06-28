@@ -45,7 +45,7 @@ flowchart TB
         ledger["mcp-evidence-ledger"]
     end
 
-    discovery -- "dataset sampling" --> structured
+    discovery -- "risk_feature_sample" --> structured
     discovery -- "seed knowledge loading" --> expert_mcp
 
     src -- "bounded search/extract tools" --> web
@@ -206,8 +206,11 @@ sequenceDiagram
     participant LF as Langfuse
 
     CLI->>RD: Submit event + scope
-    RD->>M: sample structured data and load Expert-as-Code seed pack
+    RD->>M: sample risk feature views and load Expert-as-Code seed pack
     RD-->>CLI: selected/rejected candidates and selected RiskEvents
+    alt template fallback and no explicit allow
+    CLI-->>CLI: Stop before analysis and print fallback warning
+    else agent-recorded candidates or allow fallback
     loop each selected RiskEvent
     CLI->>O: Submit selected RiskEvent
     O->>LF: trace event
@@ -239,6 +242,7 @@ sequenceDiagram
     O-->>CLI: Final status and output directory
     end
     CLI-->>CLI: Write portfolio summary across analyzed risks
+    end
 ```
 
 ## 4. Output Artifact Map

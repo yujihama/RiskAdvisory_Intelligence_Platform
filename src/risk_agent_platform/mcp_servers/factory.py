@@ -5,7 +5,7 @@ import base64
 import hashlib
 import json
 import mimetypes
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -203,6 +203,24 @@ def create_structured_data_server(settings: Settings) -> FastMCP:
     @mcp.tool
     def sample_rows(client_id: str, dataset: str, limit: int = 5) -> list[dict[str, str]]:
         return _read_rows(settings, client_id, dataset)[:limit]
+
+    @mcp.tool
+    def risk_feature_sample(client_id: str, dataset: str, limit: int = 5) -> dict[str, Any]:
+        rows = _read_rows(settings, client_id, dataset)
+        features = [_risk_feature_row(dataset, row, idx) for idx, row in enumerate(rows[:limit], start=1)]
+        return {
+            "dataset": dataset,
+            "row_count": len(rows),
+            "feature_count": len(features),
+            "features": features,
+            "summary": _risk_feature_summary(dataset, rows),
+            "redaction_policy": {
+                "omitted_fields": _sensitive_fields_present(rows),
+                "amounts": "bucketed",
+                "identifiers": "omitted",
+                "names": "omitted",
+            },
+        }
 
     @mcp.tool
     def profile_dataset(client_id: str, dataset: str) -> dict[str, Any]:
@@ -551,6 +569,170 @@ def _read_rows(settings: Settings, client_id: str, dataset: str) -> list[dict[st
         return []
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         return [dict(row) for row in csv.DictReader(handle)]
+
+
+def _risk_feature_row(dataset: str, row: dict[str, str], idx: int) -> dict[str, Any]:
+    feature: dict[str, Any] = {
+        "feature_id": f"{dataset}_feature_{idx:03d}",
+        "dataset": dataset,
+    }
+    country = (
+        row.get("country")
+        or row.get("bank_country")
+        or row.get("customer_country")
+        or row.get("supplier_country")
+    )
+    if country:
+        feature["country"] = country
+    if row.get("currency"):
+        feature["currency"] = row["currency"]
+    if row.get("criticality"):
+        feature["criticality"] = row["criticality"]
+    if row.get("business_unit"):
+        feature["business_unit"] = row["business_unit"]
+    if row.get("status"):
+        feature["status"] = row["status"]
+    if row.get("governing_law"):
+        feature["governing_law"] = row["governing_law"]
+    if row.get("amount"):
+        feature["amount_bucket"] = _amount_bucket(_to_float(row.get("amount")))
+    if row.get("due_date"):
+        feature["due_bucket"] = _due_bucket(row.get("due_date"))
+        feature["near_term_due"] = feature["due_bucket"] in {"overdue", "0_7_days", "8_30_days"}
+    if row.get("inventory_days"):
+        feature["inventory_days_bucket"] = _days_bucket(row.get("inventory_days"))
+    if row.get("notice_days"):
+        feature["notice_days_bucket"] = _days_bucket(row.get("notice_days"))
+    for source_key, feature_key in (
+        ("alternative_available", "has_alternative"),
+        ("force_majeure_clause", "has_force_majeure_clause"),
+        ("sanctions_clause", "has_sanctions_clause"),
+        ("termination_right", "has_termination_right"),
+    ):
+        if source_key in row:
+            feature[feature_key] = _to_bool(row.get(source_key))
+    signals = _risk_signals(feature)
+    if signals:
+        feature["risk_signals"] = signals
+    return feature
+
+
+def _risk_feature_summary(dataset: str, rows: list[dict[str, str]]) -> dict[str, Any]:
+    features = [_risk_feature_row(dataset, row, idx) for idx, row in enumerate(rows, start=1)]
+    countries = sorted({str(item.get("country")) for item in features if item.get("country")})
+    currencies = sorted({str(item.get("currency")) for item in features if item.get("currency")})
+    critical_count = sum(1 for item in features if str(item.get("criticality")).lower() == "high")
+    near_term_due_count = sum(1 for item in features if item.get("near_term_due") is True)
+    amount_buckets = _count_values(str(item.get("amount_bucket")) for item in features if item.get("amount_bucket"))
+    risk_signals = sorted({signal for item in features for signal in item.get("risk_signals", [])})
+    return {
+        "dataset": dataset,
+        "row_count": len(rows),
+        "countries": countries,
+        "currencies": currencies,
+        "critical_count": critical_count,
+        "near_term_due_count": near_term_due_count,
+        "amount_buckets": amount_buckets,
+        "risk_signals": risk_signals,
+    }
+
+
+def _sensitive_fields_present(rows: list[dict[str, str]]) -> list[str]:
+    sensitive_tokens = {
+        "id",
+        "name",
+        "amount",
+        "account",
+        "iban",
+        "swift",
+        "routing",
+        "email",
+        "phone",
+        "address",
+    }
+    fields: set[str] = set()
+    for row in rows:
+        for key in row:
+            lowered = key.lower()
+            if any(token in lowered for token in sensitive_tokens):
+                fields.add(key)
+    return sorted(fields)
+
+
+def _amount_bucket(amount: float) -> str:
+    absolute = abs(amount)
+    if absolute < 250_000:
+        return "lt_250k"
+    if absolute < 1_000_000:
+        return "250k_1m"
+    if absolute < 5_000_000:
+        return "1m_5m"
+    if absolute < 50_000_000:
+        return "5m_50m"
+    return "gte_50m"
+
+
+def _days_bucket(value: str | None) -> str:
+    try:
+        days = int(float(value or 0))
+    except ValueError:
+        return "unknown"
+    if days < 0:
+        return "negative"
+    if days <= 7:
+        return "0_7_days"
+    if days <= 30:
+        return "8_30_days"
+    if days <= 90:
+        return "31_90_days"
+    return "gt_90_days"
+
+
+def _due_bucket(value: str | None) -> str:
+    try:
+        due_date = date.fromisoformat(str(value or ""))
+    except ValueError:
+        return "unknown"
+    delta = (due_date - date.today()).days
+    if delta < 0:
+        return "overdue"
+    if delta <= 7:
+        return "0_7_days"
+    if delta <= 30:
+        return "8_30_days"
+    if delta <= 90:
+        return "31_90_days"
+    return "gt_90_days"
+
+
+def _to_bool(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "y"}
+
+
+def _count_values(values: Any) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _risk_signals(feature: dict[str, Any]) -> list[str]:
+    signals: list[str] = []
+    if feature.get("amount_bucket") in {"1m_5m", "5m_50m", "gte_50m"}:
+        signals.append("material_payment")
+    if feature.get("near_term_due") is True:
+        signals.append("near_term_due")
+    if str(feature.get("criticality")).lower() == "high":
+        signals.append("high_criticality")
+    if feature.get("has_sanctions_clause") is True:
+        signals.append("sanctions_clause")
+    if feature.get("has_force_majeure_clause") is True:
+        signals.append("force_majeure_clause")
+    if feature.get("has_termination_right") is True:
+        signals.append("termination_right")
+    if feature.get("has_alternative") is False:
+        signals.append("no_alternative")
+    return signals
 
 
 def _to_float(value: Any) -> float:

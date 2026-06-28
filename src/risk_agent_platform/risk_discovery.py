@@ -49,14 +49,26 @@ class RiskDiscoveryDeepAgent:
 
         @tool("discovery_sample_dataset")
         def discovery_sample_dataset(client_id: str, dataset: str, limit: int = 10) -> str:
-            """Sample a structured client dataset for scope relevance signals."""
-            rows = self.mcp.call(
+            """Sample abstracted risk features without exposing raw client rows."""
+            feature_view = self.mcp.call(
                 "mcp-structured-data",
-                "sample_rows",
+                "risk_feature_sample",
                 {"client_id": client_id, "dataset": dataset, "limit": min(limit, DISCOVERY_DATASET_LIMIT)},
             )
-            self._state.setdefault("samples", {})[dataset] = rows
-            return json.dumps({"dataset": dataset, "row_count": len(rows), "rows": rows[:5]}, ensure_ascii=False)
+            features = feature_view.get("features", []) if isinstance(feature_view, dict) else []
+            self._state.setdefault("samples", {})[dataset] = features
+            self._state.setdefault("feature_summaries", {})[dataset] = (
+                feature_view.get("summary", {}) if isinstance(feature_view, dict) else {}
+            )
+            return json.dumps(
+                {
+                    "dataset": dataset,
+                    "row_count": feature_view.get("row_count", 0) if isinstance(feature_view, dict) else 0,
+                    "features": features[:5],
+                    "summary": feature_view.get("summary", {}) if isinstance(feature_view, dict) else {},
+                },
+                ensure_ascii=False,
+            )
 
         @tool("discovery_load_expert_pack")
         def discovery_load_expert_pack() -> str:
@@ -92,6 +104,7 @@ class RiskDiscoveryDeepAgent:
             "request": request.model_dump(mode="json"),
             "datasets": [],
             "samples": {},
+            "feature_summaries": {},
             "expert": {},
             "raw_candidates": [],
         }
@@ -114,6 +127,7 @@ class RiskDiscoveryDeepAgent:
         ]
         selected_events = [_candidate_to_event(candidate, request) for candidate in selected_candidates]
         selected_event = selected_events[0] if selected_events else None
+        fallback_used = not bool(raw_candidates)
         return RiskDiscoveryResult(
             request=request,
             selected_candidates=selected_candidates,
@@ -124,9 +138,12 @@ class RiskDiscoveryDeepAgent:
                 "agent_name": DISCOVERY_AGENT_NAME,
                 "datasets": self._state.get("datasets", []),
                 "sampled_datasets": sorted((self._state.get("samples") or {}).keys()),
+                "structured_sample_view": "risk_feature_sample",
+                "feature_summaries": self._state.get("feature_summaries", {}),
                 "expert_counts": {key: len(value) for key, value in (self._state.get("expert") or {}).items()},
                 "raw_candidate_count": len(raw_candidates),
-                "fallback_used": not bool(raw_candidates),
+                "fallback_used": fallback_used,
+                "discovery_confidence": "template_fallback" if fallback_used else "agent_recorded_candidates",
                 "scope_relevance_rule_count": len(_scope_relevance_rules(self._state)),
             },
         )
@@ -137,10 +154,14 @@ class RiskDiscoveryDeepAgent:
         samples = self._state.setdefault("samples", {})
         for dataset in _datasets_for_scope(self._state.get("datasets", [])):
             if dataset not in samples:
-                samples[dataset] = self.mcp.call(
+                feature_view = self.mcp.call(
                     "mcp-structured-data",
-                    "sample_rows",
+                    "risk_feature_sample",
                     {"client_id": request.scope.client_id, "dataset": dataset, "limit": DISCOVERY_DATASET_LIMIT},
+                )
+                samples[dataset] = feature_view.get("features", []) if isinstance(feature_view, dict) else []
+                self._state.setdefault("feature_summaries", {})[dataset] = (
+                    feature_view.get("summary", {}) if isinstance(feature_view, dict) else {}
                 )
         if not self._state.get("expert"):
             self._state["expert"] = {

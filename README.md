@@ -64,7 +64,7 @@ Agents call tools through `MCPGateway`, which uses FastMCP `Client`.
 
 Bounded Autonomy is implemented in the normal path:
 
-- Risk Discovery accepts an external event and scope, samples client structured data and Expert-as-Code seed knowledge, applies `data/expert_knowledge/scope_relevance_rules.jsonl`, generates `selected_candidates` and `rejected_candidates`, and converts every threshold-selected candidate into `selected_events`. `selected_event` remains the top event for compatibility.
+- Risk Discovery accepts an external event and scope, samples client structured data through `risk_feature_sample` feature views, loads Expert-as-Code seed knowledge, applies `data/expert_knowledge/scope_relevance_rules.jsonl`, generates `selected_candidates` and `rejected_candidates`, and converts every threshold-selected candidate into `selected_events`. `selected_event` remains the top event for compatibility.
 - Orchestrator asks DeepAgent for an `analysis_plan` JSON with `selected_agents`, `skipped_agents`, `recheck_conditions`, and `exploration_questions`; invalid plans fall back to the fixed agent order.
 - Source Intelligence uses DeepAgent tool-use for bounded sanitized search and URL extraction, then Python registers selected `EvidenceItem` records through Evidence Ledger.
 - Expert-as-Code uses DeepAgent tool-use to explore similar cases, rubrics, red flags, CTA notes, and counterfactuals, then emits a structured `KnowledgeApplicationFinding` inside the A2A finding metadata.
@@ -183,7 +183,7 @@ risk-agent-platform discover-risks `
   --embedded-services
 ```
 
-`--analysis-mode all-selected` is the default. Use `--analysis-mode top` for the previous one-risk behavior, or `--analysis-mode top-n --top-n 2` to cap the number of selected risks analyzed. `--max-risks` is treated as discovery candidate-generation guidance; it does not cut threshold-selected candidates from downstream analysis. When multiple risks are analyzed, `outputs/risk_discovery/<top_scenario_id>_portfolio_summary.json` and `.md` integrate the selected/rejected candidates, per-scenario status, Decisions, Evidence counts, review-required scenarios, and priority Decisions.
+`--analysis-mode all-selected` is the default. Use `--analysis-mode top` for the previous one-risk behavior, or `--analysis-mode top-n --top-n 2` to cap the number of selected risks analyzed. `--max-risks` is treated as discovery candidate-generation guidance; it does not cut threshold-selected candidates from downstream analysis. If Discovery uses template fallback candidates, `--run-analysis` is blocked unless `--allow-fallback-analysis` is explicitly supplied. When multiple risks are analyzed, `outputs/risk_discovery/<top_scenario_id>_portfolio_summary.json` and `.md` integrate the selected/rejected candidates, Discovery metadata, per-scenario status, Decisions, Evidence counts, review-required scenarios, and priority Decisions.
 
 Local embedded A2A/MCP endpoints:
 
@@ -231,6 +231,8 @@ Initial source reliability scoring is domain-based: government, regulator, inter
 Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, CTA notes, scope relevance rules, source references, source reliability seeds, and pack version metadata. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl`, `data/expert_knowledge/primitives.jsonl`, and `data/expert_knowledge/cases.jsonl` into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
 
 Risk Discovery scope filtering is also Expert-as-Code driven: `data/expert_knowledge/scope_relevance_rules.jsonl` defines what Treasury, Legal, Accounting, Procurement, business units, and industries treat as risk-relevant. Rejected candidates are preserved with a reason and relevance score so specialist reviewers can challenge false negatives.
+
+Risk Discovery evaluation cases live in `data/evaluation/risk_discovery_cases.jsonl`. Each case includes input event/scope, expected selected risk types, risk types that should not be prioritized, and expected follow-up questions.
 
 ## Document Parsing and OCR
 
