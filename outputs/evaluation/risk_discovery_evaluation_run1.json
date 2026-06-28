@@ -1,18 +1,15 @@
 {
   "summary": {
     "case_count": 4,
-    "passed": false,
-    "average_recall": 0.4375,
-    "average_question_match": 0.5191761363636364,
-    "average_question_semantic_match": 0.5191761363636364,
-    "average_missing_data_category_match": 0.5,
+    "passed": true,
+    "average_recall": 1.0,
+    "average_question_match": 1.0,
+    "average_question_semantic_match": 1.0,
+    "average_missing_data_category_match": 1.0,
     "average_reason_quality": 1.0,
     "average_expert_rubric_coverage": 1.0,
     "forbidden_top_violation_count": 0,
-    "failed_case_ids": [
-      "rdc_treasury_iran_payment_001",
-      "rdc_legal_sanctions_contract_001"
-    ],
+    "failed_case_ids": [],
     "min_recall": 0.75,
     "min_question_match": 0.25,
     "min_missing_data_match": 0.5,
@@ -22,36 +19,52 @@
   "cases": [
     {
       "case_id": "rdc_treasury_iran_payment_001",
-      "passed": false,
-      "recall": 0.0,
+      "passed": true,
+      "recall": 1.0,
       "expected_selected_risk_types": [
         "payment_disruption"
       ],
       "selected_risk_types": [
-        "supplier_resilience",
-        "supplier_resilience",
-        "supplier_resilience"
+        "payment_disruption"
       ],
-      "expected_hits": [],
+      "selected_candidate_titles": [
+        "Correspondent bank restrictions blocking Iran-related payments"
+      ],
+      "selected_candidate_rationales": [
+        "Directly impacts Treasury's core function of payment processing. Correspondent bank restrictions are a primary mechanism through which Iran sanctions affect payment flows. Treasury is responsible for managing payment channels and ensuring timely settlement."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "Treasury",
+          "cross_border_payments",
+          "Iran",
+          "SCOPE-DEPT-TREASURY-001:primary",
+          "SCOPE-DEPT-TREASURY-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term",
+          "contracts:theme_match"
+        ]
+      ],
+      "expected_hits": [
+        "payment_disruption"
+      ],
       "top_risk_types": [
-        "supplier_resilience",
-        "supplier_resilience",
-        "supplier_resilience"
+        "payment_disruption"
       ],
       "should_not_prioritize": [
         "accounting_disclosure"
       ],
       "forbidden_in_top": [],
-      "question_match": 0.03125,
-      "question_semantic_match": 0.03125,
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
       "expected_questions": [
         "Which pending payments are near term and routed through affected bank countries?",
         "Which alternate payment routes are available without increasing sanctions risk?"
       ],
       "actual_questions": [
-        "Which critical suppliers have low inventory runway or no qualified alternative source?",
-        "Which logistics lanes or sites need immediate continuity validation?",
-        "Validated external evidence is still required before final risk scoring."
+        "Which pending payments are near term and routed through affected bank countries?",
+        "Which alternate payment routes are available without increasing sanctions risk?",
+        "Validated external evidence is still required before final risk scoring.",
+        "Near-term payment route availability and sanctions-screening ownership are not yet validated."
       ],
       "expected_missing_data_categories": [
         "payment_route",
@@ -59,11 +72,16 @@
       ],
       "actual_missing_data_categories": [
         "evidence_gap",
+        "executive_ownership",
         "materiality_reporting",
-        "supplier_continuity"
+        "payment_route",
+        "sanctions_screening"
       ],
-      "missing_data_category_hits": [],
-      "missing_data_category_match": 0.0,
+      "missing_data_category_hits": [
+        "payment_route",
+        "sanctions_screening"
+      ],
+      "missing_data_category_match": 1.0,
       "reason_quality": 1.0,
       "expected_rubric_ids": [
         "SCOPE-DEPT-TREASURY-001"
@@ -78,62 +96,88 @@
       "expert_rubric_coverage": 1.0,
       "fallback_used": false,
       "discovery_confidence": "agent_recorded_candidates",
-      "rejected_count": 0
+      "coverage_augmented_candidate_count": 0,
+      "raw_candidate_count": 3,
+      "rejected_risk_types": [
+        "legal_compliance",
+        "payment_disruption"
+      ],
+      "rejected_reasons": [
+        "Low relevance to Treasury scope: score 25 below threshold 50. Matched signals: Treasury, sanctions_screening, Iran.",
+        "Moved below threshold by scope diversity pass: duplicate selected risk_type `payment_disruption` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50."
+      ],
+      "rejected_count": 2
     },
     {
       "case_id": "rdc_legal_sanctions_contract_001",
-      "passed": false,
-      "recall": 0.0,
+      "passed": true,
+      "recall": 1.0,
       "expected_selected_risk_types": [
         "legal_compliance"
       ],
       "selected_risk_types": [
-        "supplier_resilience",
-        "supplier_resilience",
-        "accounting_disclosure"
+        "legal_compliance"
       ],
-      "expected_hits": [],
+      "selected_candidate_titles": [
+        "Sanctions and export control compliance obligations"
+      ],
+      "selected_candidate_rationales": [
+        "The Legal department is directly responsible for sanctions and export control compliance. The event explicitly identifies sanctions and export controls as the primary impact area."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "department: Legal",
+          "department",
+          "Legal",
+          "SCOPE-DEPT-LEGAL-001:primary",
+          "SCOPE-DEPT-LEGAL-001:term",
+          "contracts:theme_match"
+        ]
+      ],
+      "expected_hits": [
+        "legal_compliance"
+      ],
       "top_risk_types": [
-        "supplier_resilience",
-        "supplier_resilience",
-        "accounting_disclosure"
+        "legal_compliance"
       ],
       "should_not_prioritize": [
         "payment_disruption"
       ],
       "forbidden_in_top": [],
-      "question_match": 0.045454545454545456,
-      "question_semantic_match": 0.045454545454545456,
+      "question_match": 1.0,
+      "question_semantic_match": 1.0,
       "expected_questions": [
         "Which contracts include sanctions, force majeure, notice, or termination clauses?",
         "Which counterparties require beneficial ownership or restricted party review?"
       ],
       "actual_questions": [
-        "Which critical suppliers have low inventory runway or no qualified alternative source?",
-        "Which logistics lanes or sites need immediate continuity validation?",
-        "Which exposures could become material for impairment, provision, or disclosure?",
-        "What evidence package is required for auditor review?",
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?",
         "Validated external evidence is still required before final risk scoring.",
-        "Materiality and auditor evidence sufficiency require accounting validation."
+        "Counterparty restricted-party status and contract notice obligations require legal validation."
       ],
       "expected_missing_data_categories": [
         "contract_terms",
         "sanctions_screening"
       ],
       "actual_missing_data_categories": [
+        "contract_terms",
         "evidence_gap",
+        "executive_ownership",
         "materiality_reporting",
-        "supplier_continuity"
+        "sanctions_screening"
       ],
-      "missing_data_category_hits": [],
-      "missing_data_category_match": 0.0,
+      "missing_data_category_hits": [
+        "contract_terms",
+        "sanctions_screening"
+      ],
+      "missing_data_category_match": 1.0,
       "reason_quality": 1.0,
       "expected_rubric_ids": [
         "SCOPE-DEPT-LEGAL-001"
       ],
       "actual_rubric_ids": [
-        "SCOPE-DEPT-LEGAL-001",
-        "SCOPE-IND-MANUFACTURING-001"
+        "SCOPE-DEPT-LEGAL-001"
       ],
       "rubric_hits": [
         "SCOPE-DEPT-LEGAL-001"
@@ -141,7 +185,17 @@
       "expert_rubric_coverage": 1.0,
       "fallback_used": false,
       "discovery_confidence": "agent_recorded_candidates",
-      "rejected_count": 0
+      "coverage_augmented_candidate_count": 0,
+      "raw_candidate_count": 3,
+      "rejected_risk_types": [
+        "legal_compliance",
+        "legal_compliance"
+      ],
+      "rejected_reasons": [
+        "Moved below threshold by scope diversity pass: duplicate selected risk_type `legal_compliance` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50.",
+        "Moved below threshold by scope diversity pass: duplicate selected risk_type `legal_compliance` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50."
+      ],
+      "rejected_count": 2
     },
     {
       "case_id": "rdc_accounting_disclosure_001",
@@ -152,16 +206,38 @@
       ],
       "selected_risk_types": [
         "accounting_disclosure",
-        "accounting_disclosure",
-        "accounting_disclosure"
+        "legal_compliance"
+      ],
+      "selected_candidate_titles": [
+        "Asset impairment indicators triggered by Iran-related geopolitical disruption",
+        "Subsequent event and disclosure evidence evaluation for Iran-related impacts"
+      ],
+      "selected_candidate_rationales": [
+        "Event explicitly flags impairment indicators. Accounting scope requires impairment assessment and related disclosure. Iran exposure creates recoverability uncertainty for manufacturing assets.",
+        "Iran is a sanctioned jurisdiction. Geopolitical disruption involving Iran creates sanctions compliance risk that is scope-primary and must not be collapsed into accounting_disclosure merely because disclosure may be required."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "department: Accounting",
+          "industry: manufacturing",
+          "country: Iran",
+          "Accounting",
+          "SCOPE-DEPT-ACCOUNTING-001:primary",
+          "SCOPE-DEPT-ACCOUNTING-001:term"
+        ],
+        [
+          "department: Accounting",
+          "industry: manufacturing",
+          "country: Iran",
+          "SCOPE-DEPT-ACCOUNTING-001:term"
+        ]
       ],
       "expected_hits": [
         "accounting_disclosure"
       ],
       "top_risk_types": [
         "accounting_disclosure",
-        "accounting_disclosure",
-        "accounting_disclosure"
+        "legal_compliance"
       ],
       "should_not_prioritize": [
         "supplier_resilience"
@@ -174,9 +250,12 @@
         "What evidence package is required for auditor review?"
       ],
       "actual_questions": [
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?",
         "Which exposures could become material for impairment, provision, or disclosure?",
         "What evidence package is required for auditor review?",
         "Validated external evidence is still required before final risk scoring.",
+        "Counterparty restricted-party status and contract notice obligations require legal validation.",
         "Materiality and auditor evidence sufficiency require accounting validation."
       ],
       "expected_missing_data_categories": [
@@ -184,8 +263,11 @@
         "evidence_gap"
       ],
       "actual_missing_data_categories": [
+        "contract_terms",
         "evidence_gap",
-        "materiality_reporting"
+        "executive_ownership",
+        "materiality_reporting",
+        "sanctions_screening"
       ],
       "missing_data_category_hits": [
         "evidence_gap",
@@ -206,12 +288,20 @@
       "expert_rubric_coverage": 1.0,
       "fallback_used": false,
       "discovery_confidence": "agent_recorded_candidates",
-      "rejected_count": 0
+      "coverage_augmented_candidate_count": 0,
+      "raw_candidate_count": 3,
+      "rejected_risk_types": [
+        "accounting_disclosure"
+      ],
+      "rejected_reasons": [
+        "Moved below threshold by scope diversity pass: duplicate selected risk_type `accounting_disclosure` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50."
+      ],
+      "rejected_count": 1
     },
     {
       "case_id": "rdc_executive_manufacturing_portfolio_001",
       "passed": true,
-      "recall": 0.75,
+      "recall": 1.0,
       "expected_selected_risk_types": [
         "supplier_resilience",
         "payment_disruption",
@@ -220,19 +310,57 @@
       ],
       "selected_risk_types": [
         "supplier_resilience",
-        "supplier_resilience",
         "executive_resilience",
-        "payment_disruption"
+        "payment_disruption",
+        "legal_compliance"
+      ],
+      "selected_candidate_titles": [
+        "Iran supplier disruption due to conflict escalation",
+        "Executive resilience coverage: Regional conflict escalation affecting manufacturing continuity",
+        "Near-term Iran payment at risk of disruption or sanctions block",
+        "Sanctions compliance exposure from Iran conflict escalation"
+      ],
+      "selected_candidate_rationales": [
+        "Supplier dataset shows Iran-based supplier with high criticality, no alternative, and 8-30 day inventory bucket. Event explicitly mentions supplier continuity disruption. Executive scope requires visibility into single-source dependency in conflict zone.",
+        "Deterministic coverage augmentation added this candidate because applicable scope rule SCOPE-IND-MANUFACTURING-001 lists `executive_resilience` or its aliases as primary, matched terms were present, and no candidate of this risk type was recorded by the LLM.",
+        "Payments dataset shows Iran payment with material amount ($1m-$5m), near-term due (0-7 days), and risk signals for material_payment and near_term_due. Event mentions payment route disruption. Executive scope requires oversight of near-term cash commitments in sanctioned jurisdiction.",
+        "Contracts dataset shows multiple contracts with sanctions clauses and termination rights. Iran is a sanctioned jurisdiction. Event mentions executive-level trade-off decisions. Legal compliance is scope-primary for Executive management overseeing contractual and regulatory exposure."
+      ],
+      "selected_candidate_scope_matches": [
+        [
+          "Executive",
+          "manufacturing",
+          "SCOPE-IND-MANUFACTURING-001:primary",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "SCOPE-IND-MANUFACTURING-001:coverage_primary",
+          "coverage_term:supplier",
+          "coverage_term:inventory",
+          "coverage_term:logistics",
+          "coverage_term:energy",
+          "Executive",
+          "SCOPE-IND-MANUFACTURING-001:term"
+        ],
+        [
+          "Executive",
+          "manufacturing"
+        ],
+        [
+          "Executive",
+          "manufacturing"
+        ]
       ],
       "expected_hits": [
         "supplier_resilience",
         "payment_disruption",
+        "legal_compliance",
         "executive_resilience"
       ],
       "top_risk_types": [
         "supplier_resilience",
-        "supplier_resilience",
-        "executive_resilience"
+        "executive_resilience",
+        "payment_disruption"
       ],
       "should_not_prioritize": [],
       "forbidden_in_top": [],
@@ -247,10 +375,13 @@
         "Which alternate payment routes are available without increasing sanctions risk?",
         "Which critical suppliers have low inventory runway or no qualified alternative source?",
         "Which logistics lanes or sites need immediate continuity validation?",
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?",
         "Which selected risks require executive cross-functional decision ownership?",
         "Which evidence gaps block immediate mitigation decisions?",
         "Validated external evidence is still required before final risk scoring.",
-        "Near-term payment route availability and sanctions-screening ownership are not yet validated."
+        "Near-term payment route availability and sanctions-screening ownership are not yet validated.",
+        "Counterparty restricted-party status and contract notice obligations require legal validation."
       ],
       "expected_missing_data_categories": [
         "supplier_continuity",
@@ -259,6 +390,7 @@
         "evidence_gap"
       ],
       "actual_missing_data_categories": [
+        "contract_terms",
         "evidence_gap",
         "executive_ownership",
         "materiality_reporting",
@@ -286,6 +418,10 @@
       "expert_rubric_coverage": 1.0,
       "fallback_used": false,
       "discovery_confidence": "agent_recorded_candidates",
+      "coverage_augmented_candidate_count": 1,
+      "raw_candidate_count": 3,
+      "rejected_risk_types": [],
+      "rejected_reasons": [],
       "rejected_count": 0
     }
   ],

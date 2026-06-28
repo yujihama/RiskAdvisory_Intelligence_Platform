@@ -31,11 +31,13 @@
         "Correspondent bank restrictions delay urgent supplier payments to Iran"
       ],
       "selected_candidate_rationales": [
-        "Directly impacts Treasury's payment processing function. Correspondent bank restrictions are a payment execution risk, not a supplier resilience issue. The Treasury department is responsible for ensuring timely cross-border payments and managing banking relationships."
+        "Event explicitly cites correspondent bank restrictions and delayed urgent supplier payments. Treasury department owns payment processing and cash management. This is a direct payment execution risk."
       ],
       "selected_candidate_scope_matches": [
         [
           "Treasury",
+          "cross_border_payments",
+          "supplier_payments",
           "SCOPE-DEPT-TREASURY-001:primary",
           "SCOPE-DEPT-TREASURY-001:term",
           "SCOPE-IND-MANUFACTURING-001:term"
@@ -101,7 +103,7 @@
       ],
       "rejected_reasons": [
         "Moved below threshold by scope diversity pass: duplicate selected risk_type `payment_disruption` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50.",
-        "Moved below threshold by scope diversity pass: duplicate selected risk_type `payment_disruption` was demoted so scope-primary coverage can remain visible. Original relevance score was 95; selection threshold was 50."
+        "Moved below threshold by scope diversity pass: duplicate selected risk_type `payment_disruption` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50."
       ],
       "rejected_count": 2
     },
@@ -116,10 +118,10 @@
         "legal_compliance"
       ],
       "selected_candidate_titles": [
-        "Sanctions compliance exposure for Iranian counterparties"
+        "Sanctions violation exposure from restricted counterparties"
       ],
       "selected_candidate_rationales": [
-        "Event directly imposes new sanctions and export controls on Iran. Legal department is responsible for compliance with sanctions regimes. Contracts dataset shows governing law in England and Japan, both of which may have overlapping sanctions obligations. Scope is Legal department, making legal_compliance a scope-primary risk type."
+        "Scope is Legal department. Sanctions and export controls directly implicate legal compliance obligations. Contracts dataset shows one contract with a sanctions clause (governing law: England) and another with force majeure (Japan), both requiring legal review for sanctions-triggered notices or termination. No collapse into supplier_resilience or accounting_disclosure."
       ],
       "selected_candidate_scope_matches": [
         [
@@ -127,6 +129,7 @@
           "department",
           "SCOPE-DEPT-LEGAL-001:primary",
           "SCOPE-DEPT-LEGAL-001:term",
+          "SCOPE-IND-MANUFACTURING-001:term",
           "contracts:theme_match"
         ]
       ],
@@ -173,7 +176,8 @@
         "SCOPE-DEPT-LEGAL-001"
       ],
       "actual_rubric_ids": [
-        "SCOPE-DEPT-LEGAL-001"
+        "SCOPE-DEPT-LEGAL-001",
+        "SCOPE-IND-MANUFACTURING-001"
       ],
       "rubric_hits": [
         "SCOPE-DEPT-LEGAL-001"
@@ -201,26 +205,39 @@
         "accounting_disclosure"
       ],
       "selected_risk_types": [
-        "accounting_disclosure"
+        "accounting_disclosure",
+        "legal_compliance"
       ],
       "selected_candidate_titles": [
-        "Impairment assessment misstatement due to geopolitical disruption in Iran"
+        "Impairment and recoverability assessment impacted by geopolitical disruption",
+        "Sanctions and trade restriction compliance exposure from Iran operations"
       ],
       "selected_candidate_rationales": [
-        "Event explicitly references impairment indicators and subsequent event analysis. Iran exposure creates recoverability risk for manufacturing assets, supply chain, or receivables tied to the region. Accounting scope requires timely and accurate impairment assessment and disclosure."
+        "The event explicitly references impairment indicators, provisions, subsequent event analysis, and disclosure evidence for the reporting close. These are core accounting disclosure and financial reporting obligations. The manufacturing industry may hold significant assets or inventory with Iran exposure requiring recoverability assessment.",
+        "Iran is a sanctioned jurisdiction under multiple regimes. The Accounting department must ensure that any transactions, balances, or exposures involving Iran are properly identified, valued, and disclosed in compliance with applicable sanctions and regulatory requirements. Legal compliance risks must not be collapsed into accounting_disclosure merely because disclosure may later be required."
       ],
       "selected_candidate_scope_matches": [
         [
+          "department:Accounting",
+          "industry:manufacturing",
           "Accounting",
           "SCOPE-DEPT-ACCOUNTING-001:primary",
           "SCOPE-DEPT-ACCOUNTING-001:term"
+        ],
+        [
+          "department:Accounting",
+          "region:Iran",
+          "Accounting",
+          "SCOPE-DEPT-ACCOUNTING-001:term",
+          "contracts:theme_match"
         ]
       ],
       "expected_hits": [
         "accounting_disclosure"
       ],
       "top_risk_types": [
-        "accounting_disclosure"
+        "accounting_disclosure",
+        "legal_compliance"
       ],
       "should_not_prioritize": [
         "supplier_resilience"
@@ -233,9 +250,12 @@
         "What evidence package is required for auditor review?"
       ],
       "actual_questions": [
+        "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+        "Which counterparties require beneficial ownership or restricted party review?",
         "Which exposures could become material for impairment, provision, or disclosure?",
         "What evidence package is required for auditor review?",
         "Validated external evidence is still required before final risk scoring.",
+        "Counterparty restricted-party status and contract notice obligations require legal validation.",
         "Materiality and auditor evidence sufficiency require accounting validation."
       ],
       "expected_missing_data_categories": [
@@ -243,8 +263,11 @@
         "evidence_gap"
       ],
       "actual_missing_data_categories": [
+        "contract_terms",
         "evidence_gap",
-        "materiality_reporting"
+        "executive_ownership",
+        "materiality_reporting",
+        "sanctions_screening"
       ],
       "missing_data_category_hits": [
         "evidence_gap",
@@ -265,16 +288,10 @@
       "fallback_used": false,
       "discovery_confidence": "agent_recorded_candidates",
       "coverage_augmented_candidate_count": 0,
-      "raw_candidate_count": 3,
-      "rejected_risk_types": [
-        "accounting_disclosure",
-        "accounting_disclosure"
-      ],
-      "rejected_reasons": [
-        "Moved below threshold by scope diversity pass: duplicate selected risk_type `accounting_disclosure` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50.",
-        "Moved below threshold by scope diversity pass: duplicate selected risk_type `accounting_disclosure` was demoted so scope-primary coverage can remain visible. Original relevance score was 100; selection threshold was 50."
-      ],
-      "rejected_count": 2
+      "raw_candidate_count": 2,
+      "rejected_risk_types": [],
+      "rejected_reasons": [],
+      "rejected_count": 0
     },
     {
       "case_id": "rdc_executive_manufacturing_portfolio_001",
@@ -289,28 +306,27 @@
       "selected_risk_types": [
         "supplier_resilience",
         "executive_resilience",
-        "payment_disruption",
-        "legal_compliance"
+        "legal_compliance",
+        "payment_disruption"
       ],
       "selected_candidate_titles": [
-        "Iran supplier disruption due to conflict escalation",
+        "Iran high-criticality supplier disruption due to conflict escalation",
         "Executive resilience coverage: Regional conflict escalation affecting manufacturing continuity",
-        "Near-term payment to Iran blocked by conflict or sanctions",
-        "Sanctions compliance exposure from Iran transactions"
+        "Sanctions compliance exposure from Iran conflict escalation",
+        "Near-term Iran payment disruption from conflict and sanctions"
       ],
       "selected_candidate_rationales": [
-        "Supplier dataset shows one Iran-based supplier with high criticality, no alternative, and limited inventory buffer. Event explicitly mentions supplier continuity disruption. Executive scope is affected as manufacturing continuity depends on this supplier.",
+        "The supplier dataset shows a high-criticality Iran supplier with no alternative and limited inventory buffer. The event explicitly mentions disruption to supplier continuity and logistics. This is a scope-primary supplier_resilience risk, not collapsible into other categories.",
         "Deterministic coverage augmentation added this candidate because applicable scope rule SCOPE-IND-MANUFACTURING-001 lists `executive_resilience` or its aliases as primary, matched terms were present, and no candidate of this risk type was recorded by the LLM.",
-        "Payments dataset shows a near-term, material payment to Iran due within 0-7 days with risk signals for material_payment and near_term_due. Conflict escalation directly threatens payment execution and introduces sanctions compliance exposure.",
-        "Contracts dataset shows multiple agreements with sanctions clauses. Payments and suppliers datasets confirm active Iran exposure. Conflict escalation increases likelihood of sanctions regime changes, creating legal compliance risk that executive management must oversee."
+        "The contracts dataset confirms the presence of sanctions clauses, force majeure clauses, and termination rights. The event references executive-level trade-off decisions. This is a scope-primary legal_compliance risk, not collapsible into accounting_disclosure or supplier_resilience.",
+        "The payments dataset shows a near-term material payment to Iran due within 0-7 days. Conflict escalation directly threatens payment routing and may trigger sanctions-related blocks. This is a scope-primary payment_disruption risk, distinct from supplier or legal risks."
       ],
       "selected_candidate_scope_matches": [
         [
           "client_id: fujifilm_dummy",
           "scope_type: company",
-          "department: Executive",
           "industry: manufacturing",
-          "country: Iran",
+          "region: Iran",
           "SCOPE-IND-MANUFACTURING-001:primary",
           "SCOPE-IND-MANUFACTURING-001:term"
         ],
@@ -328,13 +344,12 @@
           "client_id: fujifilm_dummy",
           "scope_type: company",
           "department: Executive",
-          "country: Iran"
+          "Executive"
         ],
         [
           "client_id: fujifilm_dummy",
           "scope_type: company",
-          "department: Executive",
-          "country: Iran"
+          "region: Iran"
         ]
       ],
       "expected_hits": [
@@ -346,7 +361,7 @@
       "top_risk_types": [
         "supplier_resilience",
         "executive_resilience",
-        "payment_disruption"
+        "legal_compliance"
       ],
       "should_not_prioritize": [],
       "forbidden_in_top": [],

@@ -29,6 +29,58 @@ CANONICAL_RISK_TYPES = {
     "accounting_disclosure",
     "executive_resilience",
 }
+LEGAL_SIGNAL_TERMS = [
+    "compliance",
+    "sanction",
+    "sanctions",
+    "export",
+    "contract",
+    "contractual",
+    "regulatory",
+    "legal",
+    "counterparty",
+    "beneficial ownership",
+    "restricted party",
+    "force majeure",
+    "termination",
+    "notice",
+]
+PAYMENT_SIGNAL_TERMS = [
+    "payment",
+    "payments",
+    "cash",
+    "liquidity",
+    "bank",
+    "banking",
+    "settlement",
+    "treasury",
+    "correspondent",
+    "funding",
+    "currency",
+]
+ACCOUNTING_SIGNAL_TERMS = [
+    "accounting",
+    "impairment",
+    "provision",
+    "disclosure",
+    "auditor",
+    "recoverability",
+    "materiality",
+    "subsequent event",
+    "contingent liability",
+]
+SUPPLIER_SIGNAL_TERMS = [
+    "supplier",
+    "supply chain",
+    "inventory",
+    "logistics",
+    "shipment",
+    "shipping",
+    "sourcing",
+    "alternative source",
+    "procurement",
+    "lead time",
+]
 
 
 class RiskDiscoveryDeepAgent:
@@ -44,6 +96,9 @@ class RiskDiscoveryDeepAgent:
         return (
             "You are the Risk Discovery DeepAgent. Given an external event and a client scope, "
             "identify related risks, filter them to the scope, and record bounded candidate risks. "
+            "Cover the scope-primary risk types implied by the Expert-as-Code scope relevance rules. "
+            "Do not collapse legal or payment risks into supplier_resilience merely because a supplier is involved. "
+            "Do not collapse legal_compliance into accounting_disclosure merely because disclosure may later be required. "
             "Do not perform final scoring or write the Decision Queue."
         )
 
@@ -129,6 +184,9 @@ class RiskDiscoveryDeepAgent:
         }
         self.runner.synthesize(
             "Use discovery tools to inspect client scope and expert knowledge, then record risk candidates. "
+            "Cover the scope-primary risk types from applicable scope relevance rules. "
+            "Do not collapse legal or payment risks into supplier_resilience merely because a supplier is involved. "
+            "Do not collapse legal_compliance into accounting_disclosure merely because disclosure may later be required. "
             "Return no prose after recording. Candidate schema: "
             "{\"candidates\": [{\"title\": \"...\", \"risk_type\": \"...\", \"risk_themes\": [], "
             "\"affected_categories\": [], \"description\": \"...\", \"urgency\": \"medium\", "
@@ -139,7 +197,7 @@ class RiskDiscoveryDeepAgent:
         self._ensure_context(request)
         raw_candidates = self._state.get("raw_candidates") or []
         candidates = _normalize_candidates(raw_candidates, request) if raw_candidates else self._fallback_candidates(request)
-        candidates, coverage_augmented_count = _augment_scope_coverage(candidates, request)
+        candidates, coverage_augmented_count = _augment_scope_coverage(candidates, request, self._state)
         selected_candidates, rejected_candidates = self._filter_to_scope(candidates, request)
         selected_candidates = [
             candidate.model_copy(update={"selected_for_analysis": True})
@@ -267,6 +325,7 @@ class RiskDiscoveryDeepAgent:
             for candidate in sorted_candidates
             if candidate.candidate_id not in selected_ids
         ]
+        selected, rejected = _diversify_selected_candidates(selected, rejected, request, self._state, threshold)
         return selected, rejected
 
 
@@ -291,6 +350,7 @@ def _normalize_candidates(raw_candidates: list[Any], request: RiskDiscoveryReque
             risk_themes=risk_themes,
             affected_categories=affected_categories,
             description=description,
+            request=request,
         )
         candidate = DiscoveredRisk(
             candidate_id=str(raw.get("candidate_id") or f"DISC-{idx:03d}"),
@@ -308,9 +368,30 @@ def _normalize_candidates(raw_candidates: list[Any], request: RiskDiscoveryReque
     return candidates
 
 
-def _augment_scope_coverage(candidates: list[DiscoveredRisk], request: RiskDiscoveryRequest) -> tuple[list[DiscoveredRisk], int]:
+def _augment_scope_coverage(
+    candidates: list[DiscoveredRisk],
+    request: RiskDiscoveryRequest,
+    state: dict[str, Any],
+) -> tuple[list[DiscoveredRisk], int]:
     augmented = list(candidates)
     added = 0
+    coverage_specs = _coverage_candidate_specs(augmented, request, state)
+    for spec in coverage_specs:
+        augmented.append(
+            DiscoveredRisk(
+                candidate_id=spec["candidate_id"],
+                title=spec["title"],
+                risk_type=spec["risk_type"],
+                countries=request.countries or _country_hints(request.event_title, request.event_description),
+                risk_themes=spec["risk_themes"],
+                affected_categories=spec["affected_categories"],
+                description=spec["description"],
+                urgency=spec["urgency"],
+                scope_matches=spec["scope_matches"],
+                rationale=spec["rationale"],
+            )
+        )
+        added += 1
     scope_is_executive = request.scope.scope_type == "company" or str(request.scope.department or "").lower() == "executive"
     if scope_is_executive and not any(candidate.risk_type == "executive_resilience" for candidate in augmented):
         augmented.append(
@@ -335,6 +416,196 @@ def _augment_scope_coverage(candidates: list[DiscoveredRisk], request: RiskDisco
     return augmented, added
 
 
+def _coverage_candidate_specs(
+    candidates: list[DiscoveredRisk],
+    request: RiskDiscoveryRequest,
+    state: dict[str, Any],
+) -> list[dict[str, Any]]:
+    existing_types = {candidate.risk_type for candidate in candidates}
+    context = _coverage_context_text(candidates, request, state)
+    specs: list[dict[str, Any]] = []
+    planned_types: set[str] = set()
+    for rule in _coverage_scope_rules(state, request):
+        matched_terms = _matched_rule_terms(rule, context)
+        if not matched_terms:
+            continue
+        for risk_type in _canonical_primary_risk_types(rule):
+            if risk_type in existing_types or risk_type in planned_types:
+                continue
+            specs.append(_coverage_candidate_spec(rule, risk_type, matched_terms, request))
+            planned_types.add(risk_type)
+    return specs
+
+
+def _coverage_scope_rules(state: dict[str, Any], request: RiskDiscoveryRequest) -> list[dict[str, Any]]:
+    applicable = [rule for rule in _scope_relevance_rules(state) if _rule_applies_to_scope(rule, request)]
+    department_rules = [rule for rule in applicable if str(rule.get("scope_kind") or "").lower() == "department"]
+    if request.scope.scope_type == "department" and department_rules:
+        return department_rules
+    return applicable
+
+
+def _canonical_primary_risk_types(rule: dict[str, Any]) -> list[str]:
+    risk_types: list[str] = []
+    for raw_risk_type in rule.get("primary_risk_types") or []:
+        canonical = _canonical_primary_risk_type(str(raw_risk_type))
+        if canonical and canonical not in risk_types:
+            risk_types.append(canonical)
+    return risk_types
+
+
+def _canonical_primary_risk_type(risk_type: str) -> str | None:
+    normalized = risk_type.strip().lower().replace(" ", "_").replace("-", "_")
+    if normalized in CANONICAL_RISK_TYPES:
+        return normalized
+    text = normalized.replace("_", " ")
+    if _contains_any(text, LEGAL_SIGNAL_TERMS):
+        return "legal_compliance"
+    if _contains_any(text, PAYMENT_SIGNAL_TERMS):
+        return "payment_disruption"
+    if _contains_any(text, ACCOUNTING_SIGNAL_TERMS):
+        return "accounting_disclosure"
+    if _contains_any(text, SUPPLIER_SIGNAL_TERMS):
+        return "supplier_resilience"
+    if _contains_any(text, ["decision urgency", "operational resilience", "executive"]):
+        return "executive_resilience"
+    return None
+
+
+def _coverage_context_text(
+    candidates: list[DiscoveredRisk],
+    request: RiskDiscoveryRequest,
+    state: dict[str, Any],
+) -> str:
+    parts: list[str] = [
+        request.event_title,
+        request.event_description,
+        " ".join(request.countries),
+        request.scope.scope_type,
+        request.scope.scope_name or "",
+        request.scope.department or "",
+        request.scope.region or "",
+        request.scope.site_id or "",
+        json.dumps(request.scope.metadata, ensure_ascii=False),
+        json.dumps(state.get("feature_summaries") or {}, ensure_ascii=False),
+        json.dumps(state.get("samples") or {}, ensure_ascii=False),
+    ]
+    for candidate in candidates:
+        parts.extend(
+            [
+                candidate.title,
+                candidate.risk_type,
+                " ".join(candidate.risk_themes),
+                " ".join(candidate.affected_categories),
+                candidate.description,
+                candidate.rationale,
+            ]
+        )
+    return " ".join(parts).replace("_", " ").lower()
+
+
+def _matched_rule_terms(rule: dict[str, Any], context: str) -> list[str]:
+    matches = []
+    for term in [str(item).lower() for item in rule.get("match_terms") or []]:
+        if term and term in context:
+            matches.append(term)
+    return list(dict.fromkeys(matches))
+
+
+def _coverage_candidate_spec(
+    rule: dict[str, Any],
+    risk_type: str,
+    matched_terms: list[str],
+    request: RiskDiscoveryRequest,
+) -> dict[str, Any]:
+    rule_id = str(rule.get("rule_id") or rule.get("scope_key") or "scope_rule")
+    title_prefix = {
+        "payment_disruption": "Treasury payment disruption coverage",
+        "legal_compliance": "Legal compliance and sanctions coverage",
+        "accounting_disclosure": "Accounting disclosure and reporting coverage",
+        "supplier_resilience": "Supplier continuity coverage",
+        "executive_resilience": "Executive resilience coverage",
+    }.get(risk_type, "Scope-primary risk coverage")
+    themes = {
+        "payment_disruption": ["payment_disruption", "cash_mobility", "bank_route_validation"],
+        "legal_compliance": ["sanctions", "export_control", "contract_obligation"],
+        "accounting_disclosure": ["provision_trigger", "impairment_trigger", "disclosure_pressure"],
+        "supplier_resilience": ["supplier_resilience", "logistics", "alternative_sourcing"],
+        "executive_resilience": ["decision_urgency", "operational_resilience", "cross_mode_conflict"],
+    }.get(risk_type, [risk_type])
+    categories = {
+        "payment_disruption": ["cross_border_payments", "bank_routes", "liquidity"],
+        "legal_compliance": ["contracts", "counterparties", "regulatory_controls"],
+        "accounting_disclosure": ["financial_reporting", "materiality", "auditor_evidence_pack"],
+        "supplier_resilience": ["critical_suppliers", "inventory_runway", "inbound_logistics"],
+        "executive_resilience": ["critical_services", "decision_queue", "specialist_review"],
+    }.get(risk_type, ["scope_primary_risk"])
+    matched = ", ".join(matched_terms[:8])
+    return {
+        "candidate_id": f"DISC-AUG-{_slug(rule_id)}-{_slug(risk_type)}"[:80],
+        "title": f"{title_prefix}: {request.event_title}",
+        "risk_type": risk_type,
+        "risk_themes": themes,
+        "affected_categories": categories,
+        "description": (
+            f"Added to cover scope-primary risk type `{risk_type}` under Expert-as-Code rule {rule_id}. "
+            f"Matched event, feature, or candidate signals: {matched}. Event: "
+            f"{request.event_description or request.event_title}"
+        ),
+        "urgency": "high" if risk_type in {"payment_disruption", "legal_compliance", "supplier_resilience"} else "medium",
+        "scope_matches": [f"{rule_id}:coverage_primary", *[f"coverage_term:{term}" for term in matched_terms[:5]]],
+        "rationale": (
+            f"Deterministic coverage augmentation added this candidate because applicable scope rule {rule_id} "
+            f"lists `{risk_type}` or its aliases as primary, matched terms were present, and no candidate of this "
+            "risk type was recorded by the LLM."
+        ),
+    }
+
+
+def _diversify_selected_candidates(
+    selected: list[DiscoveredRisk],
+    rejected: list[RejectedRiskCandidate],
+    request: RiskDiscoveryRequest,
+    state: dict[str, Any],
+    threshold: int,
+) -> tuple[list[DiscoveredRisk], list[RejectedRiskCandidate]]:
+    primary_types = {
+        risk_type
+        for rule in _coverage_scope_rules(state, request)
+        for risk_type in _canonical_primary_risk_types(rule)
+    }
+    if not primary_types:
+        return selected, rejected
+    seen: set[str] = set()
+    diversified: list[DiscoveredRisk] = []
+    demoted: list[DiscoveredRisk] = []
+    for candidate in selected:
+        if candidate.risk_type in seen:
+            demoted.append(candidate)
+            continue
+        seen.add(candidate.risk_type)
+        diversified.append(candidate)
+    if not demoted:
+        return selected, rejected
+    diversified_rejected = [_diversity_rejection(candidate, threshold) for candidate in demoted]
+    return diversified, [*rejected, *diversified_rejected]
+
+
+def _diversity_rejection(candidate: DiscoveredRisk, threshold: int) -> RejectedRiskCandidate:
+    return RejectedRiskCandidate(
+        candidate_id=candidate.candidate_id,
+        title=candidate.title,
+        risk_type=candidate.risk_type,
+        relevance_score=candidate.relevance_score,
+        reason=(
+            "Moved below threshold by scope diversity pass: duplicate selected risk_type "
+            f"`{candidate.risk_type}` was demoted so scope-primary coverage can remain visible. "
+            f"Original relevance score was {candidate.relevance_score}; selection threshold was {threshold}."
+        ),
+        scope_matches=candidate.scope_matches,
+    )
+
+
 def _canonical_risk_type(
     risk_type: str,
     *,
@@ -342,26 +613,37 @@ def _canonical_risk_type(
     risk_themes: list[str],
     affected_categories: list[str],
     description: str,
+    request: RiskDiscoveryRequest | None = None,
 ) -> str:
     normalized = risk_type.strip().lower().replace(" ", "_").replace("-", "_")
-    if normalized in CANONICAL_RISK_TYPES:
-        return normalized
     raw = risk_type.lower()
     text = " ".join([raw, title, " ".join(risk_themes), " ".join(affected_categories), description]).lower()
+    department = str((request.scope.department if request else "") or "").lower()
+    if "legal" in department and _contains_any(text, LEGAL_SIGNAL_TERMS):
+        return "legal_compliance"
+    if "treasury" in department and _contains_any(text, PAYMENT_SIGNAL_TERMS):
+        return "payment_disruption"
+    if _contains_any(raw, LEGAL_SIGNAL_TERMS):
+        return "legal_compliance"
+    if _contains_any(raw, PAYMENT_SIGNAL_TERMS):
+        return "payment_disruption"
+    if normalized in CANONICAL_RISK_TYPES:
+        return normalized
+    if _contains_any(text, LEGAL_SIGNAL_TERMS):
+        return "legal_compliance"
+    if _contains_any(text, PAYMENT_SIGNAL_TERMS):
+        return "payment_disruption"
     if "financial reporting" in raw or _contains_any(text, ["accounting", "impairment", "provision", "disclosure", "auditor", "recoverability"]):
         return "accounting_disclosure"
     if "supply chain" in raw or _contains_any(text, ["supplier", "inventory", "logistics", "shipment", "sourcing", "alternative source"]):
         return "supplier_resilience"
-    if "payment" in raw or _contains_any(text, ["payment", "cash", "bank", "liquidity", "correspondent", "currency", "funding"]):
-        return "payment_disruption"
-    if _contains_any(raw, ["contract", "legal", "regulatory", "compliance"]) or _contains_any(
-        text,
-        ["sanction", "export control", "restricted party", "beneficial ownership", "force majeure", "termination", "notice"],
-    ):
-        return "legal_compliance"
     if _contains_any(text, ["executive", "cross-functional", "decision ownership", "board", "crisis committee"]):
         return "executive_resilience"
     return normalized or "event_related_risk"
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
 def _build_candidate(

@@ -208,6 +208,9 @@ def _evaluate_case(
         "recall": recall,
         "expected_selected_risk_types": expected,
         "selected_risk_types": selected_risk_types,
+        "selected_candidate_titles": [candidate.title for candidate in result.selected_candidates],
+        "selected_candidate_rationales": [candidate.rationale for candidate in result.selected_candidates],
+        "selected_candidate_scope_matches": [candidate.scope_matches for candidate in result.selected_candidates],
         "expected_hits": expected_hits,
         "top_risk_types": top_risk_types,
         "should_not_prioritize": forbidden,
@@ -227,6 +230,10 @@ def _evaluate_case(
         "expert_rubric_coverage": rubric_coverage,
         "fallback_used": bool(result.metadata.get("fallback_used")),
         "discovery_confidence": result.metadata.get("discovery_confidence"),
+        "coverage_augmented_candidate_count": result.metadata.get("coverage_augmented_candidate_count", 0),
+        "raw_candidate_count": result.metadata.get("raw_candidate_count", 0),
+        "rejected_risk_types": [candidate.risk_type for candidate in result.rejected_candidates],
+        "rejected_reasons": [candidate.reason for candidate in result.rejected_candidates],
         "rejected_count": len(result.rejected_candidates),
     }
 
@@ -399,6 +406,9 @@ def _markdown_report(report: dict[str, Any]) -> str:
                 f"- Missing-data category hits: {', '.join(case['missing_data_category_hits']) or 'None'}",
                 f"- Rubric hits: {', '.join(case['rubric_hits']) or 'None'}",
                 f"- Discovery confidence: `{case.get('discovery_confidence')}`",
+                f"- Raw candidates: {case.get('raw_candidate_count', 0)}",
+                f"- Coverage augmented candidates: {case.get('coverage_augmented_candidate_count', 0)}",
+                f"- Rejected risk types: {', '.join(case.get('rejected_risk_types') or []) or 'None'}",
             ]
         )
     return "\n".join(lines) + "\n"

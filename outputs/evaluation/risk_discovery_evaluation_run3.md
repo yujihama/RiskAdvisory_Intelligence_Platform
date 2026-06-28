@@ -26,7 +26,7 @@
 - Discovery confidence: `agent_recorded_candidates`
 - Raw candidates: 3
 - Coverage augmented candidates: 0
-- Rejected risk types: legal_compliance, payment_disruption
+- Rejected risk types: payment_disruption, payment_disruption
 ### rdc_legal_sanctions_contract_001
 - Passed: `True`
 - Recall: 1.000
@@ -56,9 +56,9 @@
 - Missing-data category hits: evidence_gap, materiality_reporting
 - Rubric hits: SCOPE-DEPT-ACCOUNTING-001
 - Discovery confidence: `agent_recorded_candidates`
-- Raw candidates: 3
+- Raw candidates: 2
 - Coverage augmented candidates: 0
-- Rejected risk types: accounting_disclosure
+- Rejected risk types: None
 ### rdc_executive_manufacturing_portfolio_001
 - Passed: `True`
 - Recall: 1.000
@@ -67,7 +67,7 @@
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: supplier_resilience, executive_resilience, payment_disruption, legal_compliance
+- Selected risk types: supplier_resilience, executive_resilience, legal_compliance, payment_disruption
 - Forbidden in top: None
 - Missing-data category hits: evidence_gap, executive_ownership, payment_route, supplier_continuity
 - Rubric hits: SCOPE-IND-MANUFACTURING-001

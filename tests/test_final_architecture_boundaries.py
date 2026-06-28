@@ -379,6 +379,57 @@ def test_risk_discovery_normal_path_records_candidates_and_scope_changes_selecti
     assert "amount_bucket" in _RecordingCandidateRunner.sample_payloads[0]
 
 
+def test_risk_discovery_adds_department_primary_coverage_when_llm_misses_it(tmp_path, monkeypatch):
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _RecordingCandidateRunner)
+    _RecordingCandidateRunner.candidates = [
+        {
+            "candidate_id": "DISC-SUP",
+            "title": "Supplier logistics continuity review",
+            "risk_type": "supplier_resilience",
+            "risk_themes": ["supplier", "logistics"],
+            "affected_categories": ["operations"],
+            "description": "Supplier continuity and logistics lanes may be disrupted.",
+            "urgency": "medium",
+            "scope_matches": [],
+            "rationale": "LLM recorded only supplier continuity.",
+        },
+        {
+            "candidate_id": "DISC-ACC",
+            "title": "Financial reporting follow-up",
+            "risk_type": "accounting_disclosure",
+            "risk_themes": ["disclosure", "materiality"],
+            "affected_categories": ["financial_reporting"],
+            "description": "Management may later need reporting evidence.",
+            "urgency": "medium",
+            "scope_matches": [],
+            "rationale": "LLM recorded only reporting follow-up.",
+        },
+    ]
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "demo_client", tmp_path / "data" / "clients" / "demo_client")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+    request = RiskDiscoveryRequest(
+        event_title="New sanctions and export controls for restricted counterparties",
+        event_description="A sanctions package may affect contract performance, notices, export controls, and counterparty due diligence.",
+        countries=["Iran"],
+        scope=RiskDiscoveryScope(
+            client_id="demo_client",
+            scope_type="department",
+            scope_name="Legal",
+            department="Legal",
+            metadata={"industry": "manufacturing"},
+        ),
+    )
+
+    result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    assert result.metadata["fallback_used"] is False
+    assert result.metadata["coverage_augmented_candidate_count"] >= 1
+    assert result.selected_candidates[0].risk_type == "legal_compliance"
+    assert any("SCOPE-DEPT-LEGAL-001:coverage_primary" in candidate.scope_matches for candidate in result.selected_candidates)
+
+
 def test_risk_discovery_preserves_rejected_candidate_reasons_without_llm_tools(tmp_path, monkeypatch):
     monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _NoStructuredCandidateRunner)
     root = Path.cwd()
@@ -743,6 +794,14 @@ def test_risk_discovery_evaluation_cases_compute_quality_metrics():
     assert report["summary"]["average_missing_data_category_match"] == 1.0
     assert report["summary"]["average_reason_quality"] == 1.0
     assert report["summary"]["average_expert_rubric_coverage"] == 1.0
+    first_case = report["cases"][0]
+    assert first_case["selected_candidate_titles"]
+    assert first_case["selected_candidate_rationales"]
+    assert first_case["selected_candidate_scope_matches"]
+    assert "rejected_risk_types" in first_case
+    assert "rejected_reasons" in first_case
+    assert "coverage_augmented_candidate_count" in first_case
+    assert "raw_candidate_count" in first_case
 
 
 def test_evidence_repository_upserts_by_evidence_id(tmp_path):

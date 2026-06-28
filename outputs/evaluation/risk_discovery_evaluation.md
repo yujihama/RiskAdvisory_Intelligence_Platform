@@ -2,7 +2,7 @@
 
 - Passed: `True`
 - Cases: 4
-- Average recall: 0.938
+- Average recall: 1.000
 - Forbidden top violations: 0
 - Average question match: 1.000
 - Average question semantic match: 1.000
@@ -19,11 +19,14 @@
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: payment_disruption, supplier_resilience, payment_disruption
+- Selected risk types: payment_disruption
 - Forbidden in top: None
 - Missing-data category hits: payment_route, sanctions_screening
 - Rubric hits: SCOPE-DEPT-TREASURY-001
 - Discovery confidence: `agent_recorded_candidates`
+- Raw candidates: 3
+- Coverage augmented candidates: 0
+- Rejected risk types: payment_disruption, payment_disruption
 ### rdc_legal_sanctions_contract_001
 - Passed: `True`
 - Recall: 1.000
@@ -32,11 +35,14 @@
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: legal_compliance, supplier_resilience, accounting_disclosure
+- Selected risk types: legal_compliance
 - Forbidden in top: None
 - Missing-data category hits: contract_terms, sanctions_screening
 - Rubric hits: SCOPE-DEPT-LEGAL-001
 - Discovery confidence: `agent_recorded_candidates`
+- Raw candidates: 3
+- Coverage augmented candidates: 0
+- Rejected risk types: legal_compliance, legal_compliance
 ### rdc_accounting_disclosure_001
 - Passed: `True`
 - Recall: 1.000
@@ -45,21 +51,27 @@
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: accounting_disclosure, accounting_disclosure, accounting_disclosure
+- Selected risk types: accounting_disclosure
 - Forbidden in top: None
 - Missing-data category hits: evidence_gap, materiality_reporting
 - Rubric hits: SCOPE-DEPT-ACCOUNTING-001
 - Discovery confidence: `agent_recorded_candidates`
+- Raw candidates: 3
+- Coverage augmented candidates: 0
+- Rejected risk types: accounting_disclosure, accounting_disclosure
 ### rdc_executive_manufacturing_portfolio_001
 - Passed: `True`
-- Recall: 0.750
+- Recall: 1.000
 - Question match: 1.000
 - Question semantic match: 1.000
 - Missing-data category match: 1.000
 - Reason quality: 1.000
 - Expert rubric coverage: 1.000
-- Selected risk types: supplier_resilience, executive_resilience, payment_disruption, accounting_disclosure
+- Selected risk types: supplier_resilience, executive_resilience, payment_disruption, legal_compliance
 - Forbidden in top: None
 - Missing-data category hits: evidence_gap, executive_ownership, payment_route, supplier_continuity
 - Rubric hits: SCOPE-IND-MANUFACTURING-001
 - Discovery confidence: `agent_recorded_candidates`
+- Raw candidates: 3
+- Coverage augmented candidates: 1
+- Rejected risk types: None
