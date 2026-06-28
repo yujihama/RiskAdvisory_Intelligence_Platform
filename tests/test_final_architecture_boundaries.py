@@ -1,6 +1,7 @@
 from datetime import date
 from dataclasses import replace
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -11,7 +12,15 @@ from risk_agent_platform.evidence_repository import EvidenceRepository
 from risk_agent_platform.final_agents import _analysis_plan_from_text
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
-from risk_agent_platform.schemas import AgentCard, EvidenceItem, KnowledgeApplicationFinding, RiskEvent
+from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
+from risk_agent_platform.schemas import (
+    AgentCard,
+    EvidenceItem,
+    KnowledgeApplicationFinding,
+    RiskDiscoveryRequest,
+    RiskDiscoveryScope,
+    RiskEvent,
+)
 from risk_agent_platform.source_reliability import score_source
 from risk_agent_platform.vector import VECTOR_SIZE
 
@@ -153,10 +162,49 @@ def test_expert_pack_exposes_case_question_and_cta_files():
     cases = gateway.call("mcp-expert-knowledge", "load_case_bank", {})
     questions = gateway.call("mcp-expert-knowledge", "load_question_bank", {})
     notes = gateway.call("mcp-expert-knowledge", "load_cta_notes", {})
+    primitives = gateway.call("mcp-expert-knowledge", "load_primitives", {})
+    version = gateway.call("mcp-expert-knowledge", "load_knowledge_pack_version", {})
+    refs = gateway.call("mcp-expert-knowledge", "load_source_refs", {})
+    reliability = gateway.call("mcp-expert-knowledge", "load_source_reliability_seed", {})
 
-    assert cases and cases[0]["case_id"].startswith("case_")
-    assert questions and questions[0]["question_id"].startswith("q_")
-    assert notes and notes[0]["note_id"].startswith("cta_")
+    assert len(cases) >= 14 and cases[0]["case_id"]
+    assert len(questions) >= 24 and questions[0]["question_id"]
+    assert len(notes) >= 11 and notes[0]["note_id"]
+    assert len(primitives) >= 20 and primitives[0]["id"]
+    assert version["pack_id"]
+    assert refs
+    assert reliability["high_reliability_domains"]
+
+
+def test_risk_discovery_generates_scope_filtered_event_without_llm_tools(tmp_path, monkeypatch):
+    class _FakeRunner:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def synthesize(self, *_args, **_kwargs) -> str:
+            return "no structured candidates"
+
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _FakeRunner)
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "demo_client", tmp_path / "data" / "clients" / "demo_client")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+    request = RiskDiscoveryRequest(
+        event_title="Iran war escalation affecting supplier payments",
+        event_description="Shipping, sanctions screening, and supplier payments may be disrupted.",
+        countries=["Iran"],
+        max_risks=2,
+        scope=RiskDiscoveryScope(client_id="demo_client", scope_type="department", scope_name="Treasury", department="Treasury"),
+    )
+
+    result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    assert result.selected_event is not None
+    assert result.selected_event.client_id == "demo_client"
+    assert result.selected_event.risk_type == "payment_disruption"
+    assert result.candidates[0].selected_for_analysis is True
+    assert result.candidates[0].relevance_score >= 50
+    assert result.metadata["fallback_used"] is True
 
 
 def test_evidence_repository_upserts_by_evidence_id(tmp_path):

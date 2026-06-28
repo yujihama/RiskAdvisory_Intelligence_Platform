@@ -1,0 +1,6 @@
+payment_id,supplier_id,due_date,amount,currency,bank_country,bank_name,status
+PAY-FJ-IR-1001,SUP-FJ-IR-001,2026-07-03,2400000,USD,Iran,Dummy Tehran Correspondent Bank,pending
+PAY-FJ-GULF-1002,SUP-FJ-GULF-002,2026-07-06,1800000,USD,UAE,Dummy Gulf Trade Bank,pending
+PAY-FJ-JP-1003,SUP-FJ-JP-003,2026-07-10,320000000,JPY,Japan,Dummy Tokyo Main Bank,pending
+PAY-FJ-EU-1004,SUP-FJ-EU-004,2026-07-15,950000,EUR,Germany,Dummy Frankfurt Bank,pending
+PAY-FJ-US-1005,SUP-FJ-US-005,2026-07-20,750000,USD,United States,Dummy New York Bank,pending

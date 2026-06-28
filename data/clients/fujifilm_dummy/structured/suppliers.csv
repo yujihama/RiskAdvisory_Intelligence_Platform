@@ -1,0 +1,6 @@
+supplier_id,name,country,criticality,product_id,product_name,site_id,inventory_days,alternative_available
+SUP-FJ-IR-001,Tehran Medical Service Partner,Iran,high,PRD-MED-SVC,Medical systems field-service parts,SITE-FJ-HEALTH-JP-01,21,false
+SUP-FJ-GULF-002,Gulf Logistics Corridor,UAE,high,PRD-LOG-GULF,Middle East cold-chain and spare-parts logistics,SITE-FJ-HEALTH-JP-01,14,true
+SUP-FJ-JP-003,Japan Electronic Materials Partner,Japan,high,PRD-SEM-MAT,Semiconductor materials precursor supply,SITE-FJ-ELEC-JP-01,35,true
+SUP-FJ-EU-004,Europe Bioprocess Consumables,Germany,medium,PRD-BIO-CONS,Bioprocess consumables and validation kits,SITE-FJ-BIO-US-01,45,true
+SUP-FJ-US-005,North America Imaging Components,United States,medium,PRD-IMG-PARTS,Imaging device service parts,SITE-FJ-IMG-JP-01,60,true

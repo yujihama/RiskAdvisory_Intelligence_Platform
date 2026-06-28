@@ -1,12 +1,13 @@
 # Risk Advisory Intelligence Platform Architecture Diagrams
 
-This document shows the implemented target architecture. The normal execution path is the A2A-compatible HTTP, Bounded DeepAgent autonomy, FastMCP, Qdrant, Neo4j, and Langfuse flow.
+This document shows the implemented target architecture. The normal execution path is event/scope discovery, A2A-compatible HTTP, Bounded DeepAgent autonomy, FastMCP, Qdrant, Neo4j, and Langfuse flow.
 
 ## 1. Target Runtime Architecture
 
 ```mermaid
 flowchart TB
-    user["CLI / API Caller"] --> orch["Orchestrator DeepAgent"]
+    user["CLI / API Caller"] --> discovery["Risk Discovery DeepAgent"]
+    discovery -- "selected RiskEvent" --> orch["Orchestrator DeepAgent"]
 
     subgraph a2a["A2A Agent Layer"]
         orch
@@ -43,6 +44,9 @@ flowchart TB
         expert_mcp["mcp-expert-knowledge"]
         ledger["mcp-evidence-ledger"]
     end
+
+    discovery -- "dataset sampling" --> structured
+    discovery -- "seed knowledge loading" --> expert_mcp
 
     src -- "bounded search/extract tools" --> web
     src -- "selected evidence registration" --> ledger
@@ -185,6 +189,7 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     participant CLI as CLI
+    participant RD as Risk Discovery
     participant O as Orchestrator DeepAgent
     participant C as Client Context
     participant S as Source Intelligence
@@ -198,7 +203,10 @@ sequenceDiagram
     participant M as MCP Servers
     participant LF as Langfuse
 
-    CLI->>O: Submit RiskEvent
+    CLI->>RD: Submit event + scope
+    RD->>M: sample structured data and load Expert-as-Code seed pack
+    RD-->>CLI: risk candidates and selected RiskEvent
+    CLI->>O: Submit selected RiskEvent
     O->>LF: trace event
     O->>O: Generate analysis_plan JSON or fixed-order fallback
     O->>C: A2A Stage 1 Context Build

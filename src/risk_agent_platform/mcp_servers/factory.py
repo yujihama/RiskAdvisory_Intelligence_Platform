@@ -11,6 +11,7 @@ from typing import Any
 
 import fitz
 import httpx
+import yaml
 from fastmcp import FastMCP
 from tavily import TavilyClient
 
@@ -348,8 +349,37 @@ def create_expert_knowledge_server(settings: Settings) -> FastMCP:
         return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
     @mcp.tool
+    def load_primitives() -> list[dict[str, Any]]:
+        path = settings.data_dir / "expert_knowledge" / "primitives.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    @mcp.tool
+    def load_knowledge_pack_version() -> dict[str, Any]:
+        path = settings.data_dir / "expert_knowledge" / "knowledge_pack_version.json"
+        if not path.exists():
+            return {}
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    @mcp.tool
+    def load_source_refs() -> dict[str, Any]:
+        path = settings.data_dir / "expert_knowledge" / "source_refs.json"
+        if not path.exists():
+            return {}
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    @mcp.tool
+    def load_source_reliability_seed() -> dict[str, Any]:
+        path = settings.data_dir / "expert_knowledge" / "source_reliability_seed.yaml"
+        if not path.exists():
+            return {}
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+    @mcp.tool
     def index_knowledge_pack() -> dict[str, Any]:
         objects = load_knowledge_pack()
+        primitives = load_primitives()
         chunks = [
             {
                 "text": f"{obj.get('title', '')}\n{obj.get('description', '')}",
@@ -369,6 +399,25 @@ def create_expert_knowledge_server(settings: Settings) -> FastMCP:
             }
             for obj in objects
         ]
+        chunks.extend(
+            {
+                "text": f"{item.get('primitive_type', '')}\n{item.get('statement', '')}",
+                "metadata": {
+                    "client_id": None,
+                    "scenario_id": None,
+                    "source_type": "expert_knowledge",
+                    "mode": item.get("domain"),
+                    "asset_id": None,
+                    "evidence_id": None,
+                    "document_id": item.get("id"),
+                    "confidence": item.get("confidence"),
+                    "tags": item.get("conditions", []),
+                    "domain": item.get("domain"),
+                    "object_type": item.get("primitive_type"),
+                },
+            }
+            for item in primitives
+        )
         return QdrantStore(settings).upsert_texts("expert_knowledge", chunks)
 
     @mcp.tool

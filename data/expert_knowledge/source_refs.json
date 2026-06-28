@@ -1,0 +1,122 @@
+{
+  "ISO31000": {
+    "title": "ISO 31000:2018 Risk management — Guidelines",
+    "url": "https://www.iso.org/standard/65694.html",
+    "notes": "Risk management process: identify, analyze, evaluate, treat, monitor and communicate risks."
+  },
+  "ISO31050": {
+    "title": "ISO/TS 31050:2023 Risk management — Guidelines for managing an emerging risk",
+    "url": "https://cdn.standards.iteh.ai/samples/54224/c9150993cfd84591aed5153965c11cd8/ISO-TS-31050-2023.pdf",
+    "notes": "Emerging risk intelligence cycle and resilience enhancement guidance."
+  },
+  "ISO22301": {
+    "title": "ISO 22301:2019 Business continuity management systems",
+    "url": "https://www.iso.org/standard/75106.html",
+    "notes": "Business continuity management and resilience against disruptions."
+  },
+  "NIST_CSF_2": {
+    "title": "NIST Cybersecurity Framework 2.0",
+    "url": "https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.29.pdf",
+    "notes": "Govern, Identify, Protect, Detect, Respond, Recover functions."
+  },
+  "OFAC_FRAMEWORK": {
+    "title": "A Framework for OFAC Compliance Commitments",
+    "url": "https://ofac.treasury.gov/media/16331/download?inline=",
+    "notes": "Five essential sanctions compliance components: management commitment, risk assessment, internal controls, testing/auditing, training."
+  },
+  "OFAC_50": {
+    "title": "OFAC 50 Percent Rule FAQs",
+    "url": "https://ofac.treasury.gov/faqs/topic/1521",
+    "notes": "Entities owned 50 percent or more in aggregate by blocked persons are considered blocked."
+  },
+  "OFAC_CONTROL": {
+    "title": "OFAC FAQ 398",
+    "url": "https://ofac.treasury.gov/faqs/398",
+    "notes": "OFAC 50 Percent Rule speaks to ownership, not control; control can still be a risk indicator but not automatic blocking under the rule."
+  },
+  "EU_SANCTIONS": {
+    "title": "European Commission overview of sanctions and consolidated list",
+    "url": "https://finance.ec.europa.eu/eu-and-world/sanctions-restrictive-measures/overview-sanctions-and-related-resources_en",
+    "notes": "EU consolidated list of individuals, groups and organisations subject to financial sanctions."
+  },
+  "UK_OFSI": {
+    "title": "UK financial sanctions general guidance",
+    "url": "https://www.gov.uk/government/publications/financial-sanctions-general-guidance/uk-financial-sanctions-general-guidance",
+    "notes": "Asset freeze guidance; funds/economic resources are to be frozen immediately by persons in possession/control."
+  },
+  "BIS_EXPORT": {
+    "title": "BIS export control best practices guidance for financial institutions",
+    "url": "https://www.bis.gov/media/documents/guidance-financial-institutions-best-practices-compliance-export-administration.pdf",
+    "notes": "Ongoing due diligence and review for EAR red flags; certain real-time restricted party screening recommended."
+  },
+  "BIS_RED_FLAGS": {
+    "title": "eCFR Supplement No. 3 to Part 732 — BIS Know Your Customer Guidance",
+    "url": "https://www.ecfr.gov/current/title-15/subtitle-B/chapter-VII/subchapter-C/part-732/appendix-Supplement%20No.%203%20to%20Part%20732",
+    "notes": "Guidance to decide whether abnormal transaction circumstances indicate a red flag."
+  },
+  "IFRS_IAS37": {
+    "title": "IFRS IAS 37 Provisions, Contingent Liabilities and Contingent Assets",
+    "url": "https://www.ifrs.org/issued-standards/list-of-standards/ias-37-provisions-contingent-liabilities-and-contingent-assets/",
+    "notes": "Defines and specifies accounting/disclosure for provisions, contingent liabilities, contingent assets."
+  },
+  "IFRS_IAS10": {
+    "title": "IFRS IAS 10 Events after the Reporting Period",
+    "url": "https://www.ifrs.org/issued-standards/list-of-standards/ias-10-events-after-the-reporting-period/",
+    "notes": "Adjusting events provide evidence of conditions existing at period end; non-adjusting events indicate conditions arising after period end."
+  },
+  "IFRS_IAS36": {
+    "title": "IFRS IAS 36 Impairment of Assets",
+    "url": "https://www.ifrs.org/issued-standards/list-of-standards/ias-36-impairment-of-assets/",
+    "notes": "Assets must not be carried above recoverable amount; impairment loss recognized if carrying amount exceeds recoverable amount."
+  },
+  "IFRS_S1": {
+    "title": "IFRS S1 General Requirements for Disclosure of Sustainability-related Financial Information",
+    "url": "https://www.ifrs.org/issued-standards/ifrs-sustainability-standards-navigator/ifrs-s1-general-requirements/",
+    "notes": "Disclose sustainability-related risks/opportunities expected to affect cash flows, access to finance or cost of capital over short, medium or long term."
+  },
+  "BCBS_OR": {
+    "title": "BCBS Principles for Operational Resilience — Executive Summary",
+    "url": "https://www.bis.org/fsi/fsisummaries/op_resilience.htm",
+    "notes": "Banks should assume disruptions occur and define tolerance for disruption for severe but plausible scenarios."
+  },
+  "MC_OP_RES": {
+    "title": "McKinsey: Operational resilience has become critical",
+    "url": "https://www.mckinsey.com/capabilities/risk-and-resilience/our-insights/operational-resilience-has-become-critical-how-are-banks-responding",
+    "notes": "Operational resilience reporting linked directly to risk mitigation and business impact."
+  },
+  "COSO_ERM": {
+    "title": "COSO ERM Guidance",
+    "url": "https://www.coso.org/guidance-erm",
+    "notes": "ERM examples and framework integrating risk with strategy and performance."
+  },
+  "AFP_CASH": {
+    "title": "AFP Cash Management",
+    "url": "https://www.financialprofessionals.org/glossary/cash-management",
+    "notes": "Cash management focuses on daily cash flow/liquidity to meet short-term obligations; collections, disbursements, banking, borrowing and investment."
+  },
+  "ACT_LIQUIDITY": {
+    "title": "Association of Corporate Treasurers: Liquidity risk management",
+    "url": "https://www.treasurers.org/hub/blog/future-leader-perspectives-liquidity-risk-management",
+    "notes": "Liquidity risk management involves adequate liquid assets, cash flow forecasting, and diversified funding sources."
+  },
+  "FED_LIQUIDITY": {
+    "title": "Federal Reserve: Interagency Policy Statement on Funding and Liquidity Risk Management",
+    "url": "https://www.federalreserve.gov/frrs/guidance/interagency-policy-statement-on-funding-and-liquidity-risk-management.htm",
+    "notes": "Liquidity risk is inability or perceived inability to meet obligations; obligations and funding sources depend on business mix and cash-flow profiles."
+  },
+  "NIST_800_161": {
+    "title": "NIST SP 800-161 Rev. 1 Cybersecurity Supply Chain Risk Management Practices",
+    "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-161r1.pdf",
+    "notes": "Guidance on identifying, assessing and mitigating cybersecurity risks throughout the supply chain."
+  },
+  "CISA_SCRM": {
+    "title": "CISA ICT Supply Chain Risk Management",
+    "url": "https://www.cisa.gov/information-and-communications-technology-supply-chain-risk-management",
+    "notes": "Supply chain risk management as integrated component of security and resilience."
+  },
+  "EVERSTREAM": {
+    "title": "Everstream Analytics supply chain risk analytics",
+    "url": "https://www.everstream.ai/",
+    "notes": "Network mapping, global monitoring/alerting, supplier vulnerability scorecards, sub-tier visibility."
+  }
+}

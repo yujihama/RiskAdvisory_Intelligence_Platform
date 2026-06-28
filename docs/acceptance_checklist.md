@@ -9,6 +9,7 @@ This checklist maps the implementation instruction to concrete evidence in the c
 - [x] Domain Agents are backed by `create_deep_agent` through `DomainDeepAgentService`.
 - [x] The codebase uses the A2A-compatible HTTP/client boundary as the runtime agent boundary.
 - [x] Orchestrator generates a bounded `analysis_plan` JSON and falls back to fixed agent order if generation or validation fails.
+- [x] Risk Discovery DeepAgent converts an event + client scope into scope-relevant risk candidates and a selected `RiskEvent`.
 - [x] Source Intelligence, Expert-as-Code, and Evidence / Red Team include DeepAgent tool-use slots; Treasury, Legal, and Accounting include bounded issue-exploration slots while final scoring remains structured.
 
 Evidence:
@@ -135,6 +136,7 @@ Verified commands:
 - [x] Knowledge Object and Knowledge Primitive schemas are defined.
 - [x] Expert case, question, response, CTA note, and Knowledge Pack version schemas are defined.
 - [x] Sample Knowledge Pack files exist under `data/expert_knowledge/`.
+- [x] Expert Knowledge MCP loaders read rules, primitives, cases, questions, CTA notes, source refs, source reliability seed, and pack version metadata.
 - [x] Expert-as-Code Agent indexes knowledge objects and case bank into Qdrant.
 - [x] Expert-as-Code Agent uses bounded DeepAgent tools for similar cases, rubrics, red flags, CTA notes, and counterfactuals.
 - [x] Expert-as-Code emits a structured `KnowledgeApplicationFinding` inside the AgentFinding metadata.
@@ -146,6 +148,10 @@ Evidence:
 - `data/expert_knowledge/cases.jsonl`
 - `data/expert_knowledge/questions.jsonl`
 - `data/expert_knowledge/cta_notes.jsonl`
+- `data/expert_knowledge/primitives.jsonl`
+- `data/expert_knowledge/knowledge_pack_version.json`
+- `data/expert_knowledge/source_refs.json`
+- `data/expert_knowledge/source_reliability_seed.yaml`
 - `tests/test_final_embedded_e2e.py`
 
 ## Document Parsing / OCR
@@ -162,6 +168,7 @@ Evidence:
 ## E2E
 
 - [x] `pytest` includes a final architecture embedded E2E using dummy client data, mocked Tavily results, real A2A/FastMCP boundaries, Qdrant, Neo4j, Evidence Ledger, Expert-as-Code, and output artifact generation.
+- [x] `pytest` includes Risk Discovery fallback coverage for event + department scope intake and selected `RiskEvent` generation.
 - [x] Langfuse-enabled final E2E passed.
 - [x] Final CLI fails explicitly when Tavily is missing.
 - [x] Full live E2E with real Tavily search, Qdrant, Neo4j, Langfuse, OpenRouter, and output artifacts is verified.

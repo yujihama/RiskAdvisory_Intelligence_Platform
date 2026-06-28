@@ -277,6 +277,73 @@ class KnowledgePackVersion(StrictModel):
     created_at: datetime = Field(default_factory=now_utc)
 
 
+class RiskDiscoveryScope(StrictModel):
+    client_id: str
+    scope_type: Literal[
+        "company",
+        "business_unit",
+        "department",
+        "region",
+        "site",
+        "supplier",
+        "customer",
+        "contract",
+        "product",
+        "portfolio",
+    ] = "company"
+    scope_name: str | None = None
+    department: str | None = None
+    region: str | None = None
+    site_id: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class RiskDiscoveryRequest(StrictModel):
+    event_title: str
+    event_description: str = ""
+    scope: RiskDiscoveryScope
+    countries: list[str] = Field(default_factory=list)
+    event_date: date | None = None
+    max_risks: int = 3
+
+    @field_validator("max_risks")
+    @classmethod
+    def max_risks_range(cls, value: int) -> int:
+        if not 1 <= value <= 10:
+            raise ValueError("max_risks must be between 1 and 10")
+        return value
+
+
+class DiscoveredRisk(StrictModel):
+    candidate_id: str
+    title: str
+    risk_type: str
+    countries: list[str] = Field(default_factory=list)
+    risk_themes: list[str] = Field(default_factory=list)
+    affected_categories: list[str] = Field(default_factory=list)
+    description: str
+    urgency: Literal["low", "medium", "high"] = "medium"
+    relevance_score: int = 50
+    scope_matches: list[str] = Field(default_factory=list)
+    rationale: str
+    selected_for_analysis: bool = False
+
+    @field_validator("relevance_score")
+    @classmethod
+    def relevance_score_range(cls, value: int) -> int:
+        if not 0 <= value <= 100:
+            raise ValueError("relevance_score must be between 0 and 100")
+        return value
+
+
+class RiskDiscoveryResult(StrictModel):
+    request: RiskDiscoveryRequest
+    candidates: list[DiscoveredRisk]
+    selected_event: RiskEvent | None = None
+    generated_at: datetime = Field(default_factory=now_utc)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class ExpertAssessment(StrictModel):
     knowledge_object_ids: list[str] = Field(default_factory=list)
     review_required: bool = False

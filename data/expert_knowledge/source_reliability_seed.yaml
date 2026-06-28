@@ -1,0 +1,30 @@
+# Seed source reliability config for RiskAdvisory Intelligence Platform
+# Move these lists into config/source_reliability.yaml if you want to externalize source scoring.
+high_reliability_domains:
+  - iso.org
+  - nist.gov
+  - nvlpubs.nist.gov
+  - ofac.treasury.gov
+  - ecfr.gov
+  - europa.eu
+  - finance.ec.europa.eu
+  - gov.uk
+  - bis.org
+  - ifrs.org
+  - federalreserve.gov
+  - cisa.gov
+medium_high_reliability_domains:
+  - mckinsey.com
+  - coso.org
+  - financialprofessionals.org
+  - treasurers.org
+  - everstream.ai
+low_reliability_markers:
+  - blog
+  - forum
+  - social
+  - unknown
+scoring_notes:
+  - Official government, regulator, standards-setter, exchange, and statutory sources should be prioritized for high-confidence claims.
+  - Consulting, bank, vendor, and specialist commentary can support interpretation but should not override primary sources.
+  - Media and alerts can be early signals; use them as triggers for further confirmation.

@@ -6,6 +6,7 @@ The normal execution path is:
 
 ```text
 CLI / API
+  -> optional Risk Discovery DeepAgent for event + scope intake
   -> Orchestrator DeepAgent
   -> A2A SDK-shaped Agent Cards + A2A-compatible HTTP task requests
   -> Domain DeepAgents
@@ -15,6 +16,7 @@ CLI / API
 ```
 
 The current execution path is `python -m risk_agent_platform.run_scenario` or `risk-agent-platform run-scenario`.
+For event-and-scope intake, use `risk-agent-platform discover-risks`; with `--run-analysis`, the selected discovered risk is converted to a `RiskEvent` and passed into the same scenario analysis path.
 
 ## Architecture Diagrams
 
@@ -25,6 +27,7 @@ See [docs/architecture_diagrams.md](docs/architecture_diagrams.md).
 The following A2A agents are implemented as DeepAgent-backed services:
 
 - `orchestrator-agent`
+- `risk-discovery-agent` (front-stage DeepAgent used by the CLI before Orchestrator)
 - `source-intelligence-agent`
 - `client-context-agent`
 - `treasury-risk-agent`
@@ -61,6 +64,7 @@ Agents call tools through `MCPGateway`, which uses FastMCP `Client`.
 
 Bounded Autonomy is implemented in the normal path:
 
+- Risk Discovery accepts an external event and scope, samples client structured data and Expert-as-Code seed knowledge, generates scope-relevant risk candidates, and converts the top candidate into a `RiskEvent`.
 - Orchestrator asks DeepAgent for an `analysis_plan` JSON with `selected_agents`, `skipped_agents`, `recheck_conditions`, and `exploration_questions`; invalid plans fall back to the fixed agent order.
 - Source Intelligence uses DeepAgent tool-use for bounded sanitized search and URL extraction, then Python registers selected `EvidenceItem` records through Evidence Ledger.
 - Expert-as-Code uses DeepAgent tool-use to explore similar cases, rubrics, red flags, CTA notes, and counterfactuals, then emits a structured `KnowledgeApplicationFinding` inside the A2A finding metadata.
@@ -148,6 +152,35 @@ This reports missing keys without printing secret values.
 
 ## Run Sample Scenario
 
+Event-and-scope discovery only:
+
+```powershell
+risk-agent-platform discover-risks `
+  --event-title "Iran war escalation affecting supplier payments" `
+  --event-description "Shipping, sanctions screening, and supplier payments may be disrupted." `
+  --client-id demo_client `
+  --scope-type department `
+  --scope-name Treasury `
+  --department Treasury `
+  --country Iran `
+  --embedded-services
+```
+
+Discovery followed by the current scenario analysis:
+
+```powershell
+risk-agent-platform discover-risks `
+  --event-title "Iran war escalation affecting supplier payments" `
+  --event-description "Shipping, sanctions screening, and supplier payments may be disrupted." `
+  --client-id demo_client `
+  --scope-type department `
+  --scope-name Treasury `
+  --department Treasury `
+  --country Iran `
+  --run-analysis `
+  --embedded-services
+```
+
 Local embedded A2A/MCP endpoints:
 
 ```powershell
@@ -172,6 +205,7 @@ python -m risk_agent_platform.run_scenario --scenario data\scenarios\live_geopol
 
 Expected outputs:
 
+- `outputs/risk_discovery/<scenario_id>.json`
 - `outputs/<scenario_id>/final_brief.md`
 - `outputs/<scenario_id>/decision_queue.json`
 - `outputs/<scenario_id>/evidence_summary.json`
@@ -190,7 +224,7 @@ Initial source reliability scoring is domain-based: government, regulator, inter
 
 ## Expert-as-Code
 
-Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, and CTA notes. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl` and `data/expert_knowledge/cases.jsonl` into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
+Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, CTA notes, source references, source reliability seeds, and pack version metadata. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl`, `data/expert_knowledge/primitives.jsonl`, and `data/expert_knowledge/cases.jsonl` into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
 
 ## Document Parsing and OCR
 
@@ -225,6 +259,7 @@ See [docs/acceptance_checklist.md](docs/acceptance_checklist.md) for the require
 ## Known Constraints
 
 - Live Tavily E2E requires `TAVILY_API_KEY` and the Langfuse environment variables above if Langfuse trace export is required.
+- Risk Discovery is event-and-scope intake, not autonomous continuous monitoring; a caller must still provide an event/theme and a client scope.
 - DeepAgent tool integration is bounded rather than fully autonomous: exploration and hypothesis generation use tool slots, while registration, scoring, review flags, and Decision Queue writes stay in structured Python logic for auditability.
 - A2A is currently an A2A SDK-shaped Agent Card plus A2A-compatible HTTP task boundary; the task transport is not yet a full a2a-sdk server/client implementation.
 - Qdrant has an `EmbeddingProvider` abstraction and attempts real OpenRouter-compatible embeddings by default, but deterministic embeddings remain the default fallback and the explicit test mode.

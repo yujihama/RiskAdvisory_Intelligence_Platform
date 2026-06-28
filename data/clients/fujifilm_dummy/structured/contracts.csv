@@ -1,0 +1,6 @@
+contract_id,supplier_id,governing_law,force_majeure_clause,sanctions_clause,notice_days,termination_right
+CTR-FJ-IR-9001,SUP-FJ-IR-001,England,true,true,5,true
+CTR-FJ-GULF-9002,SUP-FJ-GULF-002,Singapore,true,true,7,true
+CTR-FJ-JP-9003,SUP-FJ-JP-003,Japan,true,false,14,false
+CTR-FJ-EU-9004,SUP-FJ-EU-004,Germany,true,true,10,true
+CTR-FJ-US-9005,SUP-FJ-US-005,New York,false,true,15,true

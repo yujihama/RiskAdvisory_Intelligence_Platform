@@ -1,3 +1,24 @@
-{"question_id":"q_legal_sanctions_001","domain":"legal","question":"Which sanctions, export control, notice, and termination issues must be resolved before payment action?","expected_use":"Legal Risk Agent review trigger and specialist review request"}
-{"question_id":"q_accounting_disclosure_001","domain":"accounting","question":"Could the disruption trigger provision, impairment, subsequent event, or disclosure analysis under the client's materiality threshold?","expected_use":"Accounting Risk Agent missing data and auditor evidence pack"}
-{"question_id":"q_treasury_cash_001","domain":"treasury","question":"Which payment routes, banks, currencies, and approval controls are needed before execution, hold, or reroute?","expected_use":"Treasury Risk Agent cash mobility confidence assessment"}
+{"question_id":"Q-XFN-001","domain":"cross_functional","question":"What claim would be unsafe to make without an official source or specialist review?","expected_use":"language_guardrail"}
+{"question_id":"Q-XFN-002","domain":"cross_functional","question":"Which missing data point would most change the decision, and who owns it?","expected_use":"unknown_register"}
+{"question_id":"Q-XFN-003","domain":"cross_functional","question":"If the current risk rating is wrong, is it more likely overstated or understated, and why?","expected_use":"red_team"}
+{"question_id":"Q-XFN-004","domain":"cross_functional","question":"What is the most plausible cascade from external event to cash, contract, accounting and customer impact?","expected_use":"scenario_pattern"}
+{"question_id":"Q-TRE-001","domain":"treasury","question":"Which cash balances are book cash but not practically available within the decision window?","expected_use":"cash_mobility"}
+{"question_id":"Q-TRE-002","domain":"treasury","question":"Which payments are due before the risk can be clarified, and which of them support critical suppliers or operations?","expected_use":"payment_priority"}
+{"question_id":"Q-TRE-003","domain":"treasury","question":"What alternative payment routes exist, and what legal, tax, FX or contract risks do they introduce?","expected_use":"payment_route_options"}
+{"question_id":"Q-TRE-004","domain":"treasury","question":"What assumptions in the cash forecast would fail first under this scenario?","expected_use":"liquidity_stress"}
+{"question_id":"Q-LEG-001","domain":"legal","question":"Which sanctions, export-control, beneficial ownership or restricted-party facts must be confirmed before payment or shipment?","expected_use":"sanctions_review"}
+{"question_id":"Q-LEG-002","domain":"legal","question":"What contract notices, deadlines, mitigation duties or remedy clauses may be triggered?","expected_use":"contract_review"}
+{"question_id":"Q-LEG-003","domain":"legal","question":"What should the AI avoid saying until a lawyer confirms the position?","expected_use":"language_guardrail"}
+{"question_id":"Q-LEG-004","domain":"legal","question":"Which jurisdiction-specific review is needed before advising on freezing, payment hold, termination or force majeure?","expected_use":"external_counsel"}
+{"question_id":"Q-ACC-001","domain":"accounting","question":"Does the event create a provision trigger, contingent liability, impairment indicator, subsequent event or disclosure pressure?","expected_use":"accounting_classification"}
+{"question_id":"Q-ACC-002","domain":"accounting","question":"What evidence exists for present obligation, probable outflow and reliable estimate?","expected_use":"provision_assessment"}
+{"question_id":"Q-ACC-003","domain":"accounting","question":"Was the condition present at reporting date, or did it arise after reporting date?","expected_use":"subsequent_event"}
+{"question_id":"Q-ACC-004","domain":"accounting","question":"Which balances, estimates and assumptions would the auditor ask management to support?","expected_use":"auditor_evidence_pack"}
+{"question_id":"Q-PRC-001","domain":"procurement","question":"What critical parts, services, suppliers, logistics routes or sub-tier dependencies are affected?","expected_use":"supplier_mapping"}
+{"question_id":"Q-PRC-002","domain":"procurement","question":"How many days of inventory runway remain compared with realistic recovery or substitution time?","expected_use":"inventory_runway"}
+{"question_id":"Q-PRC-003","domain":"procurement","question":"What qualification, quality, regulatory, tooling or capacity constraint blocks substitution?","expected_use":"substitution_friction"}
+{"question_id":"Q-PRC-004","domain":"procurement","question":"What plausible hidden dependencies should be investigated when sub-tier data is missing?","expected_use":"hypothesis_generation"}
+{"question_id":"Q-EXE-001","domain":"executive","question":"What decision is needed, by whom, by when, and what option is lost if delayed?","expected_use":"decision_queue"}
+{"question_id":"Q-EXE-002","domain":"executive","question":"Which decision trade-off cuts across Treasury, Legal, Accounting and Procurement?","expected_use":"cross_mode_conflict"}
+{"question_id":"Q-EXE-003","domain":"executive","question":"Which critical business service or customer commitment could breach tolerance first?","expected_use":"operational_resilience"}
+{"question_id":"Q-EXE-004","domain":"executive","question":"What evidence and expert review status should be visible to the board or crisis committee?","expected_use":"executive_brief"}

@@ -1,0 +1,6 @@
+site_id,name,country,business_unit,criticality
+SITE-FJ-HEALTH-JP-01,Healthcare systems Japan hub,Japan,Healthcare,high
+SITE-FJ-ELEC-JP-01,Electronic materials Japan plant,Japan,Electronics,high
+SITE-FJ-BIO-US-01,Bioprocess CDMO support hub,United States,Healthcare,high
+SITE-FJ-BI-JP-01,Business Innovation Japan operations,Japan,Business Innovation,medium
+SITE-FJ-IMG-JP-01,Imaging service and distribution hub,Japan,Imaging,medium

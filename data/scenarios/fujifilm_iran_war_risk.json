@@ -1,0 +1,12 @@
+{
+  "scenario_id": "scenario_fujifilm_iran_war_001",
+  "client_id": "fujifilm_dummy",
+  "title": "Iran war escalation affecting healthcare service parts, semiconductor materials, and Middle East payment routes",
+  "risk_type": "geopolitical_war",
+  "countries": ["Iran"],
+  "risk_themes": ["war", "sanctions", "strait_of_hormuz", "payment_disruption", "energy_price", "supplier_resilience"],
+  "affected_categories": ["healthcare service parts", "semiconductor materials", "middle east payment routes", "cold-chain logistics"],
+  "description": "Dummy FUJIFILM Holdings scenario based on public filing themes: global operations, overseas sales, healthcare and electronics segments, war or terrorism disruption, supply-chain interruption, energy price volatility, sanctions screening, and Strait of Hormuz logistics risk.",
+  "event_date": "2026-06-28",
+  "urgency": "high"
+}
