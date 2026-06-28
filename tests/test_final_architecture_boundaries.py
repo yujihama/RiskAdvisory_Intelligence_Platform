@@ -1,4 +1,6 @@
 import json
+import threading
+import time
 from datetime import date
 from dataclasses import replace
 from pathlib import Path
@@ -19,6 +21,7 @@ import risk_agent_platform.run_discovery as run_discovery
 import risk_agent_platform.run_discovery_evaluation as run_discovery_evaluation
 from risk_agent_platform.schemas import (
     AgentCard,
+    AgentTaskResult,
     DiscoveredRisk,
     EvidenceItem,
     KnowledgeApplicationFinding,
@@ -737,6 +740,7 @@ def test_risk_discovery_preserves_rejected_candidate_reasons_without_llm_tools(t
 
 def test_discovery_analysis_modes_default_to_all_selected():
     assert run_discovery.DEFAULT_ANALYSIS_MODE == "all-selected"
+    assert run_discovery.DEFAULT_ANALYSIS_CONCURRENCY == 5
 
     request = RiskDiscoveryRequest(
         event_title="Iran war escalation",
@@ -796,6 +800,49 @@ def test_discovery_analysis_modes_default_to_all_selected():
         }
     )
     assert run_discovery._events_for_analysis(natural_scope_result, "auto", top_n=3) == [second]
+
+
+def test_run_discovery_analyzes_selected_events_with_bounded_parallelism(tmp_path, monkeypatch):
+    settings = replace(Settings.load(Path.cwd()), project_root=tmp_path, data_dir=Path.cwd() / "data")
+    base_event = _event()
+    events = [
+        base_event.model_copy(update={"scenario_id": f"scenario_parallel_{idx}", "title": f"Parallel risk {idx}"})
+        for idx in range(5)
+    ]
+    lock = threading.Lock()
+    active = 0
+    max_active = 0
+
+    class _ParallelOrchestrator:
+        def run_task(self, request):
+            nonlocal active, max_active
+            with lock:
+                active += 1
+                max_active = max(max_active, active)
+            time.sleep(0.05)
+            with lock:
+                active -= 1
+            return AgentTaskResult(
+                task_id=request.task.task_id,
+                parent_task_id=request.task.parent_task_id,
+                trace_id=request.task.trace_id,
+                agent_name="orchestrator-agent",
+                status="completed",
+            )
+
+    monkeypatch.setattr(run_discovery, "create_orchestrator_service", lambda *_args, **_kwargs: _ParallelOrchestrator())
+    monkeypatch.setattr(run_discovery, "create_embedded_a2a_apps", lambda *_args, **_kwargs: {})
+
+    records = run_discovery._run_analysis_records(
+        settings,
+        events,
+        embedded_services=True,
+        concurrency=run_discovery.DEFAULT_ANALYSIS_CONCURRENCY,
+    )
+
+    assert max_active > 1
+    assert [record["scenario_id"] for record in records] == [event.scenario_id for event in events]
+    assert run_discovery._bounded_analysis_concurrency(5, len(events)) == 5
 
 
 def test_risk_discovery_scenario_ids_keep_candidate_identity():

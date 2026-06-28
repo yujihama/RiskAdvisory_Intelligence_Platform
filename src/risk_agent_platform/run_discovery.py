@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,7 @@ from risk_agent_platform.schemas import AgentTaskRequest, RiskDiscoveryRequest, 
 
 
 DEFAULT_ANALYSIS_MODE = "all-selected"
+DEFAULT_ANALYSIS_CONCURRENCY = 5
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -54,6 +56,12 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=3,
         help="Number of selected RiskEvents to analyze when --analysis-mode top-n is used.",
+    )
+    parser.add_argument(
+        "--analysis-concurrency",
+        type=int,
+        default=DEFAULT_ANALYSIS_CONCURRENCY,
+        help="Maximum number of selected RiskEvents to analyze in parallel.",
     )
     parser.add_argument("--embedded-services", action="store_true", help="Use A2A/MCP endpoints in-process for local verification.")
     args = parser.parse_args(argv)
@@ -111,20 +119,21 @@ def main(argv: list[str] | None = None) -> int:
         print("analysis_status=skipped:no_events_to_analyze")
         return 1
 
-    embedded_apps = create_embedded_a2a_apps(settings, embedded_mcp=True) if args.embedded_services else None
-    orchestrator = create_orchestrator_service(settings, embedded_apps=embedded_apps)
-    records: list[dict[str, Any]] = []
-    for idx, event in enumerate(events_to_analyze, start=1):
-        task = new_root_task(event)
-        analysis_result = orchestrator.run_task(AgentTaskRequest(task=task))
-        record = _analysis_record(settings, event, analysis_result)
-        records.append(record)
-        print(f"analysis_{idx}_scenario_id={event.scenario_id}")
-        print(f"analysis_{idx}_status={analysis_result.status}")
-        print(f"analysis_{idx}_trace_id={analysis_result.trace_id}")
+    records = _run_analysis_records(
+        settings,
+        events_to_analyze,
+        embedded_services=args.embedded_services,
+        concurrency=args.analysis_concurrency,
+    )
+    print(f"analysis_concurrency={_bounded_analysis_concurrency(args.analysis_concurrency, len(events_to_analyze))}")
+    for idx, record in enumerate(records, start=1):
+        print(f"analysis_{idx}_scenario_id={record['scenario_id']}")
+        print(f"analysis_{idx}_status={record['status']}")
+        print(f"analysis_{idx}_trace_id={record['trace_id']}")
         print(f"analysis_{idx}_output_dir={record['output_dir']}")
-        if analysis_result.error:
-            print(f"analysis_{idx}_error={analysis_result.error.code}: {analysis_result.error.message}")
+        if record.get("error"):
+            error = record["error"]
+            print(f"analysis_{idx}_error={error.get('code')}: {error.get('message')}")
     portfolio_paths = _write_portfolio_summary(settings, result, records)
     print(f"analysis_status={'completed' if all(record['status'] == 'completed' for record in records) else 'failed'}")
     print(f"analysis_count={len(records)}")
@@ -162,6 +171,36 @@ def _events_for_analysis(result: RiskDiscoveryResult, mode: str, top_n: int) -> 
     if mode == "top-n":
         return events[: max(1, top_n)]
     return events
+
+
+def _run_analysis_records(
+    settings: Settings,
+    events: list[RiskEvent],
+    *,
+    embedded_services: bool,
+    concurrency: int,
+) -> list[dict[str, Any]]:
+    if not events:
+        return []
+    max_workers = _bounded_analysis_concurrency(concurrency, len(events))
+
+    def run_one(idx: int, event: RiskEvent) -> tuple[int, dict[str, Any]]:
+        embedded_apps = create_embedded_a2a_apps(settings, embedded_mcp=True) if embedded_services else None
+        orchestrator = create_orchestrator_service(settings, embedded_apps=embedded_apps)
+        task = new_root_task(event)
+        analysis_result = orchestrator.run_task(AgentTaskRequest(task=task))
+        return idx, _analysis_record(settings, event, analysis_result)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(run_one, idx, event) for idx, event in enumerate(events)]
+        indexed_records = [future.result() for future in as_completed(futures)]
+    return [record for _, record in sorted(indexed_records, key=lambda item: item[0])]
+
+
+def _bounded_analysis_concurrency(concurrency: int, event_count: int) -> int:
+    if event_count <= 0:
+        return 1
+    return max(1, min(int(concurrency or 1), event_count))
 
 
 def _analysis_record(settings: Settings, event: RiskEvent, analysis_result: Any) -> dict[str, Any]:
