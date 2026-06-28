@@ -286,6 +286,28 @@ class ExpertAssessment(StrictModel):
     red_team_observations: list[str] = Field(default_factory=list)
 
 
+class AnalysisPlan(StrictModel):
+    selected_agents: list[str]
+    skipped_agents: list[str] = Field(default_factory=list)
+    recheck_conditions: list[str] = Field(default_factory=list)
+    exploration_questions: list[str] = Field(default_factory=list)
+    rationale: str = ""
+    fallback_used: bool = False
+
+
+class KnowledgeApplicationFinding(StrictModel):
+    similar_case_ids: list[str] = Field(default_factory=list)
+    rubric_ids: list[str] = Field(default_factory=list)
+    red_flags: list[str] = Field(default_factory=list)
+    cta_note_ids: list[str] = Field(default_factory=list)
+    cta_notes: list[str] = Field(default_factory=list)
+    counterfactuals: list[str] = Field(default_factory=list)
+    recommended_guardrails: list[str] = Field(default_factory=list)
+    additional_questions: list[str] = Field(default_factory=list)
+    review_required: bool = False
+    rationale: str = ""
+
+
 class DecisionItem(StrictModel):
     decision_id: str | None = None
     decision: str

@@ -1,6 +1,6 @@
 # Risk Advisory Intelligence Platform Architecture Diagrams
 
-This document shows the implemented target architecture. The normal execution path is the A2A-compatible HTTP, DeepAgent, FastMCP, Qdrant, Neo4j, and Langfuse flow.
+This document shows the implemented target architecture. The normal execution path is the A2A-compatible HTTP, Bounded DeepAgent autonomy, FastMCP, Qdrant, Neo4j, and Langfuse flow.
 
 ## 1. Target Runtime Architecture
 
@@ -30,6 +30,7 @@ flowchart TB
     orch -- "A2A task request" --> expert
     orch -- "A2A task request" --> redteam
     orch -- "A2A task request" --> decision
+    orch -- "analysis_plan JSON / fixed-order fallback" --> orch
 
     subgraph mcp["FastMCP Server Layer"]
         web["mcp-web-search / Tavily"]
@@ -43,8 +44,8 @@ flowchart TB
         ledger["mcp-evidence-ledger"]
     end
 
-    src -- "MCP tool call" --> web
-    src -- "MCP tool call" --> ledger
+    src -- "bounded search/extract tools" --> web
+    src -- "selected evidence registration" --> ledger
     ctx -- "MCP tool call" --> structured
     ctx -- "MCP tool call" --> neo4j_mcp
     treasury -- "MCP tool call" --> structured
@@ -54,8 +55,8 @@ flowchart TB
     legal -- "MCP tool call" --> ocr
     accounting -- "MCP tool call" --> structured
     procurement -- "MCP tool call" --> structured
-    expert -- "MCP tool call" --> expert_mcp
-    redteam -- "MCP tool call" --> ledger
+    expert -- "bounded expert tool-use" --> expert_mcp
+    redteam -- "evidence challenge tool-use" --> ledger
     decision -- "MCP tool call" --> ledger
     decision -- "MCP tool call" --> neo4j_mcp
     decision -- "MCP tool call" --> filesystem
@@ -199,24 +200,28 @@ sequenceDiagram
 
     CLI->>O: Submit RiskEvent
     O->>LF: trace event
+    O->>O: Generate analysis_plan JSON or fixed-order fallback
     O->>C: A2A Stage 1 Context Build
     C->>M: structured-data and neo4j tools
     C-->>O: Client graph finding
     O->>S: A2A Stage 2 Evidence Collection
-    S->>M: web-search and evidence-ledger tools
+    S->>M: bounded query planning, sanitized searches, URL extraction, evidence registration
     S-->>O: Evidence IDs
     O->>T: A2A Stage 3 Treasury Analysis
     O->>L: A2A Stage 3 Legal Analysis
     O->>A: A2A Stage 3 Accounting Analysis
     O->>P: A2A Stage 3 Procurement Analysis
+    T->>T: DeepAgent issue-exploration slot
+    L->>L: DeepAgent issue-exploration slot
+    A->>A: DeepAgent issue-exploration slot
     T->>M: structured-data and qdrant tools
     L->>M: structured-data, document-parser, and llm-ocr tools
     A->>M: structured-data tools
     P->>M: structured-data tools
     O->>E: A2A Stage 4 Expert-as-Code
-    E->>M: expert-knowledge and qdrant tools
+    E->>M: cases, rubrics, red flags, CTA notes, counterfactuals
     O->>R: A2A Stage 5 Challenge
-    R->>M: evidence-ledger tools
+    R->>M: evidence search, contradiction search, missing data, overclaim checks
     O->>D: A2A Stage 6 Decision Synthesis
     D->>M: evidence-ledger, neo4j, and filesystem tools
     D-->>O: Decision-first output finding

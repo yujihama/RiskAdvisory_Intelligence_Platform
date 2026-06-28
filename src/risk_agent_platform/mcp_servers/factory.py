@@ -8,7 +8,6 @@ import mimetypes
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 import fitz
 import httpx
@@ -20,7 +19,6 @@ from risk_agent_platform.evidence_repository import EvidenceRepository
 from risk_agent_platform.model_profiles import ModelProfileRouter
 from risk_agent_platform.query_sanitizer import build_risk_signal_query, sanitize_query
 from risk_agent_platform.schemas import EvidenceItem, RiskEvent
-from risk_agent_platform.source_reliability import score_source
 from risk_agent_platform.stores.neo4j_store import Neo4jStore
 from risk_agent_platform.stores.qdrant_store import QDRANT_COLLECTIONS, QdrantStore
 
@@ -73,43 +71,6 @@ def create_web_search_server(settings: Settings) -> FastMCP:
             raise RuntimeError("TAVILY_API_KEY is required for extract_url")
         client = TavilyClient(api_key=settings.external_apis.tavily_api_key)
         return {"url": url, "result": client.extract(urls=[url])}
-
-    @mcp.tool
-    def search_and_register_evidence(
-        risk_event: dict[str, Any],
-        max_results: int = 5,
-        confidential_terms: list[str] | None = None,
-    ) -> dict[str, Any]:
-        event = RiskEvent.model_validate(risk_event)
-        search_result = search_risk_signals(risk_event, max_results=max_results, confidential_terms=confidential_terms)
-        repo = EvidenceRepository(settings)
-        registered: list[dict[str, Any]] = []
-        for idx, result in enumerate(search_result["results"], start=1):
-            url = str(result.get("url") or "")
-            domain = urlparse(url).netloc
-            source_score = score_source(result, event)
-            evidence = EvidenceItem(
-                evidence_id=f"{event.scenario_id}_tavily_{idx:03d}",
-                scenario_id=event.scenario_id,
-                client_id=event.client_id,
-                source_type="web",
-                source_ref=url or f"tavily:{idx}",
-                source_url=url or None,
-                source_title=str(result.get("title") or ""),
-                source_domain=str(source_score.get("source_domain") or domain or "") or None,
-                search_query_hash=str(search_result["query_hash"]),
-                summary=str(result.get("content") or result.get("raw_content") or "")[:1200],
-                raw_snippet=str(result.get("content") or "")[:2000],
-                supports=[event.risk_type, *event.risk_themes],
-                reliability=source_score["reliability"],
-                client_relevance=source_score["client_relevance"],
-                used_by_agents=["source-intelligence-agent"],
-                confidence=source_score["confidence"],
-                extraction_method="tavily_search",
-            )
-            repo.register(evidence, index_qdrant=True)
-            registered.append(evidence.model_dump(mode="json"))
-        return {"query": search_result["query"], "query_hash": search_result["query_hash"], "evidence": registered}
 
     return mcp
 

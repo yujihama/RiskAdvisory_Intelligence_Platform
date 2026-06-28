@@ -9,7 +9,7 @@ CLI / API
   -> Orchestrator DeepAgent
   -> A2A SDK-shaped Agent Cards + A2A-compatible HTTP task requests
   -> Domain DeepAgents
-  -> FastMCP tool calls, including a partial DeepAgent tool-integration path
+  -> Bounded DeepAgent tool-use slots + audited FastMCP tool calls
   -> Tavily / Qdrant / Neo4j / Files / Evidence Ledger / Expert Knowledge
   -> Decision Queue + Executive Brief + Evidence Summary
 ```
@@ -59,7 +59,13 @@ FastMCP servers are implemented for:
 
 Agents call tools through `MCPGateway`, which uses FastMCP `Client`.
 
-The Source Intelligence Agent also demonstrates partial DeepAgent tool integration: its Tavily evidence registration MCP call is wrapped as a DeepAgent tool named `register_external_risk_evidence`. The remaining agents still keep MCP orchestration in Python `analyze()` methods for auditability and deterministic control.
+Bounded Autonomy is implemented in the normal path:
+
+- Orchestrator asks DeepAgent for an `analysis_plan` JSON with `selected_agents`, `skipped_agents`, `recheck_conditions`, and `exploration_questions`; invalid plans fall back to the fixed agent order.
+- Source Intelligence uses DeepAgent tool-use for bounded sanitized search and URL extraction, then Python registers selected `EvidenceItem` records through Evidence Ledger.
+- Expert-as-Code uses DeepAgent tool-use to explore similar cases, rubrics, red flags, CTA notes, and counterfactuals, then emits a structured `KnowledgeApplicationFinding` inside the A2A finding metadata.
+- Evidence / Red Team uses DeepAgent tool-use for evidence search, contradiction search, missing-data detection, and overclaim detection; it does not write the Decision Queue.
+- Treasury, Legal, and Accounting keep final scores and review flags in structured Python logic, with a small DeepAgent issue-exploration slot for hypotheses and recheck questions.
 
 ## Required Environment Variables
 
@@ -176,7 +182,7 @@ Expected outputs:
 
 ## Evidence Ledger
 
-Tavily results are sanitized, assigned an initial source reliability score, normalized into `EvidenceItem`, stored in JSONL, indexed into Qdrant, and linked to scenarios/assets/decisions through Neo4j MCP tools.
+Source Intelligence plans bounded query themes, runs multiple sanitized Tavily searches, extracts selected URLs, assigns an initial source reliability score, normalizes results into `EvidenceItem`, stores them in JSONL, indexes them into Qdrant, and links them to scenarios/assets/decisions through Neo4j MCP tools.
 
 If `TAVILY_API_KEY` is absent, web evidence collection fails explicitly. There is no local fixture fallback in the normal path.
 
@@ -184,7 +190,7 @@ Initial source reliability scoring is domain-based: government, regulator, inter
 
 ## Expert-as-Code
 
-Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, and CTA notes. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl` and `data/expert_knowledge/cases.jsonl` into Qdrant and reflects retrieved IDs in the Decision Queue.
+Expert knowledge is represented as structured Knowledge Objects, Knowledge Primitives, case bank entries, question bank entries, and CTA notes. The Expert-as-Code Agent indexes `data/expert_knowledge/rules.jsonl` and `data/expert_knowledge/cases.jsonl` into Qdrant, explores relevant cases/rubrics/red flags/CTA notes/counterfactuals through DeepAgent tools, and reflects selected IDs in the Decision Queue.
 
 ## Document Parsing and OCR
 
@@ -219,7 +225,7 @@ See [docs/acceptance_checklist.md](docs/acceptance_checklist.md) for the require
 ## Known Constraints
 
 - Live Tavily E2E requires `TAVILY_API_KEY` and the Langfuse environment variables above if Langfuse trace export is required.
-- DeepAgent tool integration is partial: Source Intelligence has a DeepAgent-wrapped MCP tool example, while most domain agents still orchestrate MCP calls in Python for stability and auditability.
+- DeepAgent tool integration is bounded rather than fully autonomous: exploration and hypothesis generation use tool slots, while registration, scoring, review flags, and Decision Queue writes stay in structured Python logic for auditability.
 - A2A is currently an A2A SDK-shaped Agent Card plus A2A-compatible HTTP task boundary; the task transport is not yet a full a2a-sdk server/client implementation.
 - Qdrant has an `EmbeddingProvider` abstraction and attempts real OpenRouter-compatible embeddings by default, but deterministic embeddings remain the default fallback and the explicit test mode.
 - Source reliability scoring is initial/simple and domain-based; it does not yet perform full source provenance, recency, corroboration, or contradiction analysis.

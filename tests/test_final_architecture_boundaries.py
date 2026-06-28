@@ -8,9 +8,10 @@ from risk_agent_platform.config import Settings
 from risk_agent_platform.a2a_sdk_adapter import sdk_agent_card_dict
 from risk_agent_platform.embeddings import create_embedding_provider
 from risk_agent_platform.evidence_repository import EvidenceRepository
+from risk_agent_platform.final_agents import _analysis_plan_from_text
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.query_sanitizer import sanitize_query
-from risk_agent_platform.schemas import AgentCard, EvidenceItem, RiskEvent
+from risk_agent_platform.schemas import AgentCard, EvidenceItem, KnowledgeApplicationFinding, RiskEvent
 from risk_agent_platform.source_reliability import score_source
 from risk_agent_platform.vector import VECTOR_SIZE
 
@@ -70,6 +71,40 @@ def test_a2a_sdk_agent_card_adapter_emits_sdk_shape():
     assert sdk_card["url"] == "http://localhost:8101/a2a"
     assert sdk_card["skills"][0]["id"] == "tavily_search"
     assert sdk_card["capabilities"]["stateTransitionHistory"] is True
+
+
+def test_orchestrator_analysis_plan_parses_bounded_json_and_preserves_fixed_order():
+    plan = _analysis_plan_from_text(
+        """
+        {
+          "selected_agents": ["legal-risk-agent", "source-intelligence-agent", "client-context-agent"],
+          "skipped_agents": ["treasury-risk-agent"],
+          "recheck_conditions": ["new sanctions notice"],
+          "exploration_questions": ["Which source is authoritative?"],
+          "rationale": "bounded test"
+        }
+        """
+    )
+
+    assert plan is not None
+    assert plan.selected_agents == ["client-context-agent", "source-intelligence-agent", "legal-risk-agent"]
+    assert "treasury-risk-agent" in plan.skipped_agents
+    assert plan.fallback_used is False
+
+
+def test_knowledge_application_finding_is_structured():
+    finding = KnowledgeApplicationFinding(
+        similar_case_ids=["case_sanctions_payment_001"],
+        rubric_ids=["standard_high_confidence_v1"],
+        red_flags=["High-risk supplier payment requires joint review"],
+        cta_note_ids=["cta_sanctions_payment_cue_001"],
+        counterfactuals=["What if the supplier bank route is outside the event country?"],
+        review_required=True,
+        rationale="bounded expert selection",
+    )
+
+    assert finding.review_required is True
+    assert finding.similar_case_ids == ["case_sanctions_payment_001"]
 
 
 def test_source_reliability_scores_domain_classes():

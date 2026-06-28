@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 from uuid import uuid4
 
 from langchain_core.tools import tool
@@ -19,10 +19,30 @@ from risk_agent_platform.schemas import (
     AgentTask,
     AgentTaskRequest,
     AgentTaskResult,
+    AnalysisPlan,
     DecisionItem,
+    EvidenceItem,
+    KnowledgeApplicationFinding,
     RiskEvent,
 )
+from risk_agent_platform.source_reliability import score_source
 from risk_agent_platform.tracing import TraceRecorder
+
+
+FIXED_AGENT_ORDER = [
+    "client-context-agent",
+    "source-intelligence-agent",
+    "treasury-risk-agent",
+    "legal-risk-agent",
+    "accounting-risk-agent",
+    "procurement-risk-agent",
+    "expert-as-code-agent",
+    "evidence-redteam-agent",
+]
+
+SOURCE_MAX_QUERIES = 3
+SOURCE_MAX_EXTRACT_URLS = 3
+SOURCE_MAX_EVIDENCE = 5
 
 
 class DomainDeepAgentService(A2AService):
@@ -34,7 +54,7 @@ class DomainDeepAgentService(A2AService):
     def __init__(self, settings: Settings, *, embedded_mcp: bool = False) -> None:
         self.settings = settings
         self.mcp = MCPGateway(settings, embedded=embedded_mcp)
-        self._last_deepagent_tool_result: dict[str, Any] | None = None
+        self._deepagent_tool_state: dict[str, Any] = {}
         self.runner = DeepAgentRunner(settings, self.name, self.system_prompt(), tools=self.deepagent_tools())
 
     def deepagent_tools(self) -> list[Any]:
@@ -88,6 +108,43 @@ class DomainDeepAgentService(A2AService):
     def synthesize(self, prompt: str) -> str:
         return self.runner.synthesize(prompt)
 
+    def explore_issues(self, task: AgentTask, domain: str, context: dict[str, Any]) -> dict[str, Any]:
+        event = self.event(task)
+        self._deepagent_tool_state["issue_exploration"] = None
+        prompt = (
+            "Use the provided issue exploration tool once to record bounded hypotheses. "
+            "Do not make final scores or decisions. Keep the result JSON concise with keys: "
+            "issues, missing_data, recheck_conditions, exploration_questions.\n"
+            f"domain={domain}\n"
+            f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
+            f"context={json.dumps(context, ensure_ascii=False, default=str)}"
+        )
+        synthesis = self.synthesize(prompt)
+        recorded = self._deepagent_tool_state.get("issue_exploration")
+        if isinstance(recorded, dict):
+            recorded["deepagent_tool_invoked"] = True
+            recorded["synthesis"] = synthesis
+            return recorded
+        return {
+            "issues": _default_domain_issues(domain, event),
+            "missing_data": [],
+            "recheck_conditions": [],
+            "exploration_questions": [],
+            "deepagent_tool_invoked": False,
+            "synthesis": synthesis,
+        }
+
+    def _record_issue_exploration(self, issues_json: str) -> str:
+        data = _json_object_from_text(issues_json) or {}
+        result = {
+            "issues": _string_list(data.get("issues"), limit=8),
+            "missing_data": _string_list(data.get("missing_data"), limit=8),
+            "recheck_conditions": _string_list(data.get("recheck_conditions"), limit=8),
+            "exploration_questions": _string_list(data.get("exploration_questions"), limit=8),
+        }
+        self._deepagent_tool_state["issue_exploration"] = result
+        return json.dumps(result, ensure_ascii=False)
+
 
 class SourceIntelligenceDeepAgent(DomainDeepAgentService):
     name = "source-intelligence-agent"
@@ -96,71 +153,167 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
     modes = ["source_intelligence"]
 
     def deepagent_tools(self) -> list[Any]:
-        @tool("register_external_risk_evidence")
-        def register_external_risk_evidence(risk_event_json: str, confidential_terms_json: str = "[]") -> str:
-            """Search Tavily through MCP, register evidence, and return a compact audit summary."""
-            risk_event = json.loads(risk_event_json)
-            confidential_terms = json.loads(confidential_terms_json or "[]")
-            result = self.mcp.call(
-                "mcp-web-search",
-                "search_and_register_evidence",
-                {
-                    "risk_event": risk_event,
-                    "max_results": 5,
-                    "confidential_terms": confidential_terms,
-                },
-            )
-            self._last_deepagent_tool_result = result
-            return json.dumps(
-                {
-                    "query": result.get("query"),
-                    "query_hash": result.get("query_hash"),
-                    "evidence_ids": [item.get("evidence_id") for item in result.get("evidence", [])],
-                    "evidence_count": len(result.get("evidence", [])),
-                },
-                ensure_ascii=False,
-            )
+        @tool("source_search_authoritative_sources")
+        def source_search_authoritative_sources(query: str, max_results: int = 3) -> str:
+            """Run one sanitized Tavily search through MCP within the Source Agent query budget."""
+            self._deepagent_tool_state.setdefault("source", {})["deepagent_tool_invoked"] = True
+            return json.dumps(self._source_search(query, max_results=max_results), ensure_ascii=False)
 
-        return [register_external_risk_evidence]
+        @tool("source_extract_url")
+        def source_extract_url(url: str) -> str:
+            """Extract one selected URL through Tavily within the Source Agent extraction budget."""
+            self._deepagent_tool_state.setdefault("source", {})["deepagent_tool_invoked"] = True
+            return json.dumps(self._source_extract(url), ensure_ascii=False)
+
+        return [source_search_authoritative_sources, source_extract_url]
 
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
         confidential_terms = _confidential_terms_from_findings(task.inputs.get("findings", []))
-        self._last_deepagent_tool_result = None
+        self._deepagent_tool_state["source"] = {
+            "event": event,
+            "confidential_terms": confidential_terms,
+            "searches": [],
+            "extractions": [],
+            "max_queries": SOURCE_MAX_QUERIES,
+            "max_extract_urls": SOURCE_MAX_EXTRACT_URLS,
+            "max_evidence": SOURCE_MAX_EVIDENCE,
+            "deepagent_tool_invoked": False,
+        }
+        planned_queries = self._plan_queries(event, confidential_terms)
         synthesis = self.synthesize(
-            "Call the register_external_risk_evidence tool exactly once for this risk_event_json, "
-            "then summarize the source intelligence in one sentence.\n"
-            f"risk_event_json={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
-            f"confidential_terms_json={json.dumps(confidential_terms, ensure_ascii=False)}"
+            "Use bounded source tools to explore external evidence. "
+            f"Run at most {SOURCE_MAX_QUERIES} searches and extract at most {SOURCE_MAX_EXTRACT_URLS} URLs. "
+            "Do not register evidence yourself; registration is handled after selection. "
+            "Use these planned query themes first, but refine if needed.\n"
+            f"planned_queries={json.dumps(planned_queries, ensure_ascii=False)}\n"
+            f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
+            f"confidential_terms_count={len(confidential_terms)}"
         )
-        result = self._last_deepagent_tool_result
-        if result is None:
-            result = self.mcp.call(
-                "mcp-web-search",
-                "search_and_register_evidence",
-                {
-                    "risk_event": event.model_dump(mode="json"),
-                    "max_results": 5,
-                    "confidential_terms": confidential_terms,
-                },
-            )
-        evidence = result.get("evidence", [])
+        state = self._deepagent_tool_state["source"]
+        if not state["searches"]:
+            for query in planned_queries[:SOURCE_MAX_QUERIES]:
+                self._source_search(query, max_results=SOURCE_MAX_EVIDENCE)
+        selected_urls = _select_urls_for_extraction(state["searches"], SOURCE_MAX_EXTRACT_URLS)
+        if not state["extractions"]:
+            for url in selected_urls:
+                self._source_extract(url)
+        evidence = self._register_selected_evidence(event)
         return AgentFinding(
             agent_name=self.name,
             mode="source_intelligence",
-            summary=f"{synthesis} Registered {len(evidence)} Tavily evidence items.",
+            summary=f"{synthesis} Registered {len(evidence)} bounded Tavily evidence items.",
             confidence="medium",
             evidence_ids=[item["evidence_id"] for item in evidence],
             recommended_actions=["Review authoritative sources and retain query hash for audit."],
             review_required=False,
-            rationale="Tavily results are sanitized, normalized to EvidenceItem, stored in Evidence Ledger, and indexed in Qdrant.",
+            rationale="Source Intelligence planned bounded queries, ran sanitized Tavily searches through MCP, extracted selected URLs, and registered EvidenceItems through Evidence Ledger.",
             metadata={
-                "query": result.get("query"),
-                "query_hash": result.get("query_hash"),
-                "deepagent_tool_invoked": self._last_deepagent_tool_result is not None,
+                "queries": [{"query": item.get("query"), "query_hash": item.get("query_hash")} for item in state["searches"]],
+                "extracted_urls": [item.get("url") for item in state["extractions"]],
+                "deepagent_tool_invoked": bool(state.get("deepagent_tool_invoked")),
                 "confidential_terms_count": len(confidential_terms),
+                "limits": {
+                    "max_queries": SOURCE_MAX_QUERIES,
+                    "max_extract_urls": SOURCE_MAX_EXTRACT_URLS,
+                    "max_evidence": SOURCE_MAX_EVIDENCE,
+                },
             },
         )
+
+    def _plan_queries(self, event: RiskEvent, confidential_terms: list[str]) -> list[str]:
+        prompt = (
+            "Return only JSON for bounded external source query planning. "
+            f"Use at most {SOURCE_MAX_QUERIES} query strings. Avoid client-specific names. "
+            "Schema: {\"queries\": [\"...\"], \"rationale\": \"...\"}.\n"
+            f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
+            f"confidential_terms_count={len(confidential_terms)}"
+        )
+        data = _json_object_from_text(self.synthesize(prompt))
+        queries = _string_list(data.get("queries") if data else None, limit=SOURCE_MAX_QUERIES)
+        if queries:
+            return queries
+        country = " ".join(event.countries) if event.countries else "affected country"
+        themes = " ".join(event.risk_themes or [event.risk_type])
+        return [
+            f"{country} {themes} official regulatory update",
+            f"{country} payment disruption sanctions banking official source",
+            f"{country} supplier continuity logistics disruption authoritative source",
+        ][:SOURCE_MAX_QUERIES]
+
+    def _source_search(self, query: str, *, max_results: int = 3) -> dict[str, Any]:
+        state = self._deepagent_tool_state.get("source") or {}
+        searches = state.setdefault("searches", [])
+        if len(searches) >= SOURCE_MAX_QUERIES:
+            return {"status": "skipped", "reason": "max_queries_reached"}
+        event = state.get("event")
+        if not isinstance(event, RiskEvent):
+            return {"status": "skipped", "reason": "source_state_not_initialized"}
+        result = self.mcp.call(
+            "mcp-web-search",
+            "search_authoritative_sources",
+            {
+                "query": query,
+                "risk_event": event.model_dump(mode="json"),
+                "max_results": min(max_results, SOURCE_MAX_EVIDENCE),
+                "confidential_terms": state.get("confidential_terms") or [],
+            },
+        )
+        searches.append(result)
+        return {
+            "status": "searched",
+            "query": result.get("query"),
+            "query_hash": result.get("query_hash"),
+            "result_count": len(result.get("results", [])),
+        }
+
+    def _source_extract(self, url: str) -> dict[str, Any]:
+        state = self._deepagent_tool_state.get("source") or {}
+        extractions = state.setdefault("extractions", [])
+        if len(extractions) >= SOURCE_MAX_EXTRACT_URLS:
+            return {"status": "skipped", "reason": "max_extract_urls_reached", "url": url}
+        try:
+            result = self.mcp.call("mcp-web-search", "extract_url", {"url": url})
+            item = {"status": "extracted", "url": url, "result": result}
+        except Exception as exc:
+            item = {"status": "extract_failed", "url": url, "error": str(exc)}
+        extractions.append(item)
+        return {"status": item["status"], "url": url}
+
+    def _register_selected_evidence(self, event: RiskEvent) -> list[dict[str, Any]]:
+        state = self._deepagent_tool_state["source"]
+        candidates = _rank_source_candidates(state["searches"], event)
+        extracted_text_by_url = _extracted_text_by_url(state["extractions"])
+        registered: list[dict[str, Any]] = []
+        for idx, candidate in enumerate(candidates[:SOURCE_MAX_EVIDENCE], start=1):
+            result = candidate["result"]
+            url = str(result.get("url") or "")
+            domain = urlparse(url).netloc
+            source_score = score_source(result, event)
+            extracted_text = extracted_text_by_url.get(url)
+            summary = str(extracted_text or result.get("content") or result.get("raw_content") or "")[:1200]
+            evidence = EvidenceItem(
+                evidence_id=f"{event.scenario_id}_tavily_{idx:03d}",
+                scenario_id=event.scenario_id,
+                client_id=event.client_id,
+                source_type="web",
+                source_ref=url or f"tavily:{idx}",
+                source_url=url or None,
+                source_title=str(result.get("title") or ""),
+                source_domain=str(source_score.get("source_domain") or domain or "") or None,
+                search_query_hash=str(candidate.get("query_hash") or ""),
+                summary=summary,
+                raw_snippet=str(result.get("content") or "")[:2000],
+                supports=[event.risk_type, *event.risk_themes],
+                reliability=source_score["reliability"],
+                client_relevance=source_score["client_relevance"],
+                used_by_agents=[self.name],
+                confidence=source_score["confidence"],
+                extraction_method="tavily_extract" if extracted_text else "tavily_search",
+            )
+            registered_item = self.mcp.call("mcp-evidence-ledger", "register_evidence", {"evidence": evidence.model_dump(mode="json")})
+            registered.append(registered_item)
+        return registered
 
 
 class ClientContextDeepAgent(DomainDeepAgentService):
@@ -209,10 +362,19 @@ class TreasuryRiskDeepAgent(DomainDeepAgentService):
     skills = ["payment_exposure", "cash_mobility", "liquidity_at_risk"]
     modes = ["treasury"]
 
+    def deepagent_tools(self) -> list[Any]:
+        @tool("record_treasury_issue_exploration")
+        def record_treasury_issue_exploration(issues_json: str) -> str:
+            """Record bounded Treasury hypotheses and missing data; do not score or decide."""
+            return self._record_issue_exploration(issues_json)
+
+        return [record_treasury_issue_exploration]
+
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
         exposure = self.mcp.call("mcp-structured-data", "summarize_payment_exposure", {"client_id": event.client_id, "country": event.countries[0] if event.countries else None})
         evidence = self.mcp.call("mcp-qdrant", "search_evidence", {"query": event.title, "filters": {"scenario_id": event.scenario_id}, "top_k": 5})
+        issue_exploration = self.explore_issues(task, "treasury", {"payment_exposure": exposure, "evidence_hit_count": len(evidence)})
         score = min(100, 40 + int(float(exposure.get("total_amount", 0)) / 100000))
         return AgentFinding(
             agent_name=self.name,
@@ -226,7 +388,7 @@ class TreasuryRiskDeepAgent(DomainDeepAgentService):
             recommended_actions=["Prepare controlled CFO/Legal/Procurement decision on payment continuation or hold."],
             review_required=True,
             rationale="Treasury analysis uses structured payment exposure and Qdrant evidence search through MCP.",
-            metadata={"payment_exposure": exposure, "qdrant_hits": evidence},
+            metadata={"payment_exposure": exposure, "qdrant_hits": evidence, "issue_exploration": issue_exploration},
         )
 
 
@@ -236,10 +398,19 @@ class LegalRiskDeepAgent(DomainDeepAgentService):
     skills = ["sanctions_proximity", "contract_obligation", "regulatory_trigger"]
     modes = ["legal"]
 
+    def deepagent_tools(self) -> list[Any]:
+        @tool("record_legal_issue_exploration")
+        def record_legal_issue_exploration(issues_json: str) -> str:
+            """Record bounded Legal hypotheses and missing data; do not score or decide."""
+            return self._record_issue_exploration(issues_json)
+
+        return [record_legal_issue_exploration]
+
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
         contracts = self.mcp.call("mcp-structured-data", "sample_rows", {"client_id": event.client_id, "dataset": "contracts", "limit": 100})
         issues = [row["contract_id"] for row in contracts if row.get("sanctions_clause") == "true" or row.get("force_majeure_clause") == "true"]
+        issue_exploration = self.explore_issues(task, "legal", {"contract_count": len(contracts), "contract_issue_ids": issues})
         return AgentFinding(
             agent_name=self.name,
             mode="legal",
@@ -250,7 +421,7 @@ class LegalRiskDeepAgent(DomainDeepAgentService):
             recommended_actions=["Review notice, termination, sanctions, and force majeure clauses before payment decision."],
             review_required=bool(issues),
             rationale="Legal Agent is separated from Accounting and uses structured contract data via MCP.",
-            metadata={"contract_issue_ids": issues},
+            metadata={"contract_issue_ids": issues, "issue_exploration": issue_exploration},
         )
 
 
@@ -260,10 +431,19 @@ class AccountingRiskDeepAgent(DomainDeepAgentService):
     skills = ["provision_trigger", "impairment_trigger", "disclosure_pressure"]
     modes = ["accounting"]
 
+    def deepagent_tools(self) -> list[Any]:
+        @tool("record_accounting_issue_exploration")
+        def record_accounting_issue_exploration(issues_json: str) -> str:
+            """Record bounded Accounting hypotheses and missing data; do not score or decide."""
+            return self._record_issue_exploration(issues_json)
+
+        return [record_accounting_issue_exploration]
+
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
         exposure = self.mcp.call("mcp-structured-data", "summarize_payment_exposure", {"client_id": event.client_id})
         amount = float(exposure.get("total_amount", 0))
+        issue_exploration = self.explore_issues(task, "accounting", {"payment_exposure": exposure})
         score = min(100, 25 + int(amount / 100000))
         return AgentFinding(
             agent_name=self.name,
@@ -275,7 +455,7 @@ class AccountingRiskDeepAgent(DomainDeepAgentService):
             recommended_actions=["Prepare auditor evidence pack if disruption becomes probable."],
             review_required=score >= 50,
             rationale="Accounting Agent is separate and maps operational/payment disruption to reporting pressure.",
-            metadata={"payment_exposure": exposure},
+            metadata={"payment_exposure": exposure, "issue_exploration": issue_exploration},
         )
 
 
@@ -309,16 +489,112 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
     skills = ["expert_knowledge", "red_flag", "rubric", "language_guardrail"]
     modes = ["expert_as_code"]
 
+    def deepagent_tools(self) -> list[Any]:
+        @tool("expert_search_similar_cases")
+        def expert_search_similar_cases(case_description: str, mode: str = "", top_k: int = 5) -> str:
+            """Search similar Expert-as-Code cases through MCP."""
+            self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
+            result = self.mcp.call(
+                "mcp-expert-knowledge",
+                "search_similar_cases",
+                {"case_description": case_description, "mode": mode or None, "top_k": min(top_k, 5)},
+            )
+            self._deepagent_tool_state.setdefault("expert", {}).setdefault("similar_cases", []).extend(result)
+            return json.dumps({"case_count": len(result), "case_ids": _document_ids(result)}, ensure_ascii=False)
+
+        @tool("expert_search_rubrics")
+        def expert_search_rubrics(query: str, domain: str = "", top_k: int = 10) -> str:
+            """Search rubrics, guardrails, review triggers, and evidence standards through MCP."""
+            self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
+            result = self.mcp.call(
+                "mcp-expert-knowledge",
+                "search_knowledge_objects",
+                {"query": query, "domain": domain or None, "top_k": min(top_k, 10)},
+            )
+            self._deepagent_tool_state.setdefault("expert", {}).setdefault("rubrics", []).extend(result)
+            return json.dumps({"object_count": len(result), "object_ids": _document_ids(result)}, ensure_ascii=False)
+
+        @tool("expert_load_red_flags")
+        def expert_load_red_flags(domain: str = "") -> str:
+            """Load red-flag-like expert knowledge objects through MCP."""
+            self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
+            objects = self.mcp.call("mcp-expert-knowledge", "load_knowledge_pack", {})
+            selected = [
+                item
+                for item in objects
+                if (not domain or item.get("domain") in {domain, "cross_functional"})
+                and item.get("object_type") in {"red_flag", "review_trigger", "evidence_standard"}
+            ]
+            self._deepagent_tool_state.setdefault("expert", {}).setdefault("red_flags", []).extend(selected)
+            return json.dumps({"red_flag_count": len(selected), "red_flags": [item.get("title") for item in selected]}, ensure_ascii=False)
+
+        @tool("expert_load_cta_notes")
+        def expert_load_cta_notes(case_id: str = "") -> str:
+            """Load CTA notes and optionally filter by case id."""
+            self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
+            notes = self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {})
+            selected = [item for item in notes if not case_id or item.get("case_id") == case_id]
+            self._deepagent_tool_state.setdefault("expert", {}).setdefault("cta_notes", []).extend(selected)
+            return json.dumps({"cta_note_count": len(selected), "note_ids": [item.get("note_id") for item in selected]}, ensure_ascii=False)
+
+        @tool("expert_record_counterfactuals")
+        def expert_record_counterfactuals(counterfactuals_json: str) -> str:
+            """Record bounded counterfactuals selected by the Expert-as-Code Agent."""
+            self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
+            data = _json_object_from_text(counterfactuals_json) or {}
+            counterfactuals = _string_list(data.get("counterfactuals"), limit=6)
+            self._deepagent_tool_state.setdefault("expert", {})["counterfactuals"] = counterfactuals
+            return json.dumps({"counterfactual_count": len(counterfactuals)}, ensure_ascii=False)
+
+        return [
+            expert_search_similar_cases,
+            expert_search_rubrics,
+            expert_load_red_flags,
+            expert_load_cta_notes,
+            expert_record_counterfactuals,
+        ]
+
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
+        self._deepagent_tool_state["expert"] = {}
         indexed = self.mcp.call("mcp-expert-knowledge", "index_knowledge_pack", {})
         indexed_cases = self.mcp.call("mcp-expert-knowledge", "index_case_bank", {})
         questions = self.mcp.call("mcp-expert-knowledge", "load_question_bank", {})
-        cta_notes = self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {})
-        hits = self.mcp.call("mcp-expert-knowledge", "search_knowledge_objects", {"query": event.title, "top_k": 10})
-        case_hits = self.mcp.call("mcp-expert-knowledge", "search_similar_cases", {"case_description": event.description, "top_k": 5})
-        object_ids = [hit.get("payload", {}).get("document_id") for hit in hits if hit.get("payload", {}).get("document_id")]
-        case_ids = [hit.get("payload", {}).get("document_id") for hit in case_hits if hit.get("payload", {}).get("document_id")]
+        self.synthesize(
+            "Use Expert-as-Code tools to explore and select similar cases, rubrics, red flags, CTA notes, "
+            "and counterfactuals. Do not write decisions. Keep exploration bounded.\n"
+            f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}"
+        )
+        state = self._deepagent_tool_state["expert"]
+        if not state.get("similar_cases"):
+            state["similar_cases"] = self.mcp.call("mcp-expert-knowledge", "search_similar_cases", {"case_description": event.description, "top_k": 5})
+        if not state.get("rubrics"):
+            state["rubrics"] = self.mcp.call("mcp-expert-knowledge", "search_knowledge_objects", {"query": event.title, "top_k": 10})
+        if not state.get("red_flags"):
+            objects = self.mcp.call("mcp-expert-knowledge", "load_knowledge_pack", {})
+            state["red_flags"] = [item for item in objects if item.get("object_type") in {"red_flag", "review_trigger", "evidence_standard"}]
+        if not state.get("cta_notes"):
+            state["cta_notes"] = self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {})
+        if not state.get("counterfactuals"):
+            state["counterfactuals"] = _default_counterfactuals(event)
+        hits = state["rubrics"]
+        case_hits = state["similar_cases"]
+        cta_notes = state["cta_notes"]
+        object_ids = _document_ids(hits)
+        case_ids = _document_ids(case_hits)
+        cta_note_ids = [str(item.get("note_id")) for item in cta_notes if item.get("note_id")]
+        knowledge_application = KnowledgeApplicationFinding(
+            similar_case_ids=case_ids,
+            rubric_ids=object_ids,
+            red_flags=[str(item.get("title") or item.get("description") or item) for item in state["red_flags"][:6]],
+            cta_note_ids=cta_note_ids,
+            cta_notes=[str(item.get("interpretation") or item.get("cue") or item) for item in cta_notes[:6]],
+            counterfactuals=_string_list(state.get("counterfactuals"), limit=6),
+            recommended_guardrails=_recommended_guardrails_from_knowledge(hits),
+            additional_questions=[item.get("question") for item in questions if item.get("question")][:6],
+            review_required=True,
+            rationale="Expert-as-Code selected bounded comparable cases, rubrics, red flags, CTA notes, and counterfactual checks.",
+        )
         return AgentFinding(
             agent_name=self.name,
             mode="expert_as_code",
@@ -336,6 +612,8 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
                 "cta_note_count": len(cta_notes),
                 "hits": hits,
                 "case_hits": case_hits,
+                "deepagent_tool_invoked": bool(state.get("deepagent_tool_invoked")),
+                "knowledge_application_finding": knowledge_application.model_dump(mode="json"),
             },
         )
 
@@ -346,10 +624,90 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
     skills = ["red_team", "counter_evidence", "evidence_quality"]
     modes = ["evidence_red_team"]
 
+    def deepagent_tools(self) -> list[Any]:
+        @tool("redteam_list_scenario_evidence")
+        def redteam_list_scenario_evidence(scenario_id: str) -> str:
+            """List scenario evidence from Evidence Ledger for challenge review."""
+            self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
+            result = self.mcp.call("mcp-evidence-ledger", "list_evidence_by_scenario", {"scenario_id": scenario_id})
+            self._deepagent_tool_state.setdefault("redteam", {})["evidence"] = result
+            return json.dumps({"evidence_count": len(result), "evidence_ids": [item.get("evidence_id") for item in result]}, ensure_ascii=False)
+
+        @tool("redteam_search_evidence")
+        def redteam_search_evidence(query: str, scenario_id: str, top_k: int = 5) -> str:
+            """Search scenario evidence for support strength."""
+            self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
+            result = self.mcp.call("mcp-evidence-ledger", "search_evidence", {"query": query, "scenario_id": scenario_id, "top_k": min(top_k, 5)})
+            self._deepagent_tool_state.setdefault("redteam", {}).setdefault("evidence_searches", []).append({"query": query, "results": result})
+            return json.dumps({"result_count": len(result)}, ensure_ascii=False)
+
+        @tool("redteam_search_contradictions")
+        def redteam_search_contradictions(query: str, scenario_id: str, top_k: int = 5) -> str:
+            """Search for contradiction candidates in the scenario evidence index."""
+            self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
+            result = self.mcp.call(
+                "mcp-evidence-ledger",
+                "search_evidence",
+                {"query": f"contradiction alternative view {query}", "scenario_id": scenario_id, "top_k": min(top_k, 5)},
+            )
+            self._deepagent_tool_state.setdefault("redteam", {}).setdefault("contradiction_searches", []).append({"query": query, "results": result})
+            return json.dumps({"candidate_count": len(result)}, ensure_ascii=False)
+
+        @tool("redteam_record_missing_data")
+        def redteam_record_missing_data(missing_data_json: str) -> str:
+            """Record missing data detected by Red Team without writing decisions."""
+            self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
+            data = _json_object_from_text(missing_data_json) or {}
+            missing_data = _string_list(data.get("missing_data"), limit=8)
+            self._deepagent_tool_state.setdefault("redteam", {})["missing_data"] = missing_data
+            return json.dumps({"missing_data_count": len(missing_data)}, ensure_ascii=False)
+
+        @tool("redteam_record_overclaims")
+        def redteam_record_overclaims(overclaims_json: str) -> str:
+            """Record overclaim warnings detected by Red Team without writing decisions."""
+            self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
+            data = _json_object_from_text(overclaims_json) or {}
+            overclaims = _string_list(data.get("overclaims"), limit=8)
+            self._deepagent_tool_state.setdefault("redteam", {})["overclaims"] = overclaims
+            return json.dumps({"overclaim_count": len(overclaims)}, ensure_ascii=False)
+
+        return [
+            redteam_list_scenario_evidence,
+            redteam_search_evidence,
+            redteam_search_contradictions,
+            redteam_record_missing_data,
+            redteam_record_overclaims,
+        ]
+
     def analyze(self, task: AgentTask) -> AgentFinding:
         event = self.event(task)
-        evidence = self.mcp.call("mcp-evidence-ledger", "list_evidence_by_scenario", {"scenario_id": event.scenario_id})
-        unknowns = []
+        self._deepagent_tool_state["redteam"] = {}
+        prior = task.inputs.get("findings", [])
+        self.synthesize(
+            "Use Red Team tools to search evidence, search contradiction candidates, record missing data, "
+            "and record overclaim warnings. Do not write or modify the Decision Queue.\n"
+            f"scenario_id={event.scenario_id}\n"
+            f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
+            f"prior_findings={json.dumps(prior, ensure_ascii=False, default=str)[:3000]}"
+        )
+        state = self._deepagent_tool_state["redteam"]
+        evidence = state.get("evidence")
+        if evidence is None:
+            evidence = self.mcp.call("mcp-evidence-ledger", "list_evidence_by_scenario", {"scenario_id": event.scenario_id})
+        if not state.get("contradiction_searches"):
+            state["contradiction_searches"] = [
+                {
+                    "query": event.title,
+                    "results": self.mcp.call(
+                        "mcp-evidence-ledger",
+                        "search_evidence",
+                        {"query": f"contradiction alternative view {event.title}", "scenario_id": event.scenario_id, "top_k": 5},
+                    ),
+                }
+            ]
+        missing_data = state.get("missing_data") or _redteam_missing_data(event, evidence)
+        overclaims = state.get("overclaims") or _redteam_overclaims(prior, evidence)
+        unknowns = list(missing_data)
         if len(evidence) < 2:
             unknowns.append("External evidence base is thin; avoid high confidence.")
         return AgentFinding(
@@ -359,9 +717,16 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
             confidence="medium" if evidence else "low",
             unknowns=unknowns,
             recommended_actions=["Separate facts, assumptions, and inferred risk paths in the final output."],
-            review_required=bool(unknowns),
+            review_required=bool(unknowns or overclaims),
             rationale="Evidence / Red Team Agent reads Evidence Ledger through MCP and challenges confidence.",
-            metadata={"evidence_count": len(evidence)},
+            metadata={
+                "evidence_count": len(evidence),
+                "contradiction_searches": state.get("contradiction_searches", []),
+                "missing_data": missing_data,
+                "overclaims": overclaims,
+                "deepagent_tool_invoked": bool(state.get("deepagent_tool_invoked")),
+                "decision_queue_written": False,
+            },
         )
 
 
@@ -467,17 +832,11 @@ class OrchestratorDeepAgentService(A2AService):
 
     def run_orchestration(self, task: AgentTask) -> AgentFinding:
         event = RiskEvent.model_validate(task.inputs["risk_event"])
-        self.runner.synthesize(f"Plan stages for scenario {event.title}. Return one sentence.")
-        agent_order = [
-            "client-context-agent",
-            "source-intelligence-agent",
-            "treasury-risk-agent",
-            "legal-risk-agent",
-            "accounting-risk-agent",
-            "procurement-risk-agent",
-            "expert-as-code-agent",
-            "evidence-redteam-agent",
-        ]
+        analysis_plan = self._create_analysis_plan(event)
+        agent_order = [agent_name for agent_name in FIXED_AGENT_ORDER if agent_name in analysis_plan.selected_agents]
+        if not agent_order:
+            analysis_plan = _fallback_analysis_plan()
+            agent_order = list(FIXED_AGENT_ORDER)
         findings: list[dict[str, Any]] = []
         for agent_name in agent_order:
             child_task = AgentTask(
@@ -488,7 +847,11 @@ class OrchestratorDeepAgentService(A2AService):
                 requested_by=self.name,
                 objective=f"Run {agent_name} analysis",
                 mode=agent_name.replace("-agent", ""),
-                inputs={"risk_event": event.model_dump(mode="json"), "findings": findings},
+                inputs={
+                    "risk_event": event.model_dump(mode="json"),
+                    "findings": findings,
+                    "analysis_plan": analysis_plan.model_dump(mode="json"),
+                },
                 expected_output_schema="AgentFinding",
                 trace_id=task.trace_id,
             )
@@ -505,7 +868,7 @@ class OrchestratorDeepAgentService(A2AService):
             requested_by=self.name,
             objective="Generate final Decision-first outputs",
             mode="decision_synthesis",
-            inputs={"risk_event": event.model_dump(mode="json"), "findings": findings},
+            inputs={"risk_event": event.model_dump(mode="json"), "findings": findings, "analysis_plan": analysis_plan.model_dump(mode="json")},
             expected_output_schema="AgentFinding",
             trace_id=task.trace_id,
         )
@@ -521,8 +884,21 @@ class OrchestratorDeepAgentService(A2AService):
             recommended_actions=decision_result.finding.recommended_actions,
             review_required=True,
             rationale="Orchestrator used A2A task requests and did not directly call Tavily, Qdrant, Neo4j, or filesystem.",
-            metadata={"findings": findings},
+            metadata={"analysis_plan": analysis_plan.model_dump(mode="json"), "findings": findings},
         )
+
+    def _create_analysis_plan(self, event: RiskEvent) -> AnalysisPlan:
+        prompt = (
+            "Return only JSON for a bounded risk-analysis plan. Preserve the fixed agent order by selecting names "
+            "from fixed_agent_order; do not invent agent names. Schema: "
+            "{\"selected_agents\": [], \"skipped_agents\": [], \"recheck_conditions\": [], "
+            "\"exploration_questions\": [], \"rationale\": \"...\"}.\n"
+            f"fixed_agent_order={json.dumps(FIXED_AGENT_ORDER)}\n"
+            f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}"
+        )
+        text = self.runner.synthesize(prompt, max_chars=4000)
+        plan = _analysis_plan_from_text(text)
+        return plan or _fallback_analysis_plan()
 
 
 def create_domain_services(settings: Settings, *, embedded_mcp: bool = False) -> dict[str, A2AService]:
@@ -548,6 +924,216 @@ def create_embedded_a2a_apps(settings: Settings, *, embedded_mcp: bool = True) -
 def create_orchestrator_service(settings: Settings, embedded_apps: dict[str, Any] | None = None) -> OrchestratorDeepAgentService:
     client = A2AHttpClient(settings.service_urls, embedded_apps=embedded_apps, settings=settings)
     return OrchestratorDeepAgentService(settings, client)
+
+
+def _analysis_plan_from_text(text: str) -> AnalysisPlan | None:
+    data = _json_object_from_text(text)
+    if not data:
+        return None
+    requested = set(_string_list(data.get("selected_agents"), limit=len(FIXED_AGENT_ORDER)))
+    selected = [agent for agent in FIXED_AGENT_ORDER if agent in requested]
+    if not selected:
+        return None
+    skipped = [agent for agent in FIXED_AGENT_ORDER if agent not in selected]
+    return AnalysisPlan(
+        selected_agents=selected,
+        skipped_agents=skipped,
+        recheck_conditions=_string_list(data.get("recheck_conditions"), limit=12),
+        exploration_questions=_string_list(data.get("exploration_questions"), limit=12),
+        rationale=str(data.get("rationale") or ""),
+        fallback_used=False,
+    )
+
+
+def _fallback_analysis_plan() -> AnalysisPlan:
+    return AnalysisPlan(
+        selected_agents=list(FIXED_AGENT_ORDER),
+        skipped_agents=[],
+        recheck_conditions=["Re-run all fixed-order agents when bounded plan generation fails."],
+        exploration_questions=[],
+        rationale="DeepAgent analysis_plan generation failed or returned no valid selected agents; fixed order was used.",
+        fallback_used=True,
+    )
+
+
+def _json_object_from_text(text: str) -> dict[str, Any] | None:
+    stripped = text.strip()
+    if not stripped:
+        return None
+    try:
+        value = json.loads(stripped)
+        return value if isinstance(value, dict) else None
+    except json.JSONDecodeError:
+        start = stripped.find("{")
+        end = stripped.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return None
+        try:
+            value = json.loads(stripped[start : end + 1])
+        except json.JSONDecodeError:
+            return None
+        return value if isinstance(value, dict) else None
+
+
+def _string_list(value: Any, *, limit: int) -> list[str]:
+    if value is None:
+        return []
+    raw_items = value if isinstance(value, list) else [value]
+    items: list[str] = []
+    for item in raw_items:
+        text = str(item or "").strip()
+        if text and text not in items:
+            items.append(text)
+        if len(items) >= limit:
+            break
+    return items
+
+
+def _select_urls_for_extraction(searches: list[dict[str, Any]], limit: int) -> list[str]:
+    urls: list[str] = []
+    for candidate in _rank_source_candidates(searches, None):
+        url = str(candidate["result"].get("url") or "")
+        if url and url not in urls:
+            urls.append(url)
+        if len(urls) >= limit:
+            break
+    return urls
+
+
+def _rank_source_candidates(searches: list[dict[str, Any]], event: RiskEvent | None) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for search_index, search in enumerate(searches):
+        for result_index, result in enumerate(search.get("results") or []):
+            key = str(result.get("url") or result.get("title") or result.get("content") or "")
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            if event:
+                source_score = score_source(result, event)
+                reliability = _confidence_rank(source_score["reliability"])
+                relevance = _confidence_rank(source_score["client_relevance"])
+                confidence = _confidence_rank(source_score["confidence"])
+            else:
+                reliability = relevance = confidence = 1
+            candidates.append(
+                {
+                    "result": result,
+                    "query_hash": search.get("query_hash"),
+                    "sort_key": (-reliability, -relevance, -confidence, search_index, result_index),
+                }
+            )
+    candidates.sort(key=lambda item: item["sort_key"])
+    return candidates
+
+
+def _confidence_rank(value: Any) -> int:
+    return {"low": 0, "medium": 1, "high": 2}.get(str(value), 0)
+
+
+def _extracted_text_by_url(extractions: list[dict[str, Any]]) -> dict[str, str]:
+    by_url: dict[str, str] = {}
+    for item in extractions:
+        url = str(item.get("url") or "")
+        if not url or item.get("status") != "extracted":
+            continue
+        text = _extract_text_from_tavily_payload(item.get("result"))
+        if text:
+            by_url[url] = text
+    return by_url
+
+
+def _extract_text_from_tavily_payload(payload: Any) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    data = payload.get("result", payload)
+    if isinstance(data, dict):
+        results = data.get("results") or data.get("response") or []
+        if isinstance(results, list):
+            for result in results:
+                if isinstance(result, dict):
+                    text = str(result.get("raw_content") or result.get("content") or "")
+                    if text:
+                        return text
+        text = str(data.get("raw_content") or data.get("content") or "")
+        return text or None
+    return None
+
+
+def _document_ids(items: list[dict[str, Any]]) -> list[str]:
+    ids: list[str] = []
+    for item in items:
+        payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+        for key in ("document_id", "id", "case_id", "note_id"):
+            value = payload.get(key) or item.get(key)
+            if value and str(value) not in ids:
+                ids.append(str(value))
+                break
+    return ids
+
+
+def _recommended_guardrails_from_knowledge(items: list[dict[str, Any]]) -> list[str]:
+    guardrails: list[str] = []
+    for item in items:
+        payload = item.get("payload") if isinstance(item.get("payload"), dict) else item
+        object_type = str(payload.get("object_type") or "")
+        if object_type in {"language_guardrail", "evidence_standard", "review_trigger"}:
+            title = str(payload.get("title") or payload.get("document_id") or "")
+            if title:
+                guardrails.append(title)
+        for effect in payload.get("output_effects") or []:
+            if str(effect) not in guardrails:
+                guardrails.append(str(effect))
+    return guardrails[:8]
+
+
+def _default_counterfactuals(event: RiskEvent) -> list[str]:
+    country = ", ".join(event.countries) if event.countries else "the affected country"
+    return [
+        f"What if the supplier is outside {country} but its bank route is exposed?",
+        "What if public evidence describes sector risk but not this client's product category?",
+        "What if contract continuity risk is lower because alternate supply is already qualified?",
+    ]
+
+
+def _default_domain_issues(domain: str, event: RiskEvent) -> list[str]:
+    defaults = {
+        "treasury": [
+            "Payment route, correspondent bank, and currency controls may change the cash mobility conclusion.",
+            "Near-term invoice timing may require CFO approval before any hold or reroute option.",
+        ],
+        "legal": [
+            "Sanctions proximity, beneficial ownership, and force majeure clauses must be checked before action language is finalized.",
+            "Notice and termination obligations may differ by contract even when the event country is the same.",
+        ],
+        "accounting": [
+            "Provision, impairment, subsequent-event, and disclosure treatment depend on materiality and probability.",
+            "Auditor evidence pack may be needed if supplier continuity or payment recoverability becomes uncertain.",
+        ],
+    }
+    return defaults.get(domain, [f"Explore {domain} implications for {event.risk_type}."])
+
+
+def _redteam_missing_data(event: RiskEvent, evidence: list[dict[str, Any]]) -> list[str]:
+    missing: list[str] = []
+    if not evidence:
+        missing.append("No external evidence is registered for this scenario.")
+    if not any(item.get("reliability") == "high" for item in evidence):
+        missing.append("No high-reliability government, regulator, international organization, or official disclosure source is present.")
+    if event.countries and not any(any(country.lower() in str(item).lower() for country in event.countries) for item in evidence):
+        missing.append("Registered evidence does not clearly mention the affected country.")
+    return missing
+
+
+def _redteam_overclaims(findings: list[dict[str, Any]], evidence: list[dict[str, Any]]) -> list[str]:
+    evidence_ids = {item.get("evidence_id") for item in evidence}
+    warnings: list[str] = []
+    for finding in findings:
+        if finding.get("confidence") == "high" and not set(finding.get("evidence_ids") or []).intersection(evidence_ids):
+            warnings.append(f"{finding.get('agent_name') or finding.get('mode')} uses high confidence without registered supporting evidence.")
+        if (finding.get("risk_score") or 0) >= 80 and not finding.get("review_required"):
+            warnings.append(f"{finding.get('agent_name') or finding.get('mode')} has a high score without review_required=true.")
+    return warnings[:8]
 
 
 def _brief_markdown(event: RiskEvent, findings: list[dict[str, Any]], decision: DecisionItem, evidence: list[dict[str, Any]]) -> str:

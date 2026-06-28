@@ -51,6 +51,14 @@ def test_final_embedded_e2e_with_mocked_tavily_and_dummy_client_data(tmp_path, m
 
     output_dir = tmp_path / "outputs" / event.scenario_id
     assert result.status == "completed"
+    assert result.finding is not None
+    assert result.finding.metadata["analysis_plan"]["fallback_used"] is True
+    findings_by_agent = {item["agent_name"]: item for item in result.finding.metadata["findings"]}
+    assert findings_by_agent["source-intelligence-agent"]["metadata"]["queries"]
+    assert findings_by_agent["source-intelligence-agent"]["metadata"]["extracted_urls"]
+    assert findings_by_agent["expert-as-code-agent"]["metadata"]["knowledge_application_finding"]["similar_case_ids"]
+    assert findings_by_agent["evidence-redteam-agent"]["metadata"]["decision_queue_written"] is False
+    assert "issue_exploration" in findings_by_agent["treasury-risk-agent"]["metadata"]
     assert (output_dir / "final_brief.md").exists()
     assert (output_dir / "decision_queue.json").exists()
     assert (output_dir / "evidence_summary.json").exists()
@@ -94,6 +102,17 @@ class _FakeTavilyClient:
                     "title": "Payment route disruption",
                     "content": "Banks reported increased review of cross-border payments in the affected region.",
                 },
+            ]
+        }
+
+    def extract(self, urls: list[str]):
+        return {
+            "results": [
+                {
+                    "url": url,
+                    "raw_content": f"Extracted authoritative detail for {url}.",
+                }
+                for url in urls
             ]
         }
 

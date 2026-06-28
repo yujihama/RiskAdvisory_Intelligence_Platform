@@ -8,6 +8,8 @@ This checklist maps the implementation instruction to concrete evidence in the c
 - [x] Orchestrator is backed by `create_deep_agent` through `DeepAgentRunner`.
 - [x] Domain Agents are backed by `create_deep_agent` through `DomainDeepAgentService`.
 - [x] The codebase uses the A2A-compatible HTTP/client boundary as the runtime agent boundary.
+- [x] Orchestrator generates a bounded `analysis_plan` JSON and falls back to fixed agent order if generation or validation fails.
+- [x] Source Intelligence, Expert-as-Code, and Evidence / Red Team include DeepAgent tool-use slots; Treasury, Legal, and Accounting include bounded issue-exploration slots while final scoring remains structured.
 
 Evidence:
 
@@ -46,6 +48,7 @@ Verified command summary:
 
 - [x] `mcp-web-search` wraps Tavily.
 - [x] Query Sanitizer redacts IDs, amounts, client/scenario IDs, and domain-specific confidential terms.
+- [x] Source Intelligence performs bounded query planning, multiple sanitized searches, selected URL extraction, and Evidence Ledger registration.
 - [x] Tavily results are normalized to `EvidenceItem`.
 - [x] Evidence registration writes JSONL, indexes Qdrant, and registers Evidence/Scenario relations in Neo4j.
 - [x] Web evidence collection uses Tavily through `mcp-web-search`; there is no local fixture fallback in the runtime path.
@@ -133,6 +136,8 @@ Verified commands:
 - [x] Expert case, question, response, CTA note, and Knowledge Pack version schemas are defined.
 - [x] Sample Knowledge Pack files exist under `data/expert_knowledge/`.
 - [x] Expert-as-Code Agent indexes knowledge objects and case bank into Qdrant.
+- [x] Expert-as-Code Agent uses bounded DeepAgent tools for similar cases, rubrics, red flags, CTA notes, and counterfactuals.
+- [x] Expert-as-Code emits a structured `KnowledgeApplicationFinding` inside the AgentFinding metadata.
 - [x] Expert-as-Code output is reflected in `DecisionItem.expert_knowledge_ids`.
 
 Evidence:
