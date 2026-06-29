@@ -1,0 +1,1313 @@
+{
+  "request": {
+    "event_title": "US government restrictions on public release of frontier LLM models",
+    "event_description": "The US government may restrict or condition public release, open-weight distribution, API availability, export, or deployment of the latest frontier LLM models for national security, cyber, biosecurity, export-control, and strategic competition reasons. The event may affect enterprise AI roadmaps, vendor access, model procurement, software development, document automation, regulated data processing, customer-facing AI features, compliance, information security, business continuity, and international operations.",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_text": "Fujifilm enterprise AI and LLM use across software development, document automation, customer support, R&D, regulated data processing, cloud AI procurement, legal compliance, information security, business continuity, and international operations.",
+      "scope_type": "company",
+      "scope_name": null,
+      "department": null,
+      "region": null,
+      "site_id": null,
+      "metadata": {}
+    },
+    "countries": [
+      "United States"
+    ],
+    "event_date": null,
+    "max_risks": 5
+  },
+  "discovery_metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 5,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      },
+      "segments": {
+        "dataset": "segments",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "regions": {
+        "dataset": "regions",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 5,
+        "countries": [
+          "Japan",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      },
+      "payments": {
+        "dataset": "payments",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [
+          "EUR",
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 5,
+        "amount_buckets": {
+          "1m_5m": 2,
+          "gte_50m": 1,
+          "250k_1m": 2
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      }
+    },
+    "scope_interpretation": {
+      "scope_text": "Fujifilm enterprise AI and LLM use across software development, document automation, customer support, R&D, regulated data processing, cloud AI procurement, legal compliance, information security, business continuity, and international operations.",
+      "matched_domains": [
+        "logistics",
+        "procurement",
+        "legal"
+      ],
+      "matched_terms": [
+        "port",
+        "procurement",
+        "compliance",
+        "legal"
+      ],
+      "primary_risk_types": [
+        "supplier_resilience",
+        "legal_compliance"
+      ],
+      "source": "scope_text"
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 5,
+    "coverage_augmented_candidate_count": 0,
+    "web_search_count": 1,
+    "web_extraction_count": 2,
+    "web_searches": [
+      {
+        "query": "US government restrictions frontier LLM model export controls 2024 2025",
+        "query_hash": "a7e5235641750b72",
+        "result_count": 3,
+        "results": [
+          {
+            "title": "2025 AI Diffusion Export Controls - Microsoft Regulatory Capture ...",
+            "url": "https://newsletter.semianalysis.com/p/2025-ai-diffusion-export-controls-microsoft-regulatory-capture-oracle-tears",
+            "content": "The prevailing rationale within the US government is that AI progress has become so rapid, that access to compute to build and improve these models over the next few years will decide the fate of the next global order for decades to come. It establishes a Validated End User (VEU) framework that identifies the entiti..."
+          },
+          {
+            "title": "What to Know About the New U.S. AI Diffusion Policy and Export ...",
+            "url": "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls",
+            "content": "# What to Know About the New U.S. AI Diffusion Policy and Export Controls. The Biden administration released new export controls on Monday, January 13, placing restrictions on advanced AI chips, cloud access, and model weights. The policy lays out a global framework to govern the export of frontier artificial intell..."
+          },
+          {
+            "title": "Thought for the week: US government order forces commercial ...",
+            "url": "https://iapp.org/news/a/thought-for-the-week-us-government-order-forces-commercial-suspension-of-two-fronteir-ai-models",
+            "content": "On 12 June, the U.S. Department of Commerce ordered a [leading artificial intelligence developer](https://www.androidauthority.com/us-government-anthropic-fable-5-mythos-5-suspension-3677315/)to suspend foreign national access to two of its frontier AI models. The Trump Administration's recent [executive order](http..."
+          }
+        ],
+        "status": "ok"
+      }
+    ],
+    "web_extractions": [
+      {
+        "url": "https://iapp.org/news/a/thought-for-the-week-us-government-order-forces-commercial-suspension-of-two-fronteir-ai-models",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "Thought for the week: US government order forces commercial ...",
+            "url": "https://iapp.org/news/a/thought-for-the-week-us-government-order-forces-commercial-suspension-of-two-fronteir-ai-models",
+            "content": "[Skip to Content](#chakra-skip-nav) # Thought for the week: US government order forces commercial suspension of two frontier AI models The unexpected order highlights growing risk impact for multinational companies. Organizations should begin planning for potential AI model unavailability in workflows. Published [Su..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "url": "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "What to Know About the New U.S. AI Diffusion Policy and Export ...",
+            "url": "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls",
+            "content": "# What to Know About the New U.S. AI Diffusion Policy and Export Controls The Biden administration released new export controls on Monday, January 13, placing restrictions on advanced AI chips, cloud access, and model weights. The measures’ implementation will rely on the Trump administration’s support. ![<p>Flags o..."
+          }
+        ],
+        "status": "ok"
+      }
+    ],
+    "event_facts": {
+      "affected_geographies": [
+        "United States",
+        "Global (tiered country framework under AI Diffusion Rule)",
+        "Japan",
+        "China",
+        "Middle East"
+      ],
+      "affected_industries": [
+        "Artificial Intelligence / Machine Learning",
+        "Cloud Computing",
+        "Enterprise Software",
+        "Semiconductor",
+        "Document Processing",
+        "Regulated Data Services"
+      ],
+      "infrastructure_chokepoints": [
+        "Cloud AI API endpoints for frontier LLM models",
+        "Model weight distribution channels (open-weight repositories, Hugging Face, GitHub)",
+        "GPU and AI accelerator supply chains",
+        "Validated End User (VEU) authorization process"
+      ],
+      "critical_goods_or_services": [
+        "Frontier LLM model weights (open and closed)",
+        "API access to frontier AI models via cloud providers",
+        "Cloud AI compute capacity",
+        "AI accelerator chips (GPUs, TPUs)",
+        "Enterprise AI licensing and subscriptions"
+      ],
+      "regulatory_or_sanctions_signals": [
+        "AI Diffusion Rule export controls on model weights and chips (Jan 2025)",
+        "Validated End User (VEU) framework for AI model access",
+        "US Dept of Commerce order suspending foreign national access to two frontier AI models (June 2025)",
+        "Executive orders on AI model release restrictions",
+        "BIS entity list and country-tier restrictions on AI technology"
+      ],
+      "financial_or_payment_signals": [
+        "Cloud AI procurement contract repricing or termination risk",
+        "Licensing fee changes for restricted models",
+        "Potential penalties for non-compliance with export controls"
+      ],
+      "supply_chain_tier_risks": [
+        "Tier-1: Cloud AI providers (AWS, Azure, GCP) as API gateways to frontier models",
+        "Tier-1: Frontier model developers (OpenAI, Anthropic, Google DeepMind) as upstream suppliers",
+        "Tier-2: GPU manufacturers (NVIDIA, AMD) as compute infrastructure suppliers",
+        "Tier-3: Open-weight model community as alternative sourcing channel now restricted"
+      ],
+      "time_horizons": [
+        "Immediate: Commerce Dept suspension orders already issued",
+        "Near-term (0-6 months): AI Diffusion Rule implementation and VEU framework rollout",
+        "Medium-term (6-18 months): Potential expansion of restricted model list and country tiers"
+      ],
+      "source_refs": [
+        {
+          "title": "What to Know About the New U.S. AI Diffusion Policy and Export Controls",
+          "url": "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls"
+        },
+        {
+          "title": "US government order forces commercial suspension of two frontier AI models",
+          "url": "https://iapp.org/news/a/thought-for-the-week-us-government-order-forces-commercial-suspension-of-two-fronteir-ai-models"
+        },
+        {
+          "title": "2025 AI Diffusion Export Controls",
+          "url": "https://newsletter.semianalysis.com/p/2025-ai-diffusion-export-controls-microsoft-regulatory-capture-oracle-tears"
+        }
+      ],
+      "uncertainties": [
+        "Trump administration may modify or rescind Biden-era AI Diffusion Rule",
+        "Scope of which models qualify as frontier remains undefined and subject to change",
+        "Whether open-weight models already released can be retroactively restricted",
+        "Impact on existing enterprise AI contracts and SLAs unclear",
+        "Japan position in country-tier framework not yet confirmed",
+        "Enforcement mechanisms for model weight restrictions still being developed"
+      ]
+    },
+    "event_facts_source": "agent_recorded",
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?",
+      "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+      "Which counterparties require beneficial ownership or restricted party review?",
+      "Which selected risks require executive cross-functional decision ownership?",
+      "Which evidence gaps block immediate mitigation decisions?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring.",
+      "Counterparty restricted-party status and contract notice obligations require legal validation."
+    ],
+    "scope_relevance_rule_count": 10
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "Cloud AI API Gateway Disruption from Frontier Model Restrictions",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "cloud AI procurement",
+        "API access",
+        "vendor lock-in",
+        "model availability"
+      ],
+      "affected_categories": [
+        "cloud AI providers",
+        "enterprise AI workflows",
+        "document automation",
+        "customer support",
+        "software development"
+      ],
+      "description": "Tier-1 cloud AI providers (AWS, Azure, GCP) may be compelled to restrict or terminate API access to frontier LLM models under US government export control orders. Enterprise workflows for document automation, customer support, and AI-assisted software development that depend on these APIs would face immediate service degradation or outage with no contractual recourse.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "cloud AI procurement",
+        "software development",
+        "document automation",
+        "customer support",
+        "business continuity",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:procurement",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "port",
+        "procurement",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "The June 2025 Commerce Dept order already forced suspension of two frontier models. Cloud providers serve as the API gateway layer; restrictions flow through them to enterprise customers. Contracts with cloud providers may not cover government-mandated service termination, leaving procurement teams exposed.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-002",
+      "title": "Sudden Frontier Model Suspension by Commerce Department Order",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "regulatory action",
+        "model unavailability",
+        "zero-notice disruption",
+        "R&D dependency"
+      ],
+      "affected_categories": [
+        "frontier model developers",
+        "R&D pipelines",
+        "production AI systems",
+        "regulated data processing"
+      ],
+      "description": "The US Department of Commerce can issue orders requiring immediate suspension of access to specific frontier AI models, as demonstrated in June 2025. Enterprise R&D and production systems that have integrated specific model versions into validated workflows face sudden unavailability with no transition period, forcing emergency re-architecture of dependent systems.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "R&D",
+        "regulated data processing",
+        "business continuity",
+        "information security",
+        "scope_text:primary",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term"
+      ],
+      "rationale": "Unlike gradual policy changes, Commerce Dept suspension orders take effect immediately with no advance notice. The June 2025 precedent shows this is not hypothetical. R&D and regulated workflows that have been validated against specific model versions cannot simply swap models without re-validation.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-003",
+      "title": "Export Control Compliance Exposure in International AI Operations",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "export controls",
+        "VEU framework",
+        "cross-border AI",
+        "sanctions compliance",
+        "country-tier restrictions"
+      ],
+      "affected_categories": [
+        "international operations",
+        "legal compliance",
+        "AI procurement",
+        "cross-border data flows"
+      ],
+      "description": "The AI Diffusion Rule establishes a Validated End User (VEU) framework and country-tier system governing export of frontier AI model weights and access. Multinational enterprises operating across jurisdictions face complex compliance obligations: ensuring AI deployments in each country comply with tier restrictions, obtaining VEU authorization where required, and preventing deemed exports to restricted foreign nationals within their own workforce.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "international operations",
+        "legal compliance",
+        "cloud AI procurement",
+        "information security",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:procurement",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "port",
+        "procurement",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "The VEU framework creates a new compliance regime specifically for AI models, distinct from existing chip export controls. Japan-based operations accessing US-origin frontier models must determine their country-tier classification and VEU eligibility. Contracts with sanctions clauses (present in client contract portfolio) may trigger counterparty review obligations.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-004",
+      "title": "Regulated Data Processing Validation Gap from Forced Model Substitution",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "regulated data",
+        "model validation",
+        "audit trail integrity",
+        "regulatory approval continuity"
+      ],
+      "affected_categories": [
+        "regulated data processing",
+        "compliance workflows",
+        "quality assurance",
+        "audit and validation"
+      ],
+      "description": "When frontier models used in regulated data processing are restricted or suspended, enterprises must substitute alternative models. However, regulatory approvals, validation protocols, and audit trails tied to specific model versions may not transfer to substitute models, creating compliance gaps. Re-validation cycles for regulated workflows can take months, during which processing may need to halt or revert to manual methods.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "regulated data processing",
+        "legal compliance",
+        "business continuity",
+        "R&D",
+        "scope_text:primary",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term"
+      ],
+      "rationale": "Regulated data processing workflows require documented validation of the AI model used. Forced model substitution breaks the validation chain. This is a legal compliance risk distinct from supplier resilience because the core issue is regulatory approval continuity, not vendor availability.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-005",
+      "title": "Open-Weight Model Fallback Channel Elimination",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "open-weight restrictions",
+        "alternative sourcing",
+        "business continuity planning",
+        "model distribution channels"
+      ],
+      "affected_categories": [
+        "open-source AI ecosystem",
+        "business continuity fallback",
+        "self-hosted AI infrastructure",
+        "R&D experimentation"
+      ],
+      "description": "US government restrictions on open-weight distribution of frontier LLM models through repositories (Hugging Face, GitHub) and direct downloads eliminate the primary alternative sourcing strategy enterprises use when commercial API access is disrupted. Self-hosted AI infrastructure plans that assumed access to open-weight frontier models as a fallback become non-viable, collapsing both primary and secondary sourcing channels simultaneously.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "business continuity",
+        "information security",
+        "R&D",
+        "software development",
+        "scope_text:primary",
+        "SCOPE-DEPT-PROCUREMENT-001:primary",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "Enterprise business continuity plans for AI typically assume open-weight models can serve as fallback when commercial APIs fail. Restrictions on open-weight distribution close this fallback channel. This is a distinct supplier resilience risk from API disruption because it affects the alternative sourcing tier, not the primary commercial channel. The mechanism is distribution channel restriction rather than API termination.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001",
+      "client_id": "fujifilm_dummy",
+      "title": "Cloud AI API Gateway Disruption from Frontier Model Restrictions",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "cloud AI procurement",
+        "API access",
+        "vendor lock-in",
+        "model availability"
+      ],
+      "affected_categories": [
+        "cloud AI providers",
+        "enterprise AI workflows",
+        "document automation",
+        "customer support",
+        "software development"
+      ],
+      "description": "Tier-1 cloud AI providers (AWS, Azure, GCP) may be compelled to restrict or terminate API access to frontier LLM models under US government export control orders. Enterprise workflows for document automation, customer support, and AI-assisted software development that depend on these APIs would face immediate service degradation or outage with no contractual recourse.",
+      "event_date": "2026-06-29",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002",
+      "client_id": "fujifilm_dummy",
+      "title": "Sudden Frontier Model Suspension by Commerce Department Order",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "regulatory action",
+        "model unavailability",
+        "zero-notice disruption",
+        "R&D dependency"
+      ],
+      "affected_categories": [
+        "frontier model developers",
+        "R&D pipelines",
+        "production AI systems",
+        "regulated data processing"
+      ],
+      "description": "The US Department of Commerce can issue orders requiring immediate suspension of access to specific frontier AI models, as demonstrated in June 2025. Enterprise R&D and production systems that have integrated specific model versions into validated workflows face sudden unavailability with no transition period, forcing emergency re-architecture of dependent systems.",
+      "event_date": "2026-06-29",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003",
+      "client_id": "fujifilm_dummy",
+      "title": "Export Control Compliance Exposure in International AI Operations",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "export controls",
+        "VEU framework",
+        "cross-border AI",
+        "sanctions compliance",
+        "country-tier restrictions"
+      ],
+      "affected_categories": [
+        "international operations",
+        "legal compliance",
+        "AI procurement",
+        "cross-border data flows"
+      ],
+      "description": "The AI Diffusion Rule establishes a Validated End User (VEU) framework and country-tier system governing export of frontier AI model weights and access. Multinational enterprises operating across jurisdictions face complex compliance obligations: ensuring AI deployments in each country comply with tier restrictions, obtaining VEU authorization where required, and preventing deemed exports to restricted foreign nationals within their own workforce.",
+      "event_date": "2026-06-29",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004",
+      "client_id": "fujifilm_dummy",
+      "title": "Regulated Data Processing Validation Gap from Forced Model Substitution",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "regulated data",
+        "model validation",
+        "audit trail integrity",
+        "regulatory approval continuity"
+      ],
+      "affected_categories": [
+        "regulated data processing",
+        "compliance workflows",
+        "quality assurance",
+        "audit and validation"
+      ],
+      "description": "When frontier models used in regulated data processing are restricted or suspended, enterprises must substitute alternative models. However, regulatory approvals, validation protocols, and audit trails tied to specific model versions may not transfer to substitute models, creating compliance gaps. Re-validation cycles for regulated workflows can take months, during which processing may need to halt or revert to manual methods.",
+      "event_date": "2026-06-29",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005",
+      "client_id": "fujifilm_dummy",
+      "title": "Open-Weight Model Fallback Channel Elimination",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "open-weight restrictions",
+        "alternative sourcing",
+        "business continuity planning",
+        "model distribution channels"
+      ],
+      "affected_categories": [
+        "open-source AI ecosystem",
+        "business continuity fallback",
+        "self-hosted AI infrastructure",
+        "R&D experimentation"
+      ],
+      "description": "US government restrictions on open-weight distribution of frontier LLM models through repositories (Hugging Face, GitHub) and direct downloads eliminate the primary alternative sourcing strategy enterprises use when commercial API access is disrupted. Self-hosted AI infrastructure plans that assumed access to open-weight frontier models as a fallback become non-viable, collapsing both primary and secondary sourcing channels simultaneously.",
+      "event_date": "2026-06-29",
+      "urgency": "medium"
+    }
+  ],
+  "decision_consolidation_rules": [
+    {
+      "rule_id": "DECISION-CONSOLIDATION-SANCTIONS-001",
+      "group_id": "sanctions_review",
+      "match_terms": [
+        "sanction",
+        "restricted party",
+        "screening",
+        "beneficial ownership",
+        "export control"
+      ],
+      "required_owners": [
+        "Legal"
+      ],
+      "primary_owner": "Legal",
+      "secondary_owners": [
+        "Treasury",
+        "Procurement"
+      ],
+      "rationale": "Sanctions-related decisions require Legal ownership, with execution support from the affected function."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-PAYMENT-001",
+      "group_id": "payment_execution",
+      "match_terms": [
+        "payment",
+        "cash",
+        "bank",
+        "liquidity",
+        "funding",
+        "route",
+        "currency"
+      ],
+      "required_owners": [
+        "Treasury",
+        "Legal"
+      ],
+      "primary_owner": "Treasury",
+      "secondary_owners": [
+        "Legal"
+      ],
+      "rationale": "Payment execution decisions should combine Treasury execution ownership with Legal review when sanctions or bank-route constraints may apply."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-SUPPLIER-001",
+      "group_id": "supplier_continuity",
+      "match_terms": [
+        "supplier",
+        "procurement",
+        "alternative",
+        "inventory",
+        "sourcing",
+        "logistics",
+        "shipment"
+      ],
+      "required_owners": [
+        "Procurement",
+        "Operations"
+      ],
+      "primary_owner": "Procurement",
+      "secondary_owners": [
+        "Operations"
+      ],
+      "rationale": "Supplier continuity decisions should be consolidated into procurement and operations actions, not split across isolated risk memos."
+    },
+    {
+      "rule_id": "DECISION-CONSOLIDATION-CONTRACT-001",
+      "group_id": "contract_review",
+      "match_terms": [
+        "contract",
+        "notice",
+        "force majeure",
+        "termination",
+        "clause",
+        "customer commitment"
+      ],
+      "required_owners": [
+        "Legal"
+      ],
+      "primary_owner": "Legal",
+      "secondary_owners": [
+        "Sales",
+        "Customer Success"
+      ],
+      "rationale": "Contract notice and customer-commitment decisions require Legal as primary owner with commercial teams included where customer obligations are affected."
+    }
+  ],
+  "portfolio_overview": {
+    "analysis_count": 5,
+    "completed_count": 5,
+    "failed_count": 0,
+    "status_counts": {
+      "completed": 5
+    },
+    "risk_types": [
+      "legal_compliance",
+      "supplier_resilience"
+    ],
+    "total_decisions": 5,
+    "total_evidence": 25,
+    "evidence_domains": [
+      "agilebrandguide.com",
+      "aiassemblylines.com",
+      "cepa.org",
+      "cfr.org",
+      "cov.com",
+      "digitalapplied.com",
+      "federalregister.gov",
+      "fifthrow.com",
+      "finnegan.com",
+      "iapp.org",
+      "img.supplychainconnect.com",
+      "linkedin.com",
+      "mayerbrown.com",
+      "modulos.ai",
+      "newsletter.semianalysis.com",
+      "part11solutions.com",
+      "rand.org",
+      "rebuilding.tech",
+      "sciencedirect.com",
+      "techjacksolutions.com",
+      "truefoundry.com",
+      "verifywise.ai",
+      "wilmerhale.com",
+      "zapier.com"
+    ],
+    "review_required_scenarios": [
+      "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001",
+      "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002",
+      "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003",
+      "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004",
+      "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005"
+    ],
+    "priority_decisions": [
+      {
+        "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003",
+        "risk_type": "legal_compliance",
+        "decision": "Implement a comprehensive export control compliance program focused on the US AI Diffusion Rule, including establishing a Validated End User (VEU) authorization process, enforcing country-tier restrictions, and preventing deemed exports to restricted foreign nationals within the US workforce.",
+        "owner": "Chief Compliance Officer (CCO)",
+        "priority": 1,
+        "review_required": true
+      },
+      {
+        "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001",
+        "risk_type": "legal_compliance",
+        "decision": "Initiate a comprehensive legal and operational review of current cloud AI API contracts and dependencies to assess exposure to US government export control restrictions and develop contingency plans for potential API access disruptions.",
+        "owner": "Legal and Procurement Teams",
+        "priority": 2,
+        "review_required": true
+      },
+      {
+        "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002",
+        "risk_type": "legal_compliance",
+        "decision": "Initiate immediate legal and operational compliance review to assess impact of US Department of Commerce's sudden suspension order on Fujifilm's frontier AI model usage, and develop contingency plans to re-architect affected R&D and production systems.",
+        "owner": "Head of Legal Compliance and Chief Technology Officer",
+        "priority": 2,
+        "review_required": true
+      },
+      {
+        "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004",
+        "risk_type": "legal_compliance",
+        "decision": "Initiate a comprehensive compliance validation and re-validation project for all substituted AI models used in regulated data processing workflows to ensure audit trail integrity and maintain regulatory approval continuity. This includes mapping current model usage, identifying gaps in validation and audit trails, and engaging with regulatory bodies to confirm acceptance criteria for substitute models.",
+        "owner": "Chief Compliance Officer (CCO)",
+        "priority": 3,
+        "review_required": true
+      },
+      {
+        "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005",
+        "risk_type": "supplier_resilience",
+        "decision": "Initiate a comprehensive review and update of Fujifilm's AI sourcing and business continuity plans to identify and implement alternative sourcing strategies beyond open-weight frontier LLM models, including exploring commercial API providers and proprietary model development.",
+        "owner": "Head of AI Strategy and Supplier Risk Management",
+        "priority": 3,
+        "review_required": true
+      }
+    ],
+    "consolidated_decisions": [
+      {
+        "group_id": "sanctions_review",
+        "rule_id": "DECISION-CONSOLIDATION-SANCTIONS-001",
+        "decision": "Initiate a comprehensive legal and operational review of current cloud AI API contracts and dependencies to assess exposure to US government export control restrictions and develop contingency plans for potential API access disruptions.",
+        "owners": [
+          "Chief Compliance Officer (CCO)",
+          "Legal",
+          "Procurement Teams"
+        ],
+        "required_owners": [
+          "Legal"
+        ],
+        "primary_owner": "Legal",
+        "secondary_owners": [
+          "Treasury",
+          "Procurement"
+        ],
+        "owner_gap": [],
+        "deadlines": [
+          "2026-07-15",
+          "2026-07-31"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001",
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003"
+        ],
+        "risk_types": [
+          "legal_compliance"
+        ],
+        "source_count": 2,
+        "priority": 1,
+        "review_required": true,
+        "rationale": "Sanctions-related decisions require Legal ownership, with execution support from the affected function."
+      },
+      {
+        "group_id": "initiate_immediate_legal_operational_compliance",
+        "rule_id": null,
+        "decision": "Initiate immediate legal and operational compliance review to assess impact of US Department of Commerce's sudden suspension order on Fujifilm's frontier AI model usage, and develop contingency plans to re-architect affected R&D and production systems.",
+        "owners": [
+          "Chief Technology Officer",
+          "Head of Legal Compliance"
+        ],
+        "required_owners": [],
+        "primary_owner": null,
+        "secondary_owners": [],
+        "owner_gap": [],
+        "deadlines": [
+          "2026-07-10"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002"
+        ],
+        "risk_types": [
+          "legal_compliance"
+        ],
+        "source_count": 1,
+        "priority": 2,
+        "review_required": true,
+        "rationale": null
+      },
+      {
+        "group_id": "initiate_comprehensive_compliance_validation_validation",
+        "rule_id": null,
+        "decision": "Initiate a comprehensive compliance validation and re-validation project for all substituted AI models used in regulated data processing workflows to ensure audit trail integrity and maintain regulatory approval continuity. This includes mapping current model usage, identifying gaps in validation and audit trails, and engaging with regulatory bodies to confirm acceptance criteria for substitute models.",
+        "owners": [
+          "Chief Compliance Officer (CCO)"
+        ],
+        "required_owners": [],
+        "primary_owner": null,
+        "secondary_owners": [],
+        "owner_gap": [],
+        "deadlines": [
+          "2026-09-30"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004"
+        ],
+        "risk_types": [
+          "legal_compliance"
+        ],
+        "source_count": 1,
+        "priority": 3,
+        "review_required": true,
+        "rationale": null
+      },
+      {
+        "group_id": "supplier_continuity",
+        "rule_id": "DECISION-CONSOLIDATION-SUPPLIER-001",
+        "decision": "Initiate a comprehensive review and update of Fujifilm's AI sourcing and business continuity plans to identify and implement alternative sourcing strategies beyond open-weight frontier LLM models, including exploring commercial API providers and proprietary model development.",
+        "owners": [
+          "Head of AI Strategy",
+          "Supplier Risk Management"
+        ],
+        "required_owners": [
+          "Procurement",
+          "Operations"
+        ],
+        "primary_owner": "Procurement",
+        "secondary_owners": [
+          "Operations"
+        ],
+        "owner_gap": [
+          "Procurement",
+          "Operations"
+        ],
+        "deadlines": [
+          "2026-09-30"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005"
+        ],
+        "risk_types": [
+          "supplier_resilience"
+        ],
+        "source_count": 1,
+        "priority": 3,
+        "review_required": true,
+        "rationale": "Supplier continuity decisions should be consolidated into procurement and operations actions, not split across isolated risk memos."
+      }
+    ],
+    "decisions_by_owner": {
+      "Chief Compliance Officer (CCO)": 2,
+      "Head of AI Strategy and Supplier Risk Management": 1,
+      "Head of Legal Compliance and Chief Technology Officer": 1,
+      "Legal and Procurement Teams": 1
+    },
+    "decisions_by_deadline": {
+      "2026-07-10": 1,
+      "2026-07-15": 1,
+      "2026-07-31": 1,
+      "2026-09-30": 2
+    },
+    "decision_conflicts": [
+      {
+        "group_id": "sanctions_review",
+        "issue": "Potential duplicate decision with different owner or deadline.",
+        "owners": [
+          "Chief Compliance Officer (CCO)",
+          "Legal",
+          "Procurement Teams"
+        ],
+        "deadlines": [
+          "2026-07-15",
+          "2026-07-31"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001",
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003"
+        ],
+        "rule_id": "DECISION-CONSOLIDATION-SANCTIONS-001"
+      },
+      {
+        "group_id": "supplier_continuity",
+        "issue": "Required owner is missing from consolidated decision.",
+        "missing_owners": [
+          "Procurement",
+          "Operations"
+        ],
+        "required_owners": [
+          "Procurement",
+          "Operations"
+        ],
+        "owners": [
+          "Head of AI Strategy",
+          "Supplier Risk Management"
+        ],
+        "deadlines": [
+          "2026-09-30"
+        ],
+        "scenario_ids": [
+          "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005"
+        ],
+        "rule_id": "DECISION-CONSOLIDATION-SUPPLIER-001"
+      }
+    ]
+  },
+  "analyses": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001",
+      "title": "Cloud AI API Gateway Disruption from Frontier Model Restrictions",
+      "risk_type": "legal_compliance",
+      "risk_themes": [
+        "cloud AI procurement",
+        "API access",
+        "vendor lock-in",
+        "model availability"
+      ],
+      "urgency": "high",
+      "status": "completed",
+      "trace_id": "b7a66132-1d50-438c-a830-01c3e0293e5b",
+      "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001",
+      "error": null,
+      "decision_count": 1,
+      "decisions": [
+        {
+          "decision_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001_decision_001",
+          "decision": "Initiate a comprehensive legal and operational review of current cloud AI API contracts and dependencies to assess exposure to US government export control restrictions and develop contingency plans for potential API access disruptions.",
+          "owner": "Legal and Procurement Teams",
+          "deadline": "2026-07-15",
+          "deadline_rationale": "Given the high urgency of the risk scenario with imminent government restrictions effective around June 29, 2026, but considering the need for thorough contract review and operational planning, a two-week deadline balances urgency with feasibility for informed decision-making.",
+          "deadline_signals": [
+            "Event date is 2026-06-29 with high urgency",
+            "Legal agent identified 5 contracts with sanctions or force majeure clauses requiring review",
+            "Evidence indicates likely immediate API access restrictions by Tier-1 cloud AI providers",
+            "Prior findings recommend validating supplier criticality and dependencies",
+            "Expert knowledge and evidence highlight vendor lock-in risks and operational disruption"
+          ],
+          "rationale": "The scenario describes imminent US government export control orders that may compel Tier-1 cloud AI providers to restrict or terminate API access to frontier LLM models, causing immediate service degradation or outage in critical enterprise AI workflows. Evidence from multiple medium-confidence sources confirms the operational and legal risks of vendor lock-in and the difficulty of switching providers without disruption. Prior agent findings emphasize the need for contract clause review and supplier dependency validation. Given the high risk score and medium confidence in legal exposure, prompt action is required to mitigate legal compliance risks and operational continuity threats.",
+          "options": [
+            "Conduct immediate legal review of all cloud AI API contracts focusing on sanctions, termination, and force majeure clauses",
+            "Map and validate all supplier and sub-tier dependencies related to cloud AI APIs",
+            "Develop contingency plans including alternative AI providers or fallback workflows",
+            "Negotiate contract amendments to include portability and resilience clauses",
+            "Engage cross-functional teams for coordinated risk mitigation and communication"
+          ],
+          "evidence_ids": [
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001_tavily_001",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001_tavily_002",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001_tavily_003",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001_tavily_004",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_001_tavily_005"
+          ],
+          "expert_knowledge_ids": [
+            "LEG-RF-002",
+            "DECISION-CONSOLIDATION-CONTRACT-001",
+            "PRC-RF-002",
+            "XFN-GUARD-001",
+            "P-LEG-GUARD-001"
+          ],
+          "risk_if_delayed": "Delaying action risks sudden loss of API access to critical AI services without contractual recourse, causing operational outages, legal non-compliance, and significant business disruption.",
+          "review_required": true,
+          "priority": 2
+        }
+      ],
+      "evidence_count": 5,
+      "evidence_domains": [
+        "agilebrandguide.com",
+        "aiassemblylines.com",
+        "cfr.org",
+        "techjacksolutions.com",
+        "zapier.com"
+      ],
+      "orchestrator_finding": null
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002",
+      "title": "Sudden Frontier Model Suspension by Commerce Department Order",
+      "risk_type": "legal_compliance",
+      "risk_themes": [
+        "regulatory action",
+        "model unavailability",
+        "zero-notice disruption",
+        "R&D dependency"
+      ],
+      "urgency": "high",
+      "status": "completed",
+      "trace_id": "c0c998b3-1d55-44e3-9037-28025ba93020",
+      "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002",
+      "error": null,
+      "decision_count": 1,
+      "decisions": [
+        {
+          "decision_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002_decision_001",
+          "decision": "Initiate immediate legal and operational compliance review to assess impact of US Department of Commerce's sudden suspension order on Fujifilm's frontier AI model usage, and develop contingency plans to re-architect affected R&D and production systems.",
+          "owner": "Head of Legal Compliance and Chief Technology Officer",
+          "deadline": "2026-07-10",
+          "deadline_rationale": "Given the high urgency and zero-notice nature of the US Commerce Department's suspension order, a near-term deadline within two weeks is necessary to mitigate operational disruption and ensure legal compliance. This timeframe balances the need for rapid response with the complexity of assessing dependencies and planning system changes.",
+          "deadline_signals": [
+            "high urgency indicated in risk event",
+            "zero-notice disruption risk theme",
+            "legal compliance risk type",
+            "prior findings recommending review and validation",
+            "medium confidence in evidence supporting regulatory action"
+          ],
+          "rationale": "The US Department of Commerce's authority to issue immediate suspension orders on frontier AI models creates a significant legal compliance risk and operational disruption for Fujifilm's R&D and production systems that depend on these models. Evidence from multiple medium-confidence sources confirms regulatory action and zero-notice model unavailability risks. Prior agent findings highlight the need for supplier and contract review, and legal clauses related to sanctions and force majeure. Given the potential for sudden loss of access to critical AI models, proactive legal and technical mitigation is essential to maintain compliance and operational continuity.",
+          "options": [
+            "Conduct immediate legal review of contracts and compliance obligations",
+            "Audit current AI model dependencies in R&D and production",
+            "Develop alternative AI model sourcing or in-house capabilities",
+            "Engage with US regulatory authorities for clarification and compliance guidance",
+            "Implement emergency re-architecture plans for affected systems"
+          ],
+          "evidence_ids": [
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002_tavily_001",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002_tavily_002",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002_tavily_003",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002_tavily_004",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_002_tavily_005"
+          ],
+          "expert_knowledge_ids": [
+            "LEG-RF-002",
+            "DECISION-CONSOLIDATION-SANCTIONS-001",
+            "CASE-LEG-002"
+          ],
+          "risk_if_delayed": "Delaying action risks non-compliance with US export controls, potential legal penalties, and severe operational disruption due to sudden loss of access to critical AI models integrated into validated workflows.",
+          "review_required": true,
+          "priority": 2
+        }
+      ],
+      "evidence_count": 5,
+      "evidence_domains": [
+        "cepa.org",
+        "finnegan.com",
+        "iapp.org",
+        "img.supplychainconnect.com",
+        "mayerbrown.com"
+      ],
+      "orchestrator_finding": null
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003",
+      "title": "Export Control Compliance Exposure in International AI Operations",
+      "risk_type": "legal_compliance",
+      "risk_themes": [
+        "export controls",
+        "VEU framework",
+        "cross-border AI",
+        "sanctions compliance",
+        "country-tier restrictions"
+      ],
+      "urgency": "high",
+      "status": "completed",
+      "trace_id": "97e39e99-16d0-4695-9d64-9b5346de1dfd",
+      "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003",
+      "error": null,
+      "decision_count": 1,
+      "decisions": [
+        {
+          "decision_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003_decision_001",
+          "decision": "Implement a comprehensive export control compliance program focused on the US AI Diffusion Rule, including establishing a Validated End User (VEU) authorization process, enforcing country-tier restrictions, and preventing deemed exports to restricted foreign nationals within the US workforce.",
+          "owner": "Chief Compliance Officer (CCO)",
+          "deadline": "2026-07-31",
+          "deadline_rationale": "Given the high urgency of the risk scenario and the effective date of the AI Diffusion Rule on 2026-06-29, a one-month deadline allows sufficient time to operationalize compliance measures while addressing the immediate legal compliance exposure.",
+          "deadline_signals": [
+            "Event date of 2026-06-29 for AI Diffusion Rule enforcement",
+            "High urgency classification of the risk scenario",
+            "Legal compliance risk score of 100 from legal-risk-agent",
+            "Recommendations from multiple agents to review and implement controls promptly"
+          ],
+          "rationale": "The US AI Diffusion Rule introduces complex export controls on frontier AI model weights and establishes a Validated End User framework with country-tier restrictions. Multinational enterprises like Fujifilm must ensure compliance to avoid severe legal penalties and operational disruptions. Evidence from multiple high and medium reliability sources confirms the necessity of implementing controls on AI procurement, cross-border data flows, and workforce access to controlled technology. Prior agent findings emphasize the need for contract reviews and supplier validation. The risk is high and immediate due to the regulatory enforcement date and the potential for deemed export violations within the US workforce.",
+          "options": [
+            "Develop and deploy an internal compliance program aligned with the AI Diffusion Rule",
+            "Engage external legal and export control experts to audit current operations and recommend controls",
+            "Implement technical controls on AI model access and training compute environments",
+            "Conduct workforce screening and training to prevent deemed exports",
+            "Delay action until further supplier and workforce data is obtained (not recommended due to high risk)"
+          ],
+          "evidence_ids": [
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003_tavily_001",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003_tavily_002",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003_tavily_003",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003_tavily_004",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_003_tavily_005"
+          ],
+          "expert_knowledge_ids": [
+            "LEG-REV-001",
+            "DECISION-CONSOLIDATION-SANCTIONS-001",
+            "LEG-RULE-001"
+          ],
+          "risk_if_delayed": "Delaying compliance increases the risk of severe legal penalties, export license violations, operational disruptions, and reputational damage due to non-compliance with US export controls on frontier AI technologies.",
+          "review_required": true,
+          "priority": 1
+        }
+      ],
+      "evidence_count": 5,
+      "evidence_domains": [
+        "federalregister.gov",
+        "newsletter.semianalysis.com",
+        "rand.org",
+        "rebuilding.tech",
+        "wilmerhale.com"
+      ],
+      "orchestrator_finding": null
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004",
+      "title": "Regulated Data Processing Validation Gap from Forced Model Substitution",
+      "risk_type": "legal_compliance",
+      "risk_themes": [
+        "regulated data",
+        "model validation",
+        "audit trail integrity",
+        "regulatory approval continuity"
+      ],
+      "urgency": "medium",
+      "status": "completed",
+      "trace_id": "97567c6e-0e2c-4e21-8ff7-277cfb55bf9d",
+      "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004",
+      "error": null,
+      "decision_count": 1,
+      "decisions": [
+        {
+          "decision_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004_decision_001",
+          "decision": "Initiate a comprehensive compliance validation and re-validation project for all substituted AI models used in regulated data processing workflows to ensure audit trail integrity and maintain regulatory approval continuity. This includes mapping current model usage, identifying gaps in validation and audit trails, and engaging with regulatory bodies to confirm acceptance criteria for substitute models.",
+          "owner": "Chief Compliance Officer (CCO)",
+          "deadline": "2026-09-30",
+          "deadline_rationale": "Given the medium urgency and the typical multi-month re-validation cycles indicated in the scenario, a three-month deadline balances the need for timely compliance action with the practical time required to conduct thorough validation and regulatory engagement.",
+          "deadline_signals": [
+            "Regulatory approvals and validation protocols tied to specific model versions do not transfer automatically to substitutes",
+            "Re-validation cycles for regulated workflows can take months",
+            "Processing may need to halt or revert to manual methods during re-validation",
+            "Medium urgency classification in the risk scenario"
+          ],
+          "rationale": "The scenario and evidence indicate that forced substitution of AI models in regulated data processing creates compliance gaps due to non-transferable regulatory approvals and audit trails. Although evidence confidence is medium and some unknowns remain, the legal compliance risk is significant enough to warrant proactive re-validation efforts. Prior agent findings emphasize the need for review and validation of supplier criticality and compliance workflows. The medium urgency and multi-month re-validation timelines justify a non-immediate but prompt deadline to mitigate operational and regulatory risks.",
+          "options": [
+            "Do nothing and continue using substitute models without re-validation (high risk)",
+            "Conduct partial validation focusing only on critical workflows (moderate risk)",
+            "Perform full re-validation and regulatory engagement for all substituted models (recommended)",
+            "Temporarily halt regulated data processing until re-validation is complete (high operational impact)"
+          ],
+          "evidence_ids": [
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004_tavily_001",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004_tavily_002",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004_tavily_003",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004_tavily_004",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_004_tavily_005"
+          ],
+          "expert_knowledge_ids": [
+            "P-LEG-GUARD-001",
+            "LEG-GUARD-001",
+            "CASE-LEG-003"
+          ],
+          "risk_if_delayed": "Delaying re-validation risks regulatory non-compliance, potential enforcement actions, disruption of regulated data processing workflows, and loss of audit trail integrity, which could lead to operational shutdowns or manual processing fallback.",
+          "review_required": true,
+          "priority": 3
+        }
+      ],
+      "evidence_count": 5,
+      "evidence_domains": [
+        "fifthrow.com",
+        "modulos.ai",
+        "part11solutions.com",
+        "sciencedirect.com",
+        "verifywise.ai"
+      ],
+      "orchestrator_finding": null
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005",
+      "title": "Open-Weight Model Fallback Channel Elimination",
+      "risk_type": "supplier_resilience",
+      "risk_themes": [
+        "open-weight restrictions",
+        "alternative sourcing",
+        "business continuity planning",
+        "model distribution channels"
+      ],
+      "urgency": "medium",
+      "status": "completed",
+      "trace_id": "30dcc6af-e44e-4d95-b725-624538919dce",
+      "output_dir": "C:\\Users\\nyham\\work\\risk_analysis_platform\\outputs\\scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005",
+      "error": null,
+      "decision_count": 1,
+      "decisions": [
+        {
+          "decision_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005_decision_001",
+          "decision": "Initiate a comprehensive review and update of Fujifilm's AI sourcing and business continuity plans to identify and implement alternative sourcing strategies beyond open-weight frontier LLM models, including exploring commercial API providers and proprietary model development.",
+          "owner": "Head of AI Strategy and Supplier Risk Management",
+          "deadline": "2026-09-30",
+          "deadline_rationale": "The US government restrictions are effective and impactful but do not require immediate emergency action; a medium-term deadline allows for thorough assessment and strategic planning to mitigate supplier resilience risks without disrupting ongoing operations.",
+          "deadline_signals": [
+            "US government restrictions effective as of mid-2026",
+            "Collapse of primary and secondary sourcing channels for open-weight models",
+            "Procurement exposure currently medium risk with no critical suppliers in target country",
+            "Need to validate alternative sourcing and inventory runway"
+          ],
+          "rationale": "Evidence indicates that US export controls and restrictions on open-weight frontier LLM models eliminate Fujifilm's fallback sourcing channels for AI infrastructure, posing a supplier resilience risk. Prior findings show medium confidence in procurement exposure and recommend alternative sourcing validation. The risk is medium urgency, requiring strategic adaptation rather than immediate crisis response. No direct evidence links Fujifilm's supply chain to these restrictions, but the scenario's impact on AI sourcing and business continuity is clear. A coordinated review led by AI strategy and supplier risk management is necessary to maintain operational continuity and R&D experimentation capabilities.",
+          "options": [
+            "Continue relying on current open-weight model fallback channels despite restrictions",
+            "Develop partnerships with commercial API providers as primary fallback",
+            "Invest in proprietary AI model development to reduce external dependencies",
+            "Enhance business continuity planning with diversified sourcing strategies"
+          ],
+          "evidence_ids": [
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005_tavily_001",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005_tavily_002",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005_tavily_003",
+            "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_fbec6199_disc_005_tavily_005"
+          ],
+          "expert_knowledge_ids": [
+            "DECISION-CONSOLIDATION-SUPPLIER-001",
+            "PRC-PLAY-001"
+          ],
+          "risk_if_delayed": "Delaying action risks simultaneous collapse of primary and fallback AI sourcing channels, potentially disrupting R&D and operational continuity, increasing costs, and reducing competitive advantage.",
+          "review_required": true,
+          "priority": 3
+        }
+      ],
+      "evidence_count": 5,
+      "evidence_domains": [
+        "cov.com",
+        "digitalapplied.com",
+        "linkedin.com",
+        "truefoundry.com",
+        "wilmerhale.com"
+      ],
+      "orchestrator_finding": null
+    }
+  ]
+}

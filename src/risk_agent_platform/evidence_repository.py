@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -10,15 +11,19 @@ from risk_agent_platform.stores.neo4j_store import Neo4jStore
 from risk_agent_platform.stores.qdrant_store import QdrantStore
 
 
+_EVIDENCE_FILE_LOCK = threading.Lock()
+
+
 class EvidenceRepository:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.path = settings.data_dir / "evidence" / "evidence.jsonl"
 
     def register(self, evidence: EvidenceItem, *, index_qdrant: bool = True, index_neo4j: bool = True) -> EvidenceItem:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        existing = [item for item in self._read_all() if item.evidence_id != evidence.evidence_id]
-        self._write_all([*existing, evidence])
+        with _EVIDENCE_FILE_LOCK:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            existing = [item for item in self._read_all() if item.evidence_id != evidence.evidence_id]
+            self._write_all([*existing, evidence])
         if index_qdrant:
             QdrantStore(self.settings).upsert_texts(
                 "evidence_chunks",
@@ -93,7 +98,10 @@ class EvidenceRepository:
         items: list[EvidenceItem] = []
         for line in self.path.read_text(encoding="utf-8").splitlines():
             if line.strip():
-                items.append(EvidenceItem.model_validate_json(line))
+                try:
+                    items.append(EvidenceItem.model_validate_json(line))
+                except ValueError:
+                    continue
         return items
 
     def _read_latest_by_id(self) -> list[EvidenceItem]:

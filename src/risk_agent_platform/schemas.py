@@ -315,6 +315,75 @@ class RiskDiscoveryRequest(StrictModel):
         return value
 
 
+class RiskDiscoveryFactSourceRef(StrictModel):
+    title: str | None = None
+    url: str | None = None
+
+
+class RiskDiscoveryEventFacts(StrictModel):
+    affected_geographies: list[str] = Field(default_factory=list)
+    affected_industries: list[str] = Field(default_factory=list)
+    infrastructure_chokepoints: list[str] = Field(default_factory=list)
+    critical_goods_or_services: list[str] = Field(default_factory=list)
+    regulatory_or_sanctions_signals: list[str] = Field(default_factory=list)
+    financial_or_payment_signals: list[str] = Field(default_factory=list)
+    supply_chain_tier_risks: list[str] = Field(default_factory=list)
+    time_horizons: list[str] = Field(default_factory=list)
+    source_refs: list[RiskDiscoveryFactSourceRef | str] = Field(default_factory=list)
+    uncertainties: list[str] = Field(default_factory=list)
+
+
+class RiskDiscoveryEventFactsToolInput(StrictModel):
+    event_facts: RiskDiscoveryEventFacts | None = None
+    event_facts_json: str | None = None
+
+
+class RiskDiscoveryCandidateDraft(StrictModel):
+    candidate_id: str | None = None
+    title: str
+    risk_type: str
+    countries: list[str] = Field(default_factory=list)
+    risk_themes: list[str] = Field(default_factory=list)
+    affected_categories: list[str] = Field(default_factory=list)
+    description: str
+    urgency: Literal["low", "medium", "high"] = "medium"
+    scope_matches: list[str] = Field(default_factory=list)
+    rationale: str
+
+
+class RiskDiscoveryCandidatesToolInput(StrictModel):
+    candidates: list[RiskDiscoveryCandidateDraft] = Field(default_factory=list)
+    candidates_json: str | None = None
+
+
+class SourceQueryPlan(StrictModel):
+    queries: list[str] = Field(default_factory=list)
+    rationale: str = ""
+
+
+class IssueExplorationRecordInput(StrictModel):
+    issues: list[str] = Field(default_factory=list)
+    missing_data: list[str] = Field(default_factory=list)
+    recheck_conditions: list[str] = Field(default_factory=list)
+    exploration_questions: list[str] = Field(default_factory=list)
+    issues_json: str | None = None
+
+
+class CounterfactualRecordInput(StrictModel):
+    counterfactuals: list[str] = Field(default_factory=list)
+    counterfactuals_json: str | None = None
+
+
+class RedTeamMissingDataInput(StrictModel):
+    missing_data: list[str] = Field(default_factory=list)
+    missing_data_json: str | None = None
+
+
+class RedTeamOverclaimsInput(StrictModel):
+    overclaims: list[str] = Field(default_factory=list)
+    overclaims_json: str | None = None
+
+
 class DiscoveredRisk(StrictModel):
     candidate_id: str
     title: str
@@ -394,17 +463,44 @@ class KnowledgeApplicationFinding(StrictModel):
     rationale: str = ""
 
 
+class PriorityEvidenceItem(StrictModel):
+    source_agent: str
+    evidence_text: str
+    source_refs: list[str] = Field(default_factory=list)
+    limitations: str = ""
+
+
 class DecisionItem(StrictModel):
     decision_id: str | None = None
     decision: str
     owner: str
     deadline: str
+    deadline_rationale: str = ""
+    deadline_signals: list[str] = Field(default_factory=list)
     rationale: str
     options: list[str]
     evidence_ids: list[str] = Field(default_factory=list)
     expert_knowledge_ids: list[str] = Field(default_factory=list)
+    priority_evidence: list[PriorityEvidenceItem] = Field(default_factory=list)
     risk_if_delayed: str
     review_required: bool
+    priority: int = 999
+
+
+class DecisionSynthesisOutput(StrictModel):
+    model_config = ConfigDict(extra="ignore")
+
+    decision: str
+    owner: str
+    deadline: str
+    deadline_rationale: str = ""
+    deadline_signals: list[str] = Field(default_factory=list)
+    rationale: str = "Decision synthesized from available scenario evidence and prior agent findings."
+    options: list[str] = Field(default_factory=list)
+    cited_evidence_ids: list[str] = Field(default_factory=list)
+    cited_expert_knowledge_ids: list[str] = Field(default_factory=list)
+    risk_if_delayed: str = "Delayed ownership may allow the risk exposure to materialize before accountable mitigation decisions are made."
+    review_required: bool = True
     priority: int = 999
 
 

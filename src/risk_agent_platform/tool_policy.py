@@ -11,6 +11,29 @@ RAW_STRUCTURED_DATA_TOOLS = frozenset(
     }
 )
 
+DISCOVERY_ENSEMBLE_AGENT_NAMES = frozenset(
+    {
+        "event-fact-discovery-agent",
+        "analog-discovery-agent",
+        "causal-story-discovery-agent",
+    }
+)
+
+DISCOVERY_ENSEMBLE_ALLOWED_TOOLS = {
+    "mcp-structured-data": frozenset({"list_datasets", "profile_dataset", "risk_feature_sample"}),
+    "mcp-web-search": frozenset({"search_authoritative_sources", "extract_url"}),
+    "mcp-expert-knowledge": frozenset(
+        {
+            "load_knowledge_pack",
+            "load_primitives",
+            "load_case_bank",
+            "load_question_bank",
+            "load_cta_notes",
+            "load_scope_relevance_rules",
+        }
+    ),
+}
+
 LLM_SAFE_STRUCTURED_DATA_TOOLS = frozenset(
     {
         "list_datasets",
@@ -75,6 +98,7 @@ AGENT_LLM_TOOL_ALLOWLIST: dict[str, dict[str, frozenset[str]]] = {
     "accounting-risk-agent": {
         "mcp-structured-data": frozenset({"summarize_payment_exposure_safe", "summarize_invoice_exposure_safe"}),
     },
+    **{agent_name: DISCOVERY_ENSEMBLE_ALLOWED_TOOLS for agent_name in DISCOVERY_ENSEMBLE_AGENT_NAMES},
 }
 
 

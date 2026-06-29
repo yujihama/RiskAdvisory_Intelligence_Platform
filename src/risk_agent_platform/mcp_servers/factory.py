@@ -48,7 +48,7 @@ def create_web_search_server(settings: Settings) -> FastMCP:
     @mcp.tool
     def search_risk_signals(
         risk_event: dict[str, Any],
-        max_results: int = 5,
+        max_results: int | None = 5,
         confidential_terms: list[str] | None = None,
     ) -> dict[str, Any]:
         event = RiskEvent.model_validate(risk_event)
@@ -59,7 +59,7 @@ def create_web_search_server(settings: Settings) -> FastMCP:
     def search_authoritative_sources(
         query: str,
         risk_event: dict[str, Any],
-        max_results: int = 5,
+        max_results: int | None = None,
         confidential_terms: list[str] | None = None,
     ) -> dict[str, Any]:
         event = RiskEvent.model_validate(risk_event)
@@ -205,9 +205,10 @@ def create_structured_data_server(settings: Settings) -> FastMCP:
         return _read_rows(settings, client_id, dataset)[:limit]
 
     @mcp.tool
-    def risk_feature_sample(client_id: str, dataset: str, limit: int = 5) -> dict[str, Any]:
+    def risk_feature_sample(client_id: str, dataset: str, limit: int | None = 5) -> dict[str, Any]:
         rows = _read_rows(settings, client_id, dataset)
-        features = [_risk_feature_row(dataset, row, idx) for idx, row in enumerate(rows[:limit], start=1)]
+        selected_rows = rows if limit is None else rows[:limit]
+        features = [_risk_feature_row(dataset, row, idx) for idx, row in enumerate(selected_rows, start=1)]
         return {
             "dataset": dataset,
             "row_count": len(rows),
@@ -287,8 +288,15 @@ def create_evidence_ledger_server(settings: Settings) -> FastMCP:
     mcp = FastMCP("mcp-evidence-ledger")
 
     @mcp.tool
-    def register_evidence(evidence: dict[str, Any]) -> dict[str, Any]:
+    def register_evidence(evidence: Any) -> dict[str, Any]:
+        if isinstance(evidence, str):
+            evidence = json.loads(evidence)
         item = EvidenceItem.model_validate(evidence)
+        return EvidenceRepository(settings).register(item, index_qdrant=True).model_dump(mode="json")
+
+    @mcp.tool
+    def register_evidence_json(evidence_json: str) -> dict[str, Any]:
+        item = EvidenceItem.model_validate_json(evidence_json)
         return EvidenceRepository(settings).register(item, index_qdrant=True).model_dump(mode="json")
 
     @mcp.tool
@@ -606,11 +614,14 @@ def create_llm_ocr_server(settings: Settings) -> FastMCP:
     return mcp
 
 
-def _tavily_search(settings: Settings, query: str, query_hash: str, max_results: int = 5) -> dict[str, Any]:
+def _tavily_search(settings: Settings, query: str, query_hash: str, max_results: int | None = None) -> dict[str, Any]:
     if not settings.external_apis.tavily_api_key:
         raise RuntimeError("TAVILY_API_KEY is required for web evidence collection; no local fixture fallback is available")
     client = TavilyClient(api_key=settings.external_apis.tavily_api_key)
-    result = client.search(query=query, max_results=max_results, include_answer=False, include_raw_content=False)
+    kwargs: dict[str, Any] = {"query": query, "include_answer": False, "include_raw_content": False}
+    if max_results is not None:
+        kwargs["max_results"] = max_results
+    result = client.search(**kwargs)
     return {"query": query, "query_hash": query_hash, "results": result.get("results", [])}
 
 

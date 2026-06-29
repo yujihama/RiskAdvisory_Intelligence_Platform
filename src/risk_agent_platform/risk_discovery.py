@@ -14,6 +14,10 @@ from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.schemas import (
     DiscoveredRisk,
     RejectedRiskCandidate,
+    RiskDiscoveryCandidateDraft,
+    RiskDiscoveryCandidatesToolInput,
+    RiskDiscoveryEventFacts,
+    RiskDiscoveryEventFactsToolInput,
     RiskDiscoveryRequest,
     RiskDiscoveryResult,
     RiskEvent,
@@ -338,11 +342,14 @@ class RiskDiscoveryDeepAgent:
             extractions.append(summary)
             return json.dumps(summary, ensure_ascii=False)
 
-        @tool("discovery_record_event_facts")
-        def discovery_record_event_facts(event_facts_json: str) -> str:
+        @tool("discovery_record_event_facts", args_schema=RiskDiscoveryEventFactsToolInput)
+        def discovery_record_event_facts(
+            event_facts: dict[str, Any] | None = None,
+            event_facts_json: str | None = None,
+        ) -> str:
             """Record external event facts used to broaden Discovery candidates."""
-            data = _json_object_from_text(event_facts_json) or {}
-            facts = _normalize_event_facts(data.get("event_facts") if isinstance(data.get("event_facts"), dict) else data)
+            facts_model = _event_facts_from_tool_input(event_facts=event_facts, event_facts_json=event_facts_json)
+            facts = _normalize_event_facts(facts_model.model_dump(mode="json"))
             self._state["event_facts"] = facts
             self._state["event_facts_source"] = "agent_recorded"
             return json.dumps(
@@ -353,12 +360,16 @@ class RiskDiscoveryDeepAgent:
                 ensure_ascii=False,
             )
 
-        @tool("discovery_record_candidates")
-        def discovery_record_candidates(candidates_json: str) -> str:
+        @tool("discovery_record_candidates", args_schema=RiskDiscoveryCandidatesToolInput)
+        def discovery_record_candidates(
+            candidates: list[dict[str, Any]] | None = None,
+            candidates_json: str | None = None,
+        ) -> str:
             """Record bounded risk candidates as JSON for structured filtering."""
-            data = _json_object_from_text(candidates_json) or {}
-            candidates = data.get("candidates") or []
-            self._state["raw_candidates"] = candidates if isinstance(candidates, list) else []
+            draft_candidates = _candidate_drafts_from_tool_input(candidates=candidates, candidates_json=candidates_json)
+            self._state["raw_candidates"] = [
+                candidate.model_dump(mode="json", exclude_none=True) for candidate in draft_candidates
+            ]
             return json.dumps({"candidate_count": len(self._state["raw_candidates"])}, ensure_ascii=False)
 
         return [
@@ -400,10 +411,10 @@ class RiskDiscoveryDeepAgent:
             "Cover the scope-primary risk types from applicable scope relevance rules. "
             "Do not collapse legal or payment risks into supplier_resilience merely because a supplier is involved. "
             "Do not collapse legal_compliance into accounting_disclosure merely because disclosure may later be required. "
-            "Return no prose after recording. Candidate schema: "
-            "{\"candidates\": [{\"title\": \"...\", \"risk_type\": \"...\", \"risk_themes\": [], "
-            "\"affected_categories\": [], \"description\": \"...\", \"urgency\": \"medium\", "
-            "\"scope_matches\": [], \"rationale\": \"...\"}]}.\n"
+            "Return no prose after recording. Call discovery_record_event_facts with the structured event_facts "
+            "argument. Call discovery_record_candidates with the structured candidates list argument, not a JSON string. "
+            "Candidate fields: title, risk_type, risk_themes, affected_categories, description, urgency, "
+            "scope_matches, rationale.\n"
             f"scope_interpretation={json.dumps(scope_interpretation, ensure_ascii=False)}\n"
             f"request={json.dumps(request.model_dump(mode='json'), ensure_ascii=False)}",
             max_chars=3000,
@@ -547,6 +558,7 @@ class RiskDiscoveryDeepAgent:
         selected = [candidate for candidate in sorted_candidates if candidate.relevance_score >= threshold]
         if not selected and sorted_candidates:
             selected = sorted_candidates[:1]
+        selected = selected[: request.max_risks]
         selected_ids = {candidate.candidate_id for candidate in selected}
         rejected = [
             _rejection_for_candidate(candidate, request, threshold)
@@ -559,6 +571,38 @@ class RiskDiscoveryDeepAgent:
 def _datasets_for_scope(datasets: list[str]) -> list[str]:
     preferred = ["segments", "regions", "sites", "suppliers", "payments", "contracts", "customers"]
     return [dataset for dataset in preferred if dataset in datasets][:6]
+
+
+def _event_facts_from_tool_input(
+    *,
+    event_facts: Any = None,
+    event_facts_json: str | None = None,
+) -> RiskDiscoveryEventFacts:
+    if event_facts_json:
+        data = _json_object_from_text(event_facts_json) or {}
+        payload = data.get("event_facts") if isinstance(data.get("event_facts"), dict) else data
+        return RiskDiscoveryEventFacts.model_validate(payload)
+    if isinstance(event_facts, RiskDiscoveryEventFacts):
+        return event_facts
+    return RiskDiscoveryEventFacts.model_validate(event_facts or {})
+
+
+def _candidate_drafts_from_tool_input(
+    *,
+    candidates: Any = None,
+    candidates_json: str | None = None,
+) -> list[RiskDiscoveryCandidateDraft]:
+    if candidates_json:
+        data = _json_object_from_text(candidates_json) or {}
+        raw_candidates = data.get("candidates") or []
+    else:
+        raw_candidates = candidates or []
+    if not isinstance(raw_candidates, list):
+        raise ValueError("candidates must be a list")
+    return [
+        item if isinstance(item, RiskDiscoveryCandidateDraft) else RiskDiscoveryCandidateDraft.model_validate(item)
+        for item in raw_candidates
+    ]
 
 
 def _normalize_candidates(raw_candidates: list[Any], request: RiskDiscoveryRequest) -> list[DiscoveredRisk]:

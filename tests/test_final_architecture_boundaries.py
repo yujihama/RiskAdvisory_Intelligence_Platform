@@ -22,6 +22,7 @@ import risk_agent_platform.run_discovery_evaluation as run_discovery_evaluation
 from risk_agent_platform.schemas import (
     AgentCard,
     AgentTaskResult,
+    DecisionSynthesisOutput,
     DiscoveredRisk,
     EvidenceItem,
     KnowledgeApplicationFinding,
@@ -76,6 +77,39 @@ class _RecordingCandidateRunner:
             {"candidates_json": json.dumps({"candidates": self.candidates})}
         )
         return ""
+
+
+class _StructuredCandidateRunner:
+    def __init__(self, *_args, tools=None, **_kwargs) -> None:
+        self.tools = {item.name: item for item in tools or []}
+
+    def synthesize(self, *_args, **_kwargs) -> str:
+        self.tools["discovery_record_candidates"].invoke({"candidates": _recorded_scope_candidates()})
+        return ""
+
+
+class _StructuredDecisionRunner:
+    def __init__(self, output: DecisionSynthesisOutput | None = None) -> None:
+        self.output = output or DecisionSynthesisOutput(
+            decision="Decide whether model access should continue under legal and operational controls.",
+            owner="AI Platform / Legal",
+            deadline="48 hours",
+            deadline_rationale="Structured test output selected a non-immediate review window from scenario evidence.",
+            deadline_signals=["llm:scenario_evidence"],
+            rationale="Structured test output was generated from event, evidence, expert IDs, and prior findings.",
+            options=["Continue with controls", "Pause affected use", "Move to approved fallback"],
+            cited_evidence_ids=["ev-001"],
+            cited_expert_knowledge_ids=["LEG-GUARD-001"],
+            risk_if_delayed="Unreviewed model access may create compliance and continuity exposure.",
+            review_required=True,
+            priority=2,
+        )
+        self.calls: list[dict[str, object]] = []
+
+    def synthesize_structured(self, prompt, output_model, **kwargs):
+        self.calls.append({"prompt": prompt, "output_model": output_model, "kwargs": kwargs})
+        assert output_model is DecisionSynthesisOutput
+        return self.output
 
 
 class _WebDiscoveryRunner:
@@ -287,20 +321,186 @@ def test_knowledge_application_finding_is_structured():
     assert finding.similar_case_ids == ["case_sanctions_payment_001"]
 
 
-def test_decision_synthesis_uses_supplier_logistics_decision_for_supplier_risk():
-    event = _event().model_copy(update={"risk_type": "supplier_resilience"})
+def test_decision_synthesis_uses_structured_llm_output_without_rule_template():
+    event = _event().model_copy(
+        update={
+            "risk_type": "legal_compliance",
+            "title": "Sudden frontier model suspension",
+            "description": "Commerce Department order creates immediate suspension with no transition period.",
+            "urgency": "high",
+        }
+    )
+    runner = _StructuredDecisionRunner()
 
     decision = _decision_for_event(
         event,
-        "decision-001",
-        [{"evidence_id": "evidence-001"}],
-        ["DECISION-CONSOLIDATION-SUPPLIER-001"],
+        "decision-structured",
+        [{"evidence_id": "ev-001", "source_title": "Order forces immediate suspension"}],
+        ["LEG-GUARD-001"],
+        runner,
+        [{"agent_name": "legal-risk-agent", "summary": "Legal model-access review is required."}],
     )
 
-    assert "logistics continuity" in decision.decision
-    assert decision.owner == "Procurement / Operations / Logistics"
-    assert "payment" not in decision.decision.lower()
-    assert "DECISION-CONSOLIDATION-SUPPLIER-001" in decision.expert_knowledge_ids
+    assert decision.decision == "Decide whether model access should continue under legal and operational controls."
+    assert decision.owner == "AI Platform / Legal"
+    assert decision.deadline == "48 hours"
+    assert decision.deadline_signals == ["llm:scenario_evidence"]
+    assert decision.evidence_ids == ["ev-001"]
+    assert decision.expert_knowledge_ids == ["LEG-GUARD-001"]
+    assert runner.calls[0]["output_model"] is DecisionSynthesisOutput
+    assert runner.calls[0]["kwargs"]["provider_first"] is True
+    assert runner.calls[0]["kwargs"]["allow_text_fallback"] is False
+
+
+def test_decision_synthesis_carries_natural_language_priority_evidence_from_findings():
+    runner = _StructuredDecisionRunner()
+    prior_findings = [
+        {
+            "agent_name": "treasury-risk-agent",
+            "mode": "treasury",
+            "summary": "Payment exposure count=1 amount=2400000.0.",
+            "metadata": {
+                "payment_exposure": {
+                    "payment_count": 1,
+                    "total_amount": 2400000.0,
+                },
+                "payment_exposure_safe": {
+                    "payment_count": 1,
+                    "features": [
+                        {
+                            "feature_id": "payments_feature_001",
+                            "dataset": "payments",
+                            "country": "Iran",
+                            "currency": "USD",
+                            "status": "pending",
+                            "amount_bucket": "1m_5m",
+                            "due_bucket": "0_7_days",
+                            "near_term_due": True,
+                            "risk_signals": ["material_payment", "near_term_due"],
+                        }
+                    ],
+                    "summary": {
+                        "dataset": "payments",
+                        "row_count": 1,
+                        "countries": ["Iran"],
+                        "currencies": ["USD"],
+                        "near_term_due_count": 1,
+                        "amount_buckets": {"1m_5m": 1},
+                        "risk_signals": ["material_payment", "near_term_due"],
+                    },
+                    "redaction_policy": {
+                        "omitted_fields": ["amount", "bank_name", "payment_id", "supplier_id"],
+                        "amounts": "bucketed",
+                    },
+                },
+            },
+        },
+        {
+            "agent_name": "legal-risk-agent",
+            "mode": "legal",
+            "summary": "Contract exposure count=5 with sanctions and force majeure clauses requiring review.",
+            "metadata": {
+                "contract_exposure_safe": {
+                    "contract_count": 5,
+                    "features": [
+                        {
+                            "feature_id": "contracts_feature_001",
+                            "dataset": "contracts",
+                            "governing_law": "England",
+                            "notice_days_bucket": "0_7_days",
+                            "has_force_majeure_clause": True,
+                            "has_sanctions_clause": True,
+                            "risk_signals": ["sanctions_clause", "force_majeure_clause"],
+                        }
+                    ],
+                    "summary": {
+                        "dataset": "contracts",
+                        "row_count": 5,
+                        "risk_signals": ["sanctions_clause", "force_majeure_clause"],
+                    },
+                },
+                "issue_exploration": {
+                    "missing_data": ["Full clause text has not yet been reviewed."],
+                },
+            },
+        },
+    ]
+
+    decision = _decision_for_event(
+        _event(),
+        "decision-payment-evidence",
+        [{"evidence_id": "ev-001", "summary": "Sanctions evidence."}],
+        ["LEG-GUARD-001"],
+        runner,
+        prior_findings,
+    )
+
+    assert len(decision.priority_evidence) == 2
+    treasury_evidence = decision.priority_evidence[0]
+    assert treasury_evidence.source_agent == "treasury-risk-agent"
+    assert "Payment exposure count=1" in treasury_evidence.evidence_text
+    assert "payment_exposure_safe" in treasury_evidence.evidence_text
+    assert "Iran" in treasury_evidence.evidence_text
+    assert "0_7_days" in treasury_evidence.evidence_text
+    assert "treasury-risk-agent.metadata.payment_exposure_safe" in treasury_evidence.source_refs
+    assert "Raw identifiers" in treasury_evidence.limitations
+    legal_evidence = decision.priority_evidence[1]
+    assert legal_evidence.source_agent == "legal-risk-agent"
+    assert "Contract exposure count=5" in legal_evidence.evidence_text
+    assert "contract_exposure_safe" in legal_evidence.evidence_text
+    assert "sanctions_clause" in legal_evidence.evidence_text
+    assert "Full clause text has not yet been reviewed." in legal_evidence.limitations
+    assert "priority_evidence_digest=" in str(runner.calls[0]["prompt"])
+
+
+def test_decision_synthesis_prompt_requires_no_template_or_fallback():
+    runner = _StructuredDecisionRunner()
+
+    _decision_for_event(
+        _event(),
+        "decision-prompt",
+        [{"evidence_id": "ev-001", "summary": "Evidence summary."}],
+        ["LEG-GUARD-001"],
+        runner,
+        [],
+    )
+
+    prompt = str(runner.calls[0]["prompt"])
+    assert "Do not use hard-coded keyword taxonomy" in prompt
+    assert "static risk_type templates" in prompt
+    assert "fallback/default decision text" in prompt
+    assert "risk_event=" in prompt
+    assert "evidence_digest=" in prompt
+    assert "priority_evidence_digest=" in prompt
+
+
+def test_decision_synthesis_rejects_unknown_evidence_ids_without_fallback():
+    event = _event().model_copy(
+        update={
+            "risk_type": "legal_compliance",
+            "title": "Export control compliance exposure",
+            "description": "Model access may be restricted by country tier.",
+        }
+    )
+    runner = _StructuredDecisionRunner(
+        DecisionSynthesisOutput(
+            decision="Decide whether model access can continue.",
+            owner="Legal / Compliance",
+            deadline="48 hours",
+            deadline_rationale="The model cited an unavailable evidence id.",
+            deadline_signals=["llm:invalid_citation"],
+            rationale="Invalid citation test.",
+            options=["Continue", "Pause", "Escalate"],
+            cited_evidence_ids=["ev-missing"],
+            cited_expert_knowledge_ids=["LEG-GUARD-001"],
+            risk_if_delayed="Invalid evidence links would make the decision unauditable.",
+            review_required=True,
+            priority=2,
+        )
+    )
+
+    with pytest.raises(ValueError, match="unknown evidence_id"):
+        _decision_for_event(event, "decision-invalid", [{"evidence_id": "ev-001"}], ["LEG-GUARD-001"], runner)
 
 
 def test_source_reliability_scores_domain_classes():
@@ -505,6 +705,30 @@ def test_risk_discovery_normal_path_records_candidates_and_scope_changes_selecti
     assert _RecordingCandidateRunner.sample_payloads
     assert "bank_name" not in _RecordingCandidateRunner.sample_payloads[0]
     assert "amount_bucket" in _RecordingCandidateRunner.sample_payloads[0]
+
+
+def test_risk_discovery_record_candidates_accepts_structured_tool_payload(tmp_path, monkeypatch):
+    monkeypatch.setattr("risk_agent_platform.risk_discovery.DeepAgentRunner", _StructuredCandidateRunner)
+    root = Path.cwd()
+    shutil.copytree(root / "data" / "clients" / "demo_client", tmp_path / "data" / "clients" / "demo_client")
+    shutil.copytree(root / "data" / "expert_knowledge", tmp_path / "data" / "expert_knowledge")
+    settings = replace(Settings.load(root), project_root=tmp_path, data_dir=tmp_path / "data")
+    request = RiskDiscoveryRequest(
+        event_title="Geopolitical disruption requiring functional triage",
+        event_description="The event may affect payment execution and contract controls.",
+        countries=["Iran"],
+        scope=RiskDiscoveryScope(
+            client_id="demo_client",
+            scope_text="Treasury payment execution and liquidity scope",
+        ),
+    )
+
+    result = RiskDiscoveryDeepAgent(settings, embedded_mcp=True).discover(request)
+
+    assert result.metadata["fallback_used"] is False
+    assert result.metadata["raw_candidate_count"] == len(_recorded_scope_candidates())
+    assert result.selected_candidates[0].candidate_id == "DISC-PAY"
+    assert result.selected_candidates[0].risk_type == "payment_disruption"
 
 
 def test_risk_discovery_adds_department_primary_coverage_when_llm_misses_it(tmp_path, monkeypatch):
@@ -1005,6 +1229,14 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
                     "deadline": "2026-07-02",
                     "priority": 1,
                     "review_required": True,
+                    "priority_evidence": [
+                        {
+                            "source_agent": "treasury-risk-agent",
+                            "evidence_text": "Treasury reviewed structured payment data and found one pending Iran USD payment of 2400000.0 due within 0_7_days, making payment execution time-sensitive.",
+                            "source_refs": ["treasury-risk-agent.metadata.payment_exposure_safe"],
+                            "limitations": "Raw payment identifiers and bank names are omitted by redaction policy.",
+                        }
+                    ],
                 },
                 {
                     "decision": "Complete sanctions check before payment release.",
@@ -1060,6 +1292,7 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
     assert summary["portfolio_overview"]["total_evidence"] == 5
     assert summary["portfolio_overview"]["review_required_scenarios"] == [first.scenario_id, second.scenario_id]
     assert summary["portfolio_overview"]["priority_decisions"][0]["decision"].startswith("Confirm payment route")
+    assert summary["portfolio_overview"]["priority_decisions"][0]["priority_evidence"][0]["source_agent"] == "treasury-risk-agent"
     sanctions_group = [
         item
         for item in summary["portfolio_overview"]["consolidated_decisions"]
@@ -1078,6 +1311,7 @@ def test_portfolio_summary_integrates_multi_risk_outputs(tmp_path):
     assert summary["portfolio_overview"]["decision_conflicts"]
     assert "## Portfolio Overview" in markdown
     assert "## Priority Decisions" in markdown
+    assert "Priority evidence from treasury-risk-agent" in markdown
     assert "## Consolidated Decisions" in markdown
 
 
@@ -1203,3 +1437,62 @@ def test_evidence_repository_upserts_by_evidence_id(tmp_path):
     assert len(evidence) == 1
     assert evidence[0].summary == "Latest summary"
     assert len(repo.path.read_text(encoding="utf-8").splitlines()) == 1
+
+
+def test_evidence_repository_skips_corrupt_jsonl_rows_when_registering(tmp_path):
+    settings = replace(Settings.load(Path.cwd()), project_root=tmp_path, data_dir=tmp_path / "data")
+    repo = EvidenceRepository(settings)
+    repo.path.parent.mkdir(parents=True, exist_ok=True)
+    repo.path.write_text('{"evidence_id": "broken", "summary": "unterminated\n', encoding="utf-8")
+
+    evidence = EvidenceItem(
+        evidence_id="ev-healthy",
+        scenario_id="scenario-test",
+        client_id="client-test",
+        source_type="web",
+        source_ref="https://example.test/healthy",
+        summary="Healthy summary",
+    )
+
+    repo.register(evidence, index_qdrant=False, index_neo4j=False)
+
+    items = repo.list_by_scenario("scenario-test")
+    assert [item.evidence_id for item in items] == ["ev-healthy"]
+    assert len(repo.path.read_text(encoding="utf-8").splitlines()) == 1
+
+
+def test_evidence_ledger_accepts_json_string_payload_with_quoted_source_text(tmp_path, monkeypatch):
+    settings = replace(Settings.load(Path.cwd()), project_root=tmp_path, data_dir=tmp_path / "data")
+    registered: list[EvidenceItem] = []
+
+    class _FakeEvidenceRepository:
+        def __init__(self, _settings):
+            pass
+
+        def register(self, evidence: EvidenceItem, *, index_qdrant: bool = True) -> EvidenceItem:
+            registered.append(evidence)
+            return evidence
+
+    monkeypatch.setattr("risk_agent_platform.mcp_servers.factory.EvidenceRepository", _FakeEvidenceRepository)
+
+    evidence = EvidenceItem(
+        evidence_id="ev-json-001",
+        scenario_id="scenario-json",
+        client_id="client-json",
+        source_type="web",
+        source_ref="https://example.test/the-us-ai-diffusion-rule",
+        source_url="https://example.test/the-us-ai-diffusion-rule",
+        source_title='The US AI "Diffusion" Rule: what it means ...',
+        summary='Analysis of America. Insight for Australia. "Frontier model" restrictions may change access.',
+        raw_snippet="API, open-weight, and export-control conditions may be tightened.",
+    )
+
+    gateway = MCPGateway(settings, embedded=True)
+    result = gateway.call(
+        "mcp-evidence-ledger",
+        "register_evidence_json",
+        {"evidence_json": evidence.model_dump_json()},
+    )
+
+    assert result["evidence_id"] == "ev-json-001"
+    assert registered[0].summary.startswith("Analysis of America")

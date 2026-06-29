@@ -10,7 +10,7 @@ import pytest
 
 from risk_agent_platform.config import Settings
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
-from risk_agent_platform.schemas import AgentTaskRequest, RiskEvent
+from risk_agent_platform.schemas import AgentTaskRequest, AnalysisPlan, DecisionSynthesisOutput, RiskEvent, SourceQueryPlan
 from risk_agent_platform.stores.neo4j_store import Neo4jStore
 from risk_agent_platform.stores.qdrant_store import QdrantStore
 
@@ -22,6 +22,10 @@ def test_final_embedded_e2e_with_mocked_tavily_and_dummy_client_data(tmp_path, m
     monkeypatch.setattr(
         "risk_agent_platform.deepagent_runtime.DeepAgentRunner.synthesize",
         lambda self, prompt, max_chars=600: f"{self.agent_name} synthesized",
+    )
+    monkeypatch.setattr(
+        "risk_agent_platform.deepagent_runtime.DeepAgentRunner.synthesize_structured",
+        _fake_structured_output,
     )
     monkeypatch.setattr("risk_agent_platform.mcp_servers.factory.TavilyClient", _FakeTavilyClient)
 
@@ -52,7 +56,7 @@ def test_final_embedded_e2e_with_mocked_tavily_and_dummy_client_data(tmp_path, m
     output_dir = tmp_path / "outputs" / event.scenario_id
     assert result.status == "completed"
     assert result.finding is not None
-    assert result.finding.metadata["analysis_plan"]["fallback_used"] is True
+    assert result.finding.metadata["analysis_plan"]["fallback_used"] is False
     findings_by_agent = {item["agent_name"]: item for item in result.finding.metadata["findings"]}
     assert findings_by_agent["source-intelligence-agent"]["metadata"]["queries"]
     assert findings_by_agent["source-intelligence-agent"]["metadata"]["extracted_urls"]
@@ -115,6 +119,54 @@ class _FakeTavilyClient:
                 for url in urls
             ]
         }
+
+
+def _fake_structured_output(self, _prompt, output_model, **_kwargs):
+    if output_model is SourceQueryPlan:
+        return SourceQueryPlan(
+            queries=[
+                "Noveria sanctions payment disruption official source",
+                "Noveria supplier continuity logistics disruption official source",
+            ],
+            rationale="Test query plan.",
+        )
+    if output_model is AnalysisPlan:
+        return AnalysisPlan(
+            selected_agents=[
+                "client-context-agent",
+                "source-intelligence-agent",
+                "treasury-risk-agent",
+                "legal-risk-agent",
+                "expert-as-code-agent",
+                "evidence-redteam-agent",
+            ],
+            rationale="Test analysis plan.",
+        )
+    if output_model is DecisionSynthesisOutput:
+        evidence_ids = _json_line_value(_prompt, "available_evidence_ids") or ["scenario_test_final_e2e_tavily_001"]
+        expert_ids = _json_line_value(_prompt, "available_expert_knowledge_ids") or []
+        return DecisionSynthesisOutput(
+            decision="Decide whether to hold or reroute supplier payments under legal and treasury controls.",
+            owner="Treasury / Legal",
+            deadline="48 hours",
+            deadline_rationale="Mocked structured decision uses payment and sanctions evidence without immediate execution proof.",
+            deadline_signals=["test:payment_sanctions_evidence"],
+            rationale="Test structured decision synthesis output.",
+            options=["Proceed after screening", "Hold pending legal review", "Prepare approved alternate route"],
+            cited_evidence_ids=evidence_ids[:1],
+            cited_expert_knowledge_ids=expert_ids[:1],
+            risk_if_delayed="Delayed ownership may worsen payment, sanctions, and supplier continuity exposure.",
+            review_required=True,
+            priority=2,
+        )
+    return output_model()
+
+
+def _json_line_value(prompt: str, key: str):
+    for line in prompt.splitlines():
+        if line.startswith(f"{key}="):
+            return json.loads(line.split("=", 1)[1])
+    return None
 
 
 def _skip_if_stores_unavailable(settings: Settings) -> None:
