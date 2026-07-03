@@ -11,7 +11,7 @@
 
 | 領域 | 実装状況 | 根拠 |
 |---|---|---|
-| マルチエージェント分析パイプライン | Orchestrator + 10 ドメイン DeepAgent が A2A 境界で連携し、動的 `analysis_plan` を生成 | `final_agents.py`, `a2a_http.py` |
+| マルチエージェント分析パイプライン | Orchestrator + A2A 配下の 9 DeepAgent サービスが連携し、前段の Risk Discovery DeepAgent と合わせて動的 `analysis_plan` と複数リスク分析を実行 | `final_agents.py`, `risk_discovery.py`, `a2a_http.py` |
 | Risk Discovery | イベント+スコープ(自然言語 `--scope-text` 含む)→ 候補生成 → Expert-as-Code ルールで選別 → 複数 `RiskEvent` 並行分析 | `risk_discovery.py`, `run_discovery.py` |
 | Evidence Ledger | Tavily 検索 → `EvidenceItem` 正規化 → JSONL + Qdrant + Neo4j 三重登録、ソース信頼度初期スコア | `evidence_repository.py`, `source_reliability.py` |
 | Expert-as-Code | ルール/プリミティブ/事例/CTA ノート/スコープ関連ルール/Decision 統合ルールを JSONL で外部化し、Qdrant 索引 + DeepAgent ツールで適用 | `data/expert_knowledge/`, `ExpertAsCodeDeepAgent` |
@@ -24,8 +24,8 @@
 
 1. **継続監視・差分更新・アラート** — 現在は「人がイベントを入力して 1 回分析する」CLI バッチ。プレスリリースの中核差別化「継続監視、差分更新、アラート、意思決定ログ」が存在しない(README Known Constraints にも明記)。
 2. **Scenario Delta Ledger / Decision Log** — Evidence Ledger はあるが、「前回からの変化」と「人間の承認・保留・再評価」を記録する台帳がない。`AnalysisPlan.recheck_conditions` は生成されるが**どこからも再評価に使われていない**(`schemas.py:378` 生成のみ)。
-3. **UI(Risk Dashboard / Scenario Workspace / Lens Switcher)** — 出力は JSON/Markdown ファイルのみ。設計書 §12 の UI 層が丸ごと未着手。API サーバも A2A 内部境界のみで、外部向け REST API がない。
-4. **Risk-to-Cash 定量分析** — Treasury モードは 0–100 のヒューリスティックスコアのみ。Liquidity-at-Risk、Payment Disruption Map 等の金額ベース分析(設計書 §7.2)が未実装。
+3. **UI(Risk Dashboard / Scenario Workspace / Lens Switcher)** — 現行の永続成果物は JSON/Markdown ファイル中心。設計書 §12 の対話型 UI 層は未着手で、実行・成果物取得・Decision 操作を担う製品向け REST API もまだない(A2A は内部エージェント境界)。
+4. **Risk-to-Cash 定量分析** — Treasury モードは構造化支払データから支払エクスポージャと 0–100 のリスクスコアを算出するが、30/60/90 日バケット、通貨別レンジ、Liquidity-at-Risk、Payment Disruption Map 等の本格的な金額ベース分析(設計書 §7.2)は未実装。
 5. **分析モードの欠落** — Cyber & Operational Resilience、Reputation & Communications、Cross-Mode War Room(部門間矛盾検出、設計書 §7.6–7.8)が未実装。
 6. **ソース信頼度 v2** — ドメイン種別による 3 段階のみ。裏取り(corroboration)、鮮度、矛盾検出、来歴が未実装(README Known Constraints)。
 7. **Expert Knowledge Studio / 知見のフィードバックループ** — Knowledge Pack は静的 JSONL。専門家レビュー結果を取り込んでパックを成長させる仕組み(設計書 §9.5–9.6)がない。
@@ -184,7 +184,7 @@ Phase 3 (6–12ヶ月) 複利とエンタープライズ化    F9 新モード+W
 
 **概要**: Treasury モードに金額ベースの決定的分析を追加する: 影響国・影響サプライヤー起点の Payment Disruption Map(期間別の支払停止額)、Liquidity-at-Risk(シナリオ別の資金不足額レンジ)、Critical Supplier Payment(停止時の事業影響が大きい支払の特定)。設計書 §7.2 の中核。
 
-**価値**: 「リスクがある」ではなく「◯◯億円の支払が停止し得る」が出せると、経営会議資料として直接使える成果物になる。スコア 0–100 との違いは説明責任の質。
+**価値**: 現行の支払エクスポージャ要約を、「◯◯億円の支払がどの期間・通貨・前提で停止し得るか」まで引き上げると、経営会議資料として直接使える成果物になる。単一スコアとの違いは説明責任の質。
 
 **実装方針**:
 - 計算はすべて決定的 Python(`mcp-structured-data` の raw ツール側)。既存の tool_policy 原則を維持し、LLM には bucketed 結果のみ渡す。
