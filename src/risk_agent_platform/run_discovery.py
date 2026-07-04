@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
@@ -9,10 +10,13 @@ from pathlib import Path
 from typing import Any
 
 from risk_agent_platform.config import Settings
+from risk_agent_platform.delta import load_previous_recheck_conditions, record_scenario_delta
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
 from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
 from risk_agent_platform.schemas import AgentTaskRequest, RiskDiscoveryRequest, RiskDiscoveryResult, RiskDiscoveryScope, RiskEvent
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ANALYSIS_MODE = "all-selected"
 DEFAULT_ANALYSIS_CONCURRENCY = 5
@@ -281,7 +285,12 @@ def _run_analysis_records(
         embedded_apps = create_embedded_a2a_apps(settings, embedded_mcp=True) if embedded_services else None
         orchestrator = create_orchestrator_service(settings, embedded_apps=embedded_apps)
         task = new_root_task(event)
+        task.inputs["previous_recheck_conditions"] = load_previous_recheck_conditions(settings, event.scenario_id)
         analysis_result = orchestrator.run_task(AgentTaskRequest(task=task))
+        try:
+            record_scenario_delta(settings, event, analysis_result)
+        except Exception as exc:  # noqa: BLE001 - delta recording must never fail the analysis
+            logger.warning("scenario delta recording raised unexpectedly for %s: %s", event.scenario_id, exc)
         return idx, _analysis_record(settings, event, analysis_result)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:

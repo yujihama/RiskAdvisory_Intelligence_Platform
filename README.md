@@ -266,7 +266,27 @@ Expected outputs:
 - `outputs/<scenario_id>/red_team_review.md`
 - `outputs/<scenario_id>/assumptions_and_unknowns.json`
 - `outputs/<scenario_id>/trace_metadata.json`
+- `outputs/<scenario_id>/runs/<run_id>.json` (scenario delta ledger snapshot)
+- `outputs/<scenario_id>/deltas/<run_id>.json` and `outputs/<scenario_id>/deltas/<run_id>_summary.md` (scenario delta ledger, from the second run onward)
 - `outputs/_traces/<trace_id>.jsonl`
+
+## Scenario Delta Ledger
+
+Every completed scenario run (roadmap F2), whether started through `run_scenario.execute_scenario` or the `discover-risks --run-analysis` path, snapshots its comparable state (Evidence IDs with reliability/confidence, per-agent risk scores and review flags, Decisions, assumptions, unknowns, and the `analysis_plan`/per-domain `recheck_conditions`) to `outputs/<scenario_id>/runs/<run_id>.json`. `run_id` is a sortable, unique timestamp-based identifier.
+
+Each run is diffed deterministically (no LLM) against the most recent prior snapshot for the same scenario:
+
+- Evidence is matched by `evidence_id`; new/removed IDs become `evidence_added`/`evidence_removed`.
+- Per-agent risk scores are compared by `agent_name` when both runs have a score and it changed.
+- Decisions are matched by `decision_id` (falling back to the decision text when `decision_id` is absent); additions, removals, and changes to owner/deadline/priority/review_required/rationale are recorded as `decision_changes`.
+- Assumptions with an `expires_at` in the past, or that disappeared from the latest run while still carrying an `expires_at`, are listed in `assumption_expirations`.
+- Unknowns present in the previous run but no longer present are listed in `unknown_resolutions`.
+
+The result is written to `outputs/<scenario_id>/deltas/<run_id>.json` (a `ScenarioDelta`) plus a human-readable `outputs/<scenario_id>/deltas/<run_id>_summary.md`; the first run for a scenario is written as `baseline: true` with empty change lists, and a run with no detected changes states so explicitly ("No changes detected since the previous run.") rather than leaving the summary empty.
+
+Each run also consumes the previous run's `recheck_conditions`: they are loaded before the run and passed to the orchestrator as `task.inputs["previous_recheck_conditions"]` so the analysis plan step can see them, then evaluated deterministically against the computed delta (keyword heuristics for evidence/score/decision-shaped conditions; anything else is recorded as `not_evaluable` rather than guessed) and recorded in `recheck_triggers_fired`.
+
+Delta recording is best-effort and never fails scenario analysis: failures are caught, logged, and — where possible — recorded as a `degraded: true` delta with a `degraded_reason` instead of leaving partial output. The delta is also registered as a best-effort `ScenarioDelta` node linked to its scenario in Neo4j; a store failure only logs a warning. Delta artifacts (`deltas/<run_id>.json` and `deltas/<run_id>_summary.md`) are listed and served by the Platform API's `GET /v1/scenarios/{scenario_id}/artifacts` endpoints alongside the other scenario artifacts.
 
 ## Evidence Ledger
 

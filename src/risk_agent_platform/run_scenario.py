@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from pathlib import Path
 
 from risk_agent_platform.config import Settings
+from risk_agent_platform.delta import load_previous_recheck_conditions, record_scenario_delta
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
 from risk_agent_platform.schemas import AgentTaskRequest, AgentTaskResult, RiskEvent
+
+
+logger = logging.getLogger(__name__)
 
 
 def execute_scenario(settings: Settings, event: RiskEvent, *, embedded_services: bool = False) -> tuple[AgentTaskResult, Path]:
@@ -14,8 +19,13 @@ def execute_scenario(settings: Settings, event: RiskEvent, *, embedded_services:
     embedded_apps = create_embedded_a2a_apps(settings, embedded_mcp=True) if embedded_services else None
     orchestrator = create_orchestrator_service(settings, embedded_apps=embedded_apps)
     task = new_root_task(event)
+    task.inputs["previous_recheck_conditions"] = load_previous_recheck_conditions(settings, event.scenario_id)
     result = orchestrator.run_task(AgentTaskRequest(task=task))
     output_dir = settings.project_root / "outputs" / event.scenario_id
+    try:
+        record_scenario_delta(settings, event, result)
+    except Exception as exc:  # noqa: BLE001 - delta recording must never fail the scenario result
+        logger.warning("scenario delta recording raised unexpectedly for %s: %s", event.scenario_id, exc)
     return result, output_dir
 
 

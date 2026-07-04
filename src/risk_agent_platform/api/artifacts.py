@@ -40,6 +40,11 @@ def list_artifacts(outputs_root: Path, scenario_id: str) -> list[str]:
         for name in SCENARIO_ARTIFACT_NAMES:
             if (scenario_dir / name).is_file():
                 names.append(name)
+        deltas_dir = scenario_dir / "deltas"
+        if deltas_dir.is_dir():
+            for path in sorted(deltas_dir.iterdir()):
+                if path.is_file() and (path.suffix == ".json" or path.name.endswith("_summary.md")):
+                    names.append(f"deltas/{path.name}")
     discovery_dir = outputs_root / "risk_discovery"
     if discovery_dir.is_dir():
         for suffix in DISCOVERY_SUFFIXES:
