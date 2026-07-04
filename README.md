@@ -143,6 +143,24 @@ docker compose up -d
 Langfuse self-host services are included in `docker-compose.yml`.
 The local UI is exposed at `http://localhost:3300` to avoid collisions with common frontend dev servers on port 3000.
 
+## Platform API
+
+The external REST boundary (roadmap F1) wraps the same discovery/scenario pipelines as the CLI:
+
+```powershell
+risk-agent-platform serve-api --host 127.0.0.1 --port 8080
+```
+
+Endpoints:
+
+- `POST /v1/discoveries` — submit a discovery job (mirrors `discover-risks` parameters); returns `202` with a `job_id`.
+- `POST /v1/scenarios` — submit a scenario job from an inline `RiskEvent` or a path under `data/scenarios/`.
+- `GET /v1/jobs/{job_id}` / `GET /v1/jobs?status=` — job status (`submitted -> working -> completed|failed`).
+- `GET /v1/scenarios/{scenario_id}/artifacts` and `GET /v1/scenarios/{scenario_id}/artifacts/{name}` — list and fetch output artifacts.
+- `GET /healthz` — liveness.
+
+Job state persists in SQLite at `outputs/api_jobs.sqlite3` (override with `PLATFORM_API_JOB_DB`). Jobs left `submitted`/`working` by a previous process are marked `failed` with `orphaned_by_restart` on startup. Each job records a `trace_id` and emits `api_job.*` events through the existing trace recorder. OpenAPI docs are served at `/docs`.
+
 ## Run Preflight
 
 ```powershell

@@ -18,6 +18,100 @@ DEFAULT_ANALYSIS_MODE = "all-selected"
 DEFAULT_ANALYSIS_CONCURRENCY = 5
 
 
+def run_discovery_pipeline(
+    settings: Settings,
+    request: RiskDiscoveryRequest,
+    *,
+    scenario_output: Path | None = None,
+    run_analysis: bool = False,
+    allow_fallback_analysis: bool = False,
+    analysis_mode: str = DEFAULT_ANALYSIS_MODE,
+    top_n: int = 3,
+    analysis_concurrency: int = DEFAULT_ANALYSIS_CONCURRENCY,
+    embedded_services: bool = False,
+) -> dict[str, Any]:
+    """Run Risk Discovery and (optionally) scenario analysis, reusable by the CLI and the Platform API.
+
+    Returns a JSON-serializable-friendly summary dict; the CLI prints it line-by-line and the API
+    layer persists a trimmed projection of it as the job result.
+    """
+    discovery = RiskDiscoveryDeepAgent(settings, embedded_mcp=embedded_services)
+    result = discovery.discover(request)
+    output_path = _write_discovery_output(settings, result.model_dump(mode="json"), scenario_output)
+
+    summary: dict[str, Any] = {
+        "result": result,
+        "discovery_status": "completed",
+        "selected_candidate_count": len(result.selected_candidates),
+        "rejected_candidate_count": len(result.rejected_candidates),
+        "fallback_used": bool(result.metadata.get("fallback_used")),
+        "discovery_confidence": result.metadata.get("discovery_confidence", ""),
+        "selected_scenario_id": result.selected_event.scenario_id if result.selected_event else "",
+        "selected_scenario_ids": [event.scenario_id for event in result.selected_events],
+        "discovery_output": str(output_path),
+        "selected_scenario_path": None,
+        "discovery_warning": None,
+        "analysis_status": "skipped",
+        "analysis_concurrency": None,
+        "records": [],
+        "analysis_count": 0,
+        "portfolio_summary_json": None,
+        "portfolio_summary_md": None,
+        "exit_code": 0,
+    }
+
+    if not result.selected_event:
+        summary["analysis_status"] = "skipped:no_selected_event"
+        summary["exit_code"] = 1
+        return summary
+
+    if scenario_output:
+        scenario_output.parent.mkdir(parents=True, exist_ok=True)
+        scenario_output.write_text(
+            json.dumps(result.selected_event.model_dump(mode="json"), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        summary["selected_scenario_path"] = str(scenario_output)
+
+    if not run_analysis:
+        summary["analysis_status"] = "skipped"
+        summary["exit_code"] = 0
+        return summary
+
+    if result.metadata.get("fallback_used") and not allow_fallback_analysis:
+        summary["discovery_warning"] = "template_fallback_requires_explicit_allow_fallback_analysis"
+        summary["analysis_status"] = "blocked:fallback_used"
+        summary["exit_code"] = 2
+        return summary
+
+    events_to_analyze = _events_for_analysis(result, analysis_mode, top_n)
+    if not events_to_analyze:
+        summary["analysis_status"] = "skipped:no_events_to_analyze"
+        summary["exit_code"] = 1
+        return summary
+
+    records = _run_analysis_records(
+        settings,
+        events_to_analyze,
+        embedded_services=embedded_services,
+        concurrency=analysis_concurrency,
+    )
+    portfolio_paths = _write_portfolio_summary(settings, result, records)
+    all_completed = all(record["status"] == "completed" for record in records)
+    summary.update(
+        {
+            "analysis_concurrency": _bounded_analysis_concurrency(analysis_concurrency, len(events_to_analyze)),
+            "records": records,
+            "analysis_count": len(records),
+            "analysis_status": "completed" if all_completed else "failed",
+            "portfolio_summary_json": portfolio_paths["json"],
+            "portfolio_summary_md": portfolio_paths["markdown"],
+            "exit_code": 0 if all_completed else 1,
+        }
+    )
+    return summary
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--event-title", required=True)
@@ -84,48 +178,48 @@ def main(argv: list[str] | None = None) -> int:
             metadata={"industry": args.industry} if args.industry else {},
         ),
     )
-    discovery = RiskDiscoveryDeepAgent(settings, embedded_mcp=args.embedded_services)
-    result = discovery.discover(request)
-    output_path = _write_discovery_output(settings, result.model_dump(mode="json"), args.scenario_output)
-    print(f"discovery_status=completed")
-    print(f"selected_candidate_count={len(result.selected_candidates)}")
-    print(f"rejected_candidate_count={len(result.rejected_candidates)}")
-    print(f"fallback_used={str(bool(result.metadata.get('fallback_used'))).lower()}")
-    print(f"discovery_confidence={result.metadata.get('discovery_confidence', '')}")
-    print(f"selected_scenario_id={result.selected_event.scenario_id if result.selected_event else ''}")
-    print(f"selected_scenario_ids={','.join(event.scenario_id for event in result.selected_events)}")
-    print(f"discovery_output={output_path}")
-
-    if not result.selected_event:
-        print("analysis_status=skipped:no_selected_event")
-        return 1
-
-    if args.scenario_output:
-        args.scenario_output.parent.mkdir(parents=True, exist_ok=True)
-        args.scenario_output.write_text(json.dumps(result.selected_event.model_dump(mode="json"), ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"selected_scenario={args.scenario_output}")
-
-    if not args.run_analysis:
-        print("analysis_status=skipped")
-        return 0
-
-    if result.metadata.get("fallback_used") and not args.allow_fallback_analysis:
-        print("discovery_warning=template_fallback_requires_explicit_allow_fallback_analysis")
-        print("analysis_status=blocked:fallback_used")
-        return 2
-
-    events_to_analyze = _events_for_analysis(result, args.analysis_mode, args.top_n)
-    if not events_to_analyze:
-        print("analysis_status=skipped:no_events_to_analyze")
-        return 1
-
-    records = _run_analysis_records(
+    summary = run_discovery_pipeline(
         settings,
-        events_to_analyze,
+        request,
+        scenario_output=args.scenario_output,
+        run_analysis=args.run_analysis,
+        allow_fallback_analysis=args.allow_fallback_analysis,
+        analysis_mode=args.analysis_mode,
+        top_n=args.top_n,
+        analysis_concurrency=args.analysis_concurrency,
         embedded_services=args.embedded_services,
-        concurrency=args.analysis_concurrency,
     )
-    print(f"analysis_concurrency={_bounded_analysis_concurrency(args.analysis_concurrency, len(events_to_analyze))}")
+    print(f"discovery_status={summary['discovery_status']}")
+    print(f"selected_candidate_count={summary['selected_candidate_count']}")
+    print(f"rejected_candidate_count={summary['rejected_candidate_count']}")
+    print(f"fallback_used={str(summary['fallback_used']).lower()}")
+    print(f"discovery_confidence={summary['discovery_confidence']}")
+    print(f"selected_scenario_id={summary['selected_scenario_id']}")
+    print(f"selected_scenario_ids={','.join(summary['selected_scenario_ids'])}")
+    print(f"discovery_output={summary['discovery_output']}")
+
+    if summary["analysis_status"] == "skipped:no_selected_event":
+        print("analysis_status=skipped:no_selected_event")
+        return summary["exit_code"]
+
+    if summary["selected_scenario_path"]:
+        print(f"selected_scenario={summary['selected_scenario_path']}")
+
+    if summary["analysis_status"] == "skipped":
+        print("analysis_status=skipped")
+        return summary["exit_code"]
+
+    if summary["analysis_status"] == "blocked:fallback_used":
+        print(f"discovery_warning={summary['discovery_warning']}")
+        print("analysis_status=blocked:fallback_used")
+        return summary["exit_code"]
+
+    if summary["analysis_status"] == "skipped:no_events_to_analyze":
+        print("analysis_status=skipped:no_events_to_analyze")
+        return summary["exit_code"]
+
+    records = summary["records"]
+    print(f"analysis_concurrency={summary['analysis_concurrency']}")
     for idx, record in enumerate(records, start=1):
         print(f"analysis_{idx}_scenario_id={record['scenario_id']}")
         print(f"analysis_{idx}_status={record['status']}")
@@ -134,12 +228,11 @@ def main(argv: list[str] | None = None) -> int:
         if record.get("error"):
             error = record["error"]
             print(f"analysis_{idx}_error={error.get('code')}: {error.get('message')}")
-    portfolio_paths = _write_portfolio_summary(settings, result, records)
-    print(f"analysis_status={'completed' if all(record['status'] == 'completed' for record in records) else 'failed'}")
-    print(f"analysis_count={len(records)}")
-    print(f"portfolio_summary_json={portfolio_paths['json']}")
-    print(f"portfolio_summary_md={portfolio_paths['markdown']}")
-    return 0 if all(record["status"] == "completed" for record in records) else 1
+    print(f"analysis_status={summary['analysis_status']}")
+    print(f"analysis_count={summary['analysis_count']}")
+    print(f"portfolio_summary_json={summary['portfolio_summary_json']}")
+    print(f"portfolio_summary_md={summary['portfolio_summary_md']}")
+    return summary["exit_code"]
 
 
 def _write_discovery_output(settings: Settings, data: dict[str, object], scenario_output: Path | None) -> Path:
