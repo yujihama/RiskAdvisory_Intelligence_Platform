@@ -288,6 +288,22 @@ Each run also consumes the previous run's `recheck_conditions`: they are loaded 
 
 Delta recording is best-effort and never fails scenario analysis: failures are caught, logged, and — where possible — recorded as a `degraded: true` delta with a `degraded_reason` instead of leaving partial output. The delta is also registered as a best-effort `ScenarioDelta` node linked to its scenario in Neo4j; a store failure only logs a warning. Delta artifacts (`deltas/<run_id>.json` and `deltas/<run_id>_summary.md`) are listed and served by the Platform API's `GET /v1/scenarios/{scenario_id}/artifacts` endpoints alongside the other scenario artifacts.
 
+## Notifications
+
+Completion, risk-score threshold, review-required Decision, scenario delta, and portfolio owner/deadline conflict events (roadmap F3) are matched against `data/notification_rules.jsonl` — an Expert-as-Code rule file. Each rule (`rule_id`, `description`, `enabled`, `trigger`, `params`, `channels`, `severity`) maps to one of six deterministic triggers: `scenario_completed`, `risk_score_threshold`, `review_required_decision`, `delta_changes`, `portfolio_owner_gap`, `portfolio_deadline_conflict`. Adding a new rule of an existing trigger type only requires appending a JSONL line; no code change is needed. `scenario_completed` ships disabled by default to avoid noise.
+
+Per-scenario rules are evaluated after delta recording in both `run_scenario.execute_scenario` and the `discover-risks --run-analysis` path; portfolio-level rules (owner gaps, deadline conflicts) are evaluated after `_write_portfolio_summary` writes the consolidated Decision conflicts. Notification failures never fail the analysis, matching the delta ledger's degraded-and-continue principle.
+
+Each fired message gets a deterministic idempotency key (`sha256(rule_id + scenario_id + run_or_trace_id + target_id)`) so the same rule firing on the same target within one run is only sent once; the key is also included in the delivered payload for downstream dedupe. Messages are built from a whitelist of fields only (scenario_id, trace_id, rule_id, severity, short summaries, owner names, counts, scores) and the final title/body text is additionally passed through the Query Sanitizer's redaction patterns as defense-in-depth, so amounts, invoice/PO/supplier identifiers, and raw evidence snippets never reach a channel payload. Message links point at the Platform API's `GET /v1/scenarios/{scenario_id}/artifacts` (base URL from `PLATFORM_API_BASE_URL`, default `http://127.0.0.1:8080`).
+
+Three channels are supported, each inactive unless configured through environment variables:
+
+- `webhook` (generic JSON POST) — `NOTIFY_WEBHOOK_URL`
+- `slack` (Slack incoming-webhook payload) — `NOTIFY_SLACK_WEBHOOK_URL`
+- `smtp` (plain-text email via stdlib `smtplib`) — `NOTIFY_SMTP_HOST`, `NOTIFY_SMTP_PORT`, `NOTIFY_SMTP_FROM`, `NOTIFY_SMTP_TO` (comma-separated recipients)
+
+A rule referencing only unconfigured channels is recorded as `skipped:channel_unconfigured` rather than raising. On send failure, delivery is retried up to `NOTIFY_RETRY_MAX_ATTEMPTS` (default 3) additional times with exponential backoff (`NOTIFY_RETRY_BASE_DELAY_SECONDS`, default 0.5s); after the final failure the message, channel, error, and attempt count are appended to `outputs/<scenario_id>/notification_failures.json`. Every evaluated message and its per-channel outcome (`sent` / `skipped:channel_unconfigured` / `failed`) is also appended to `outputs/<scenario_id>/notifications.json` for auditability.
+
 ## Evidence Ledger
 
 Source Intelligence plans bounded query themes, runs multiple sanitized Tavily searches, extracts selected URLs, assigns an initial source reliability score, normalizes results into `EvidenceItem`, stores them in JSONL, indexes them into Qdrant, and links them to scenarios/assets/decisions through Neo4j MCP tools.

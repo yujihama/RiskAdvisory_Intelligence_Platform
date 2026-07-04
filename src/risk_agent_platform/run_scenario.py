@@ -8,7 +8,8 @@ from pathlib import Path
 from risk_agent_platform.config import Settings
 from risk_agent_platform.delta import load_previous_recheck_conditions, record_scenario_delta
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
-from risk_agent_platform.schemas import AgentTaskRequest, AgentTaskResult, RiskEvent
+from risk_agent_platform.notifications import dispatch_scenario_notifications
+from risk_agent_platform.schemas import AgentTaskRequest, AgentTaskResult, RiskEvent, ScenarioDelta
 
 
 logger = logging.getLogger(__name__)
@@ -22,10 +23,15 @@ def execute_scenario(settings: Settings, event: RiskEvent, *, embedded_services:
     task.inputs["previous_recheck_conditions"] = load_previous_recheck_conditions(settings, event.scenario_id)
     result = orchestrator.run_task(AgentTaskRequest(task=task))
     output_dir = settings.project_root / "outputs" / event.scenario_id
+    delta: ScenarioDelta | None = None
     try:
-        record_scenario_delta(settings, event, result)
+        delta = record_scenario_delta(settings, event, result)
     except Exception as exc:  # noqa: BLE001 - delta recording must never fail the scenario result
         logger.warning("scenario delta recording raised unexpectedly for %s: %s", event.scenario_id, exc)
+    try:
+        dispatch_scenario_notifications(settings, event, result, delta)
+    except Exception as exc:  # noqa: BLE001 - notification dispatch must never fail the scenario result
+        logger.warning("notification dispatch raised unexpectedly for %s: %s", event.scenario_id, exc)
     return result, output_dir
 
 

@@ -12,6 +12,7 @@ from typing import Any
 from risk_agent_platform.config import Settings
 from risk_agent_platform.delta import load_previous_recheck_conditions, record_scenario_delta
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
+from risk_agent_platform.notifications import dispatch_portfolio_notifications, dispatch_scenario_notifications
 from risk_agent_platform.risk_discovery import RiskDiscoveryDeepAgent
 from risk_agent_platform.schemas import AgentTaskRequest, RiskDiscoveryRequest, RiskDiscoveryResult, RiskDiscoveryScope, RiskEvent
 
@@ -287,10 +288,15 @@ def _run_analysis_records(
         task = new_root_task(event)
         task.inputs["previous_recheck_conditions"] = load_previous_recheck_conditions(settings, event.scenario_id)
         analysis_result = orchestrator.run_task(AgentTaskRequest(task=task))
+        delta = None
         try:
-            record_scenario_delta(settings, event, analysis_result)
+            delta = record_scenario_delta(settings, event, analysis_result)
         except Exception as exc:  # noqa: BLE001 - delta recording must never fail the analysis
             logger.warning("scenario delta recording raised unexpectedly for %s: %s", event.scenario_id, exc)
+        try:
+            dispatch_scenario_notifications(settings, event, analysis_result, delta)
+        except Exception as exc:  # noqa: BLE001 - notification dispatch must never fail the analysis
+            logger.warning("notification dispatch raised unexpectedly for %s: %s", event.scenario_id, exc)
         return idx, _analysis_record(settings, event, analysis_result)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -353,6 +359,10 @@ def _write_portfolio_summary(
     md_path = output_dir / f"{portfolio_id}_portfolio_summary.md"
     json_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     md_path.write_text(_portfolio_markdown(data), encoding="utf-8")
+    try:
+        dispatch_portfolio_notifications(settings, portfolio_id, data["portfolio_overview"])
+    except Exception as exc:  # noqa: BLE001 - notification dispatch must never fail the discovery pipeline
+        logger.warning("portfolio notification dispatch raised unexpectedly for %s: %s", portfolio_id, exc)
     return {"json": str(json_path), "markdown": str(md_path)}
 
 
