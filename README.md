@@ -143,6 +143,25 @@ docker compose up -d
 Langfuse self-host services are included in `docker-compose.yml`.
 The local UI is exposed at `http://localhost:3300` to avoid collisions with common frontend dev servers on port 3000.
 
+## Platform API
+
+The external REST boundary (roadmap F1) wraps the same discovery/scenario pipelines as the CLI:
+
+```powershell
+risk-agent-platform serve-api --host 127.0.0.1 --port 8080
+```
+
+Endpoints:
+
+- `POST /v1/discoveries` — submit a discovery job (mirrors `discover-risks` parameters); returns `202` with a `job_id`.
+- `POST /v1/scenarios` — submit a scenario job from an inline `RiskEvent` or a path under `data/scenarios/`.
+- `GET /v1/jobs/{job_id}` / `GET /v1/jobs?status=` — job status (`submitted -> working -> completed|failed`).
+- `GET /v1/scenarios/{scenario_id}/artifacts` and `GET /v1/scenarios/{scenario_id}/artifacts/{name}` — list and fetch output artifacts.
+- `POST /v1/scenarios/{scenario_id}/decisions/{decision_id}/actions` and `GET /v1/scenarios/{scenario_id}/decision-log` — Decision Log (roadmap F4), see below.
+- `GET /healthz` — liveness.
+
+Job state persists in SQLite at `outputs/api_jobs.sqlite3` (override with `PLATFORM_API_JOB_DB`). Jobs left `submitted`/`working` by a previous process are marked `failed` with `orphaned_by_restart` on startup. Each job records a `trace_id` and emits `api_job.*` events through the existing trace recorder. OpenAPI docs are served at `/docs`.
+
 ## Run Preflight
 
 ```powershell
@@ -248,7 +267,69 @@ Expected outputs:
 - `outputs/<scenario_id>/red_team_review.md`
 - `outputs/<scenario_id>/assumptions_and_unknowns.json`
 - `outputs/<scenario_id>/trace_metadata.json`
+- `outputs/<scenario_id>/runs/<run_id>.json` (scenario delta ledger snapshot)
+- `outputs/<scenario_id>/deltas/<run_id>.json` and `outputs/<scenario_id>/deltas/<run_id>_summary.md` (scenario delta ledger, from the second run onward)
+- `outputs/<scenario_id>/decision_log.jsonl` (Decision Log, append-only, from the first recorded human action onward)
 - `outputs/_traces/<trace_id>.jsonl`
+
+## Scenario Delta Ledger
+
+Every completed scenario run (roadmap F2), whether started through `run_scenario.execute_scenario` or the `discover-risks --run-analysis` path, snapshots its comparable state (Evidence IDs with reliability/confidence, per-agent risk scores and review flags, Decisions, assumptions, unknowns, and the `analysis_plan`/per-domain `recheck_conditions`) to `outputs/<scenario_id>/runs/<run_id>.json`. `run_id` is a sortable, unique timestamp-based identifier.
+
+Each run is diffed deterministically (no LLM) against the most recent prior snapshot for the same scenario:
+
+- Evidence is matched by `evidence_id`; new/removed IDs become `evidence_added`/`evidence_removed`.
+- Per-agent risk scores are compared by `agent_name` when both runs have a score and it changed.
+- Decisions are matched by `decision_id` (falling back to the decision text when `decision_id` is absent); additions, removals, and changes to owner/deadline/priority/review_required/rationale are recorded as `decision_changes`.
+- Assumptions with an `expires_at` in the past, or that disappeared from the latest run while still carrying an `expires_at`, are listed in `assumption_expirations`.
+- Unknowns present in the previous run but no longer present are listed in `unknown_resolutions`.
+
+The result is written to `outputs/<scenario_id>/deltas/<run_id>.json` (a `ScenarioDelta`) plus a human-readable `outputs/<scenario_id>/deltas/<run_id>_summary.md`; the first run for a scenario is written as `baseline: true` with empty change lists, and a run with no detected changes states so explicitly ("No changes detected since the previous run.") rather than leaving the summary empty.
+
+Each run also consumes the previous run's `recheck_conditions`: they are loaded before the run and passed to the orchestrator as `task.inputs["previous_recheck_conditions"]` so the analysis plan step can see them, then evaluated deterministically against the computed delta (keyword heuristics for evidence/score/decision-shaped conditions; anything else is recorded as `not_evaluable` rather than guessed) and recorded in `recheck_triggers_fired`.
+
+Delta recording is best-effort and never fails scenario analysis: failures are caught, logged, and — where possible — recorded as a `degraded: true` delta with a `degraded_reason` instead of leaving partial output. The delta is also registered as a best-effort `ScenarioDelta` node linked to its scenario in Neo4j; a store failure only logs a warning. Delta artifacts (`deltas/<run_id>.json` and `deltas/<run_id>_summary.md`) are listed and served by the Platform API's `GET /v1/scenarios/{scenario_id}/artifacts` endpoints alongside the other scenario artifacts.
+
+## Decision Log
+
+Every human action on a Decision Queue item — `approve`, `reject`, `hold`, `request_recheck`, `reassign` (roadmap F4) — is recorded as an append-only `DecisionAction` at `outputs/<scenario_id>/decision_log.jsonl`, one JSON object per line, in the order actions occur. There is no update or delete endpoint; the current state of a decision is always the fold of its own actions in that order, never a separately mutated record.
+
+Endpoints:
+
+- `POST /v1/scenarios/{scenario_id}/decisions/{decision_id}/actions` — body `{action, actor, reason?, new_owner?}`. Returns `201` with the recorded `DecisionAction`; `404` for an unknown scenario or `decision_id`; `422` when `reason` is missing for `hold`/`reject` or `new_owner` is missing for `reassign`; `409` when the action is not a valid transition from the decision's current state. (The roadmap sketches a global `POST /v1/decisions/{decision_id}/actions`; this implementation scopes the path under `/v1/scenarios/{scenario_id}/` instead, since `decision_id` values such as `<scenario_id>_decision_001` are only unique within a scenario and this avoids needing a separate global decision index.)
+- `GET /v1/scenarios/{scenario_id}/decision-log` — chronological actions for the scenario, each decision's current state, and a `state_summary` (counts by state plus held reasons).
+
+State machine (deterministic, no LLM involved):
+
+| Current state | `approve` | `reject`* | `hold`* | `request_recheck` | `reassign`† |
+|---|---|---|---|---|---|
+| `pending` | → `approved` | → `rejected` | → `held` | → `recheck_requested` | stays `pending` |
+| `held` | → `approved` | → `rejected` | 409 | → `recheck_requested` | stays `held` |
+| `recheck_requested` | → `approved` | → `rejected` | → `held` | 409 | stays `recheck_requested` |
+| `approved` | 409 | 409 | 409 | 409 | 409 |
+| `rejected` | 409 | 409 | 409 | 409 | 409 |
+
+\* `reason` is required. † `new_owner` is required; `reassign` never changes state (`prev_state == new_state`). `approved` and `rejected` are terminal — every further action, including `reassign`, is rejected as an invalid transition (409); corrections are out of scope by design, matching the append-only storage.
+
+A `request_recheck` action feeds F2: `delta.load_previous_recheck_conditions` also loads the scenario's Decisions currently in `recheck_requested` state and appends a synthetic condition (`decision_recheck_requested: <decision_id> - <reason>`) alongside the run's own recheck conditions. Like any other recheck condition, it flows into the orchestrator's next plan and is evaluated against `decision_changes` in the delta of the run after that (the existing keyword heuristic maps `decision_recheck_requested` conditions to the decision signal).
+
+The Decision Log is best-effort registered in Neo4j as a `(:DecisionAction)` node linked from its `(:Decision)` node via `ACTED_ON`; a store failure only logs a warning. `decision_log.jsonl` is listed and served by the Platform API's artifact endpoints alongside the other scenario artifacts. Portfolio summaries (`_write_portfolio_summary`) include a `decision_log_summary` per scenario and a portfolio-level roll-up: counts of `pending`/`approved`/`rejected`/`held`/`recheck_requested` decisions plus held reasons, with decisions that have no log entries yet counted as `pending`.
+
+## Notifications
+
+Completion, risk-score threshold, review-required Decision, scenario delta, and portfolio owner/deadline conflict events (roadmap F3) are matched against `data/notification_rules.jsonl` — an Expert-as-Code rule file. Each rule (`rule_id`, `description`, `enabled`, `trigger`, `params`, `channels`, `severity`) maps to one of six deterministic triggers: `scenario_completed`, `risk_score_threshold`, `review_required_decision`, `delta_changes`, `portfolio_owner_gap`, `portfolio_deadline_conflict`. Adding a new rule of an existing trigger type only requires appending a JSONL line; no code change is needed. `scenario_completed` ships disabled by default to avoid noise.
+
+Per-scenario rules are evaluated after delta recording in both `run_scenario.execute_scenario` and the `discover-risks --run-analysis` path; portfolio-level rules (owner gaps, deadline conflicts) are evaluated after `_write_portfolio_summary` writes the consolidated Decision conflicts. Notification failures never fail the analysis, matching the delta ledger's degraded-and-continue principle.
+
+Each fired message gets a deterministic idempotency key (`sha256(rule_id + scenario_id + run_or_trace_id + target_id)`) so the same rule firing on the same target within one run is only sent once; the key is also included in the delivered payload for downstream dedupe. Messages are built from a whitelist of fields only (scenario_id, trace_id, rule_id, severity, short summaries, owner names, counts, scores) and the final title/body text is additionally passed through the Query Sanitizer's redaction patterns as defense-in-depth, so amounts, invoice/PO/supplier identifiers, and raw evidence snippets never reach a channel payload. Message links point at the Platform API's `GET /v1/scenarios/{scenario_id}/artifacts` (base URL from `PLATFORM_API_BASE_URL`, default `http://127.0.0.1:8080`).
+
+Three channels are supported, each inactive unless configured through environment variables:
+
+- `webhook` (generic JSON POST) — `NOTIFY_WEBHOOK_URL`
+- `slack` (Slack incoming-webhook payload) — `NOTIFY_SLACK_WEBHOOK_URL`
+- `smtp` (plain-text email via stdlib `smtplib`) — `NOTIFY_SMTP_HOST`, `NOTIFY_SMTP_PORT`, `NOTIFY_SMTP_FROM`, `NOTIFY_SMTP_TO` (comma-separated recipients)
+
+A rule referencing only unconfigured channels is recorded as `skipped:channel_unconfigured` rather than raising. On send failure, delivery is retried up to `NOTIFY_RETRY_MAX_ATTEMPTS` (default 3) additional times with exponential backoff (`NOTIFY_RETRY_BASE_DELAY_SECONDS`, default 0.5s); after the final failure the message, channel, error, and attempt count are appended to `outputs/<scenario_id>/notification_failures.json`. Every evaluated message and its per-channel outcome (`sent` / `skipped:channel_unconfigured` / `failed`) is also appended to `outputs/<scenario_id>/notifications.json` for auditability.
 
 ## Evidence Ledger
 

@@ -125,6 +125,34 @@ class ExternalApiSettings:
         return cls(tavily_api_key=os.getenv("TAVILY_API_KEY") or None)
 
 
+@dataclass(frozen=True)
+class NotificationSettings:
+    webhook_url: str | None
+    slack_webhook_url: str | None
+    smtp_host: str | None
+    smtp_port: int
+    smtp_from: str | None
+    smtp_to: list[str]
+    retry_max_attempts: int
+    retry_base_delay_seconds: float
+    platform_api_base_url: str
+
+    @classmethod
+    def from_env(cls) -> "NotificationSettings":
+        smtp_to_raw = os.getenv("NOTIFY_SMTP_TO", "")
+        return cls(
+            webhook_url=os.getenv("NOTIFY_WEBHOOK_URL") or None,
+            slack_webhook_url=os.getenv("NOTIFY_SLACK_WEBHOOK_URL") or None,
+            smtp_host=os.getenv("NOTIFY_SMTP_HOST") or None,
+            smtp_port=int(os.getenv("NOTIFY_SMTP_PORT", "587")),
+            smtp_from=os.getenv("NOTIFY_SMTP_FROM") or None,
+            smtp_to=[addr.strip() for addr in smtp_to_raw.split(",") if addr.strip()],
+            retry_max_attempts=int(os.getenv("NOTIFY_RETRY_MAX_ATTEMPTS", "3")),
+            retry_base_delay_seconds=float(os.getenv("NOTIFY_RETRY_BASE_DELAY_SECONDS", "0.5")),
+            platform_api_base_url=os.getenv("PLATFORM_API_BASE_URL", "http://127.0.0.1:8080"),
+        )
+
+
 def service_urls_from_env() -> dict[str, str]:
     return {
         "orchestrator-agent": os.getenv("ORCHESTRATOR_AGENT_URL", "http://localhost:8100"),
@@ -163,6 +191,7 @@ class Settings:
     embeddings: EmbeddingSettings
     external_apis: ExternalApiSettings
     langfuse: LangfuseSettings
+    notifications: NotificationSettings
     service_urls: dict[str, str]
     mcp_urls: dict[str, str]
 
@@ -178,6 +207,7 @@ class Settings:
             embeddings=EmbeddingSettings.from_env(),
             external_apis=ExternalApiSettings.from_env(),
             langfuse=LangfuseSettings.from_env(),
+            notifications=NotificationSettings.from_env(),
             service_urls=service_urls_from_env(),
             mcp_urls=mcp_urls_from_env(),
         )

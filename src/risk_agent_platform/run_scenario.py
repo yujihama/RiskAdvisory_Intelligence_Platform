@@ -2,12 +2,37 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from pathlib import Path
 
-from risk_agent_platform.a2a_http import create_a2a_app
 from risk_agent_platform.config import Settings
+from risk_agent_platform.delta import load_previous_recheck_conditions, record_scenario_delta
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
-from risk_agent_platform.schemas import AgentTaskRequest, RiskEvent
+from risk_agent_platform.notifications import dispatch_scenario_notifications
+from risk_agent_platform.schemas import AgentTaskRequest, AgentTaskResult, RiskEvent, ScenarioDelta
+
+
+logger = logging.getLogger(__name__)
+
+
+def execute_scenario(settings: Settings, event: RiskEvent, *, embedded_services: bool = False) -> tuple[AgentTaskResult, Path]:
+    """Run the A2A/MCP/DeepAgent scenario path for a single RiskEvent, reusable by the CLI and the Platform API."""
+    embedded_apps = create_embedded_a2a_apps(settings, embedded_mcp=True) if embedded_services else None
+    orchestrator = create_orchestrator_service(settings, embedded_apps=embedded_apps)
+    task = new_root_task(event)
+    task.inputs["previous_recheck_conditions"] = load_previous_recheck_conditions(settings, event.scenario_id)
+    result = orchestrator.run_task(AgentTaskRequest(task=task))
+    output_dir = settings.project_root / "outputs" / event.scenario_id
+    delta: ScenarioDelta | None = None
+    try:
+        delta = record_scenario_delta(settings, event, result)
+    except Exception as exc:  # noqa: BLE001 - delta recording must never fail the scenario result
+        logger.warning("scenario delta recording raised unexpectedly for %s: %s", event.scenario_id, exc)
+    try:
+        dispatch_scenario_notifications(settings, event, result, delta)
+    except Exception as exc:  # noqa: BLE001 - notification dispatch must never fail the scenario result
+        logger.warning("notification dispatch raised unexpectedly for %s: %s", event.scenario_id, exc)
+    return result, output_dir
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -18,12 +43,7 @@ def main(argv: list[str] | None = None) -> int:
 
     settings = Settings.load(Path.cwd())
     event = RiskEvent.model_validate(json.loads(args.scenario.read_text(encoding="utf-8")))
-    embedded_apps = create_embedded_a2a_apps(settings, embedded_mcp=True) if args.embedded_services else None
-    orchestrator = create_orchestrator_service(settings, embedded_apps=embedded_apps)
-    app = create_a2a_app(orchestrator)
-    task = new_root_task(event)
-    result = orchestrator.run_task(AgentTaskRequest(task=task))
-    output_dir = settings.project_root / "outputs" / event.scenario_id
+    result, output_dir = execute_scenario(settings, event, embedded_services=args.embedded_services)
     print(f"status={result.status}")
     print(f"trace_id={result.trace_id}")
     print(f"output_dir={output_dir}")

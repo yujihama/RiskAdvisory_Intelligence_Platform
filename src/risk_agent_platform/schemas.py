@@ -445,3 +445,56 @@ class ScenarioResult(StrictModel):
     decisions: list[DecisionItem]
     evidence: list[EvidenceItem]
     final_brief_path: str
+
+
+class RecheckEvaluation(StrictModel):
+    condition: str
+    status: Literal["fired", "not_fired", "not_evaluable"]
+    rationale: str = ""
+
+
+class ScoreChange(StrictModel):
+    agent_name: str
+    previous_score: int
+    current_score: int
+
+
+class DecisionChange(StrictModel):
+    change_type: Literal["added", "removed", "modified"]
+    decision_id: str
+    decision: str
+    changed_fields: list[str] = Field(default_factory=list)
+
+
+DecisionActionType = Literal["approve", "reject", "hold", "request_recheck", "reassign"]
+DecisionState = Literal["pending", "approved", "rejected", "held", "recheck_requested"]
+
+
+class DecisionAction(StrictModel):
+    action_id: str
+    scenario_id: str
+    decision_id: str
+    action: DecisionActionType
+    actor: str
+    reason: str = ""
+    new_owner: str | None = None
+    prev_state: DecisionState
+    new_state: DecisionState
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+class ScenarioDelta(StrictModel):
+    scenario_id: str
+    run_id: str
+    previous_run_id: str | None = None
+    baseline: bool = False
+    evidence_added: list[str] = Field(default_factory=list)
+    evidence_removed: list[str] = Field(default_factory=list)
+    score_changes: list[ScoreChange] = Field(default_factory=list)
+    decision_changes: list[DecisionChange] = Field(default_factory=list)
+    assumption_expirations: list[str] = Field(default_factory=list)
+    unknown_resolutions: list[str] = Field(default_factory=list)
+    recheck_triggers_fired: list[RecheckEvaluation] = Field(default_factory=list)
+    generated_at: datetime = Field(default_factory=now_utc)
+    degraded: bool = False
+    degraded_reason: str | None = None

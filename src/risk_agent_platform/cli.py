@@ -3,6 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import uvicorn
+
+from risk_agent_platform.api.app import create_app
 from risk_agent_platform.config import Settings
 from risk_agent_platform.run_discovery import main as run_discovery_main
 from risk_agent_platform.run_discovery_evaluation import main as run_discovery_evaluation_main
@@ -69,6 +72,10 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--min-rubric-coverage", type=float, default=0.5)
 
     sub.add_parser("preflight", help="Check required final architecture configuration.")
+
+    serve_api = sub.add_parser("serve-api", help="Start the external Platform API (FastAPI) service.")
+    serve_api.add_argument("--host", default="127.0.0.1")
+    serve_api.add_argument("--port", type=int, default=8080)
 
     return parser
 
@@ -151,6 +158,11 @@ def main(argv: list[str] | None = None) -> int:
         for name, ok in checks.items():
             print(f"{name}={'ok' if ok else 'missing'}")
         return 0 if all(checks.values()) else 1
+
+    if args.command == "serve-api":
+        app = create_app(settings)
+        uvicorn.run(app, host=args.host, port=args.port)
+        return 0
 
     parser.error(f"Unknown command: {args.command}")
     return 2

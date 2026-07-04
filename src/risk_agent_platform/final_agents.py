@@ -953,7 +953,7 @@ class OrchestratorDeepAgentService(A2AService):
 
     def run_orchestration(self, task: AgentTask) -> AgentFinding:
         event = RiskEvent.model_validate(task.inputs["risk_event"])
-        analysis_plan = self._create_analysis_plan(event)
+        analysis_plan = self._create_analysis_plan(task, event)
         agent_order = [agent_name for agent_name in FIXED_AGENT_ORDER if agent_name in analysis_plan.selected_agents]
         if not agent_order:
             analysis_plan = _fallback_analysis_plan()
@@ -1008,21 +1008,26 @@ class OrchestratorDeepAgentService(A2AService):
             metadata={"analysis_plan": analysis_plan.model_dump(mode="json"), "findings": findings},
         )
 
-    def _create_analysis_plan(self, event: RiskEvent) -> AnalysisPlan:
+    def _create_analysis_plan(self, task: AgentTask, event: RiskEvent) -> AnalysisPlan:
+        previous_recheck_conditions = _string_list(task.inputs.get("previous_recheck_conditions"), limit=12)
         deterministic_plan = _deterministic_analysis_plan(event)
         if deterministic_plan:
-            return deterministic_plan
+            return _with_previous_recheck_conditions(deterministic_plan, previous_recheck_conditions)
         prompt = (
             "Return only JSON for a bounded risk-analysis plan. Preserve the fixed agent order by selecting names "
-            "from fixed_agent_order; do not invent agent names. Schema: "
+            "from fixed_agent_order; do not invent agent names. If previous_recheck_conditions is non-empty, "
+            "consider whether they should still apply and may be reflected in recheck_conditions. Schema: "
             "{\"selected_agents\": [], \"skipped_agents\": [], \"recheck_conditions\": [], "
             "\"exploration_questions\": [], \"rationale\": \"...\"}.\n"
             f"fixed_agent_order={json.dumps(FIXED_AGENT_ORDER)}\n"
+            f"previous_recheck_conditions={json.dumps(previous_recheck_conditions, ensure_ascii=False)}\n"
             f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}"
         )
         text = self.runner.synthesize(prompt, max_chars=4000)
         plan = _analysis_plan_from_text(text)
-        return plan or _fallback_analysis_plan()
+        if plan is None:
+            return _fallback_analysis_plan()
+        return _with_previous_recheck_conditions(plan, previous_recheck_conditions)
 
 
 def create_domain_services(settings: Settings, *, embedded_mcp: bool = False) -> dict[str, A2AService]:
@@ -1087,6 +1092,16 @@ def _analysis_plan_from_text(text: str) -> AnalysisPlan | None:
         rationale=str(data.get("rationale") or ""),
         fallback_used=False,
     )
+
+
+def _with_previous_recheck_conditions(plan: AnalysisPlan, previous_recheck_conditions: list[str]) -> AnalysisPlan:
+    if not previous_recheck_conditions:
+        return plan
+    merged = list(plan.recheck_conditions)
+    for condition in previous_recheck_conditions:
+        if condition not in merged:
+            merged.append(condition)
+    return plan.model_copy(update={"recheck_conditions": merged})
 
 
 def _fallback_analysis_plan() -> AnalysisPlan:
