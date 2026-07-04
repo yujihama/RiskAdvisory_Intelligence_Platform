@@ -157,6 +157,7 @@ Endpoints:
 - `POST /v1/scenarios` — submit a scenario job from an inline `RiskEvent` or a path under `data/scenarios/`.
 - `GET /v1/jobs/{job_id}` / `GET /v1/jobs?status=` — job status (`submitted -> working -> completed|failed`).
 - `GET /v1/scenarios/{scenario_id}/artifacts` and `GET /v1/scenarios/{scenario_id}/artifacts/{name}` — list and fetch output artifacts.
+- `POST /v1/scenarios/{scenario_id}/decisions/{decision_id}/actions` and `GET /v1/scenarios/{scenario_id}/decision-log` — Decision Log (roadmap F4), see below.
 - `GET /healthz` — liveness.
 
 Job state persists in SQLite at `outputs/api_jobs.sqlite3` (override with `PLATFORM_API_JOB_DB`). Jobs left `submitted`/`working` by a previous process are marked `failed` with `orphaned_by_restart` on startup. Each job records a `trace_id` and emits `api_job.*` events through the existing trace recorder. OpenAPI docs are served at `/docs`.
@@ -268,6 +269,7 @@ Expected outputs:
 - `outputs/<scenario_id>/trace_metadata.json`
 - `outputs/<scenario_id>/runs/<run_id>.json` (scenario delta ledger snapshot)
 - `outputs/<scenario_id>/deltas/<run_id>.json` and `outputs/<scenario_id>/deltas/<run_id>_summary.md` (scenario delta ledger, from the second run onward)
+- `outputs/<scenario_id>/decision_log.jsonl` (Decision Log, append-only, from the first recorded human action onward)
 - `outputs/_traces/<trace_id>.jsonl`
 
 ## Scenario Delta Ledger
@@ -287,6 +289,31 @@ The result is written to `outputs/<scenario_id>/deltas/<run_id>.json` (a `Scenar
 Each run also consumes the previous run's `recheck_conditions`: they are loaded before the run and passed to the orchestrator as `task.inputs["previous_recheck_conditions"]` so the analysis plan step can see them, then evaluated deterministically against the computed delta (keyword heuristics for evidence/score/decision-shaped conditions; anything else is recorded as `not_evaluable` rather than guessed) and recorded in `recheck_triggers_fired`.
 
 Delta recording is best-effort and never fails scenario analysis: failures are caught, logged, and — where possible — recorded as a `degraded: true` delta with a `degraded_reason` instead of leaving partial output. The delta is also registered as a best-effort `ScenarioDelta` node linked to its scenario in Neo4j; a store failure only logs a warning. Delta artifacts (`deltas/<run_id>.json` and `deltas/<run_id>_summary.md`) are listed and served by the Platform API's `GET /v1/scenarios/{scenario_id}/artifacts` endpoints alongside the other scenario artifacts.
+
+## Decision Log
+
+Every human action on a Decision Queue item — `approve`, `reject`, `hold`, `request_recheck`, `reassign` (roadmap F4) — is recorded as an append-only `DecisionAction` at `outputs/<scenario_id>/decision_log.jsonl`, one JSON object per line, in the order actions occur. There is no update or delete endpoint; the current state of a decision is always the fold of its own actions in that order, never a separately mutated record.
+
+Endpoints:
+
+- `POST /v1/scenarios/{scenario_id}/decisions/{decision_id}/actions` — body `{action, actor, reason?, new_owner?}`. Returns `201` with the recorded `DecisionAction`; `404` for an unknown scenario or `decision_id`; `422` when `reason` is missing for `hold`/`reject` or `new_owner` is missing for `reassign`; `409` when the action is not a valid transition from the decision's current state. (The roadmap sketches a global `POST /v1/decisions/{decision_id}/actions`; this implementation scopes the path under `/v1/scenarios/{scenario_id}/` instead, since `decision_id` values such as `<scenario_id>_decision_001` are only unique within a scenario and this avoids needing a separate global decision index.)
+- `GET /v1/scenarios/{scenario_id}/decision-log` — chronological actions for the scenario, each decision's current state, and a `state_summary` (counts by state plus held reasons).
+
+State machine (deterministic, no LLM involved):
+
+| Current state | `approve` | `reject`* | `hold`* | `request_recheck` | `reassign`† |
+|---|---|---|---|---|---|
+| `pending` | → `approved` | → `rejected` | → `held` | → `recheck_requested` | stays `pending` |
+| `held` | → `approved` | → `rejected` | 409 | → `recheck_requested` | stays `held` |
+| `recheck_requested` | → `approved` | → `rejected` | → `held` | 409 | stays `recheck_requested` |
+| `approved` | 409 | 409 | 409 | 409 | 409 |
+| `rejected` | 409 | 409 | 409 | 409 | 409 |
+
+\* `reason` is required. † `new_owner` is required; `reassign` never changes state (`prev_state == new_state`). `approved` and `rejected` are terminal — every further action, including `reassign`, is rejected as an invalid transition (409); corrections are out of scope by design, matching the append-only storage.
+
+A `request_recheck` action feeds F2: `delta.load_previous_recheck_conditions` also loads the scenario's Decisions currently in `recheck_requested` state and appends a synthetic condition (`decision_recheck_requested: <decision_id> - <reason>`) alongside the run's own recheck conditions. Like any other recheck condition, it flows into the orchestrator's next plan and is evaluated against `decision_changes` in the delta of the run after that (the existing keyword heuristic maps `decision_recheck_requested` conditions to the decision signal).
+
+The Decision Log is best-effort registered in Neo4j as a `(:DecisionAction)` node linked from its `(:Decision)` node via `ACTED_ON`; a store failure only logs a warning. `decision_log.jsonl` is listed and served by the Platform API's artifact endpoints alongside the other scenario artifacts. Portfolio summaries (`_write_portfolio_summary`) include a `decision_log_summary` per scenario and a portfolio-level roll-up: counts of `pending`/`approved`/`rejected`/`held`/`recheck_requested` decisions plus held reasons, with decisions that have no log entries yet counted as `pending`.
 
 ## Notifications
 

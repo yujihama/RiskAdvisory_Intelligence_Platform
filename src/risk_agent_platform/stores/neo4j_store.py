@@ -26,6 +26,7 @@ ALLOWED_NODE_LABELS = {
     "Assumption",
     "Unknown",
     "ScenarioDelta",
+    "DecisionAction",
 }
 
 ALLOWED_RELATIONSHIPS = {
@@ -46,6 +47,7 @@ ALLOWED_RELATIONSHIPS = {
     "HAS_ASSUMPTION",
     "HAS_UNKNOWN",
     "HAS_DELTA",
+    "ACTED_ON",
 }
 
 

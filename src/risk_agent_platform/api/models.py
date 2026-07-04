@@ -6,7 +6,15 @@ from typing import Any, Literal
 from pydantic import Field, field_validator, model_validator
 
 from risk_agent_platform.run_discovery import DEFAULT_ANALYSIS_CONCURRENCY
-from risk_agent_platform.schemas import RiskDiscoveryRequest, RiskDiscoveryScope, RiskEvent, StrictModel
+from risk_agent_platform.schemas import (
+    DecisionAction,
+    DecisionActionType,
+    DecisionState,
+    RiskDiscoveryRequest,
+    RiskDiscoveryScope,
+    RiskEvent,
+    StrictModel,
+)
 
 
 ScopeType = Literal[
@@ -124,3 +132,17 @@ class JobListResponse(StrictModel):
 class ArtifactListResponse(StrictModel):
     scenario_id: str
     artifacts: list[str]
+
+
+class DecisionActionRequest(StrictModel):
+    action: DecisionActionType
+    actor: str
+    reason: str = ""
+    new_owner: str | None = None
+
+
+class DecisionLogResponse(StrictModel):
+    scenario_id: str
+    actions: list[DecisionAction]
+    states: dict[str, DecisionState]
+    summary: dict[str, Any]

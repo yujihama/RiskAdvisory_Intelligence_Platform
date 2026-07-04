@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from risk_agent_platform.config import Settings
+from risk_agent_platform.decision_log import DecisionLogStore
 from risk_agent_platform.delta import load_previous_recheck_conditions, record_scenario_delta
 from risk_agent_platform.final_agents import create_embedded_a2a_apps, create_orchestrator_service, new_root_task
 from risk_agent_platform.notifications import dispatch_portfolio_notifications, dispatch_scenario_notifications
@@ -333,6 +334,7 @@ def _analysis_record(settings: Settings, event: RiskEvent, analysis_result: Any)
             {str(item.get("source_domain")) for item in evidence if item.get("source_domain")}
         ),
         "orchestrator_finding": finding,
+        "decision_log_summary": DecisionLogStore(settings).state_summary(event.scenario_id),
     }
 
 
@@ -431,6 +433,26 @@ def _portfolio_overview(records: list[dict[str, Any]], decision_rules: list[dict
         "decisions_by_owner": _group_decisions(decision_rows, "owner"),
         "decisions_by_deadline": _group_decisions(decision_rows, "deadline"),
         "decision_conflicts": _decision_conflicts(consolidated_decisions),
+        "decision_log_summary": _decision_log_rollup(records),
+    }
+
+
+def _decision_log_rollup(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Portfolio-level roll-up of each scenario's DecisionLogStore.state_summary (roadmap F4)."""
+    counts: dict[str, int] = {state: 0 for state in ("pending", "approved", "rejected", "held", "recheck_requested")}
+    held_reasons: dict[str, list[str]] = {}
+    total_decisions = 0
+    for record in records:
+        summary = record.get("decision_log_summary") or {}
+        for state, count in (summary.get("counts") or {}).items():
+            counts[state] = counts.get(state, 0) + int(count or 0)
+        total_decisions += int(summary.get("total_decisions") or 0)
+        for decision_id, reasons in (summary.get("held_reasons") or {}).items():
+            held_reasons[decision_id] = list(reasons)
+    return {
+        "total_decisions": total_decisions,
+        "counts": counts,
+        "held_reasons": held_reasons,
     }
 
 

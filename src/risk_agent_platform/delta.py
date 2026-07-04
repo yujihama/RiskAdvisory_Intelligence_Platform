@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from risk_agent_platform import decision_log
 from risk_agent_platform.config import Settings
 from risk_agent_platform.schemas import (
     AgentTaskResult,
@@ -104,12 +105,26 @@ def record_scenario_delta(settings: Settings, event: RiskEvent, result: AgentTas
 
 
 def load_previous_recheck_conditions(settings: Settings, scenario_id: str) -> list[str]:
+    """Recheck conditions for the next run: prior-run conditions plus any human `request_recheck` actions.
+
+    Feeds F2 (Scenario Delta Ledger): both this scenario's own analysis_plan/domain recheck
+    conditions from the previous run, and synthetic conditions for any Decision currently in the
+    `recheck_requested` state (F4), so a human's request-recheck action is evaluated like any
+    other recheck condition in the next run's delta.
+    """
     try:
         snapshot = _load_latest_snapshot(settings, scenario_id, exclude_run_id=None)
+        conditions = list(snapshot.recheck_conditions) if snapshot else []
     except Exception as exc:  # noqa: BLE001
         logger.warning("failed to load previous recheck conditions for %s: %s", scenario_id, exc)
-        return []
-    return list(snapshot.recheck_conditions) if snapshot else []
+        conditions = []
+    try:
+        for condition in decision_log.recheck_requested_conditions(settings, scenario_id):
+            if condition not in conditions:
+                conditions.append(condition)
+    except Exception as exc:  # noqa: BLE001 - decision log lookups must never break recheck loading
+        logger.warning("failed to load decision recheck conditions for %s: %s", scenario_id, exc)
+    return conditions
 
 
 def compute_delta(previous: RunSnapshot | None, current: RunSnapshot, *, now: datetime | None = None) -> ScenarioDelta:

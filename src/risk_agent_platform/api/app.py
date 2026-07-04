@@ -22,6 +22,8 @@ from risk_agent_platform.api.artifacts import (
 from risk_agent_platform.api.jobs import JOB_STATUSES, JobRecord, JobStore
 from risk_agent_platform.api.models import (
     ArtifactListResponse,
+    DecisionActionRequest,
+    DecisionLogResponse,
     DiscoveryJobRequest,
     JobListResponse,
     JobStatusResponse,
@@ -30,7 +32,14 @@ from risk_agent_platform.api.models import (
 )
 from risk_agent_platform.api.runner import JobRunner
 from risk_agent_platform.config import Settings
-from risk_agent_platform.schemas import RiskEvent
+from risk_agent_platform.decision_log import (
+    DecisionLogStore,
+    DecisionNotFoundError,
+    DecisionValidationError,
+    InvalidTransitionError,
+    ScenarioNotFoundError,
+)
+from risk_agent_platform.schemas import DecisionAction, RiskEvent
 
 
 logger = logging.getLogger(__name__)
@@ -66,6 +75,7 @@ def create_app(
     settings = settings or Settings.load(Path.cwd())
     store = JobStore(job_db_path or default_job_db_path(settings))
     runner = JobRunner(settings, store, max_workers=max_workers)
+    decision_log_store = DecisionLogStore(settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
@@ -81,6 +91,7 @@ def create_app(
     app.state.settings = settings
     app.state.store = store
     app.state.runner = runner
+    app.state.decision_log_store = decision_log_store
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -149,5 +160,40 @@ def create_app(
         except ArtifactNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         return Response(content=path.read_bytes(), media_type=artifact_media_type(name))
+
+    @app.post(
+        "/v1/scenarios/{scenario_id}/decisions/{decision_id}/actions",
+        status_code=201,
+        response_model=DecisionAction,
+    )
+    def record_decision_action(scenario_id: str, decision_id: str, body: DecisionActionRequest) -> DecisionAction:
+        # Deviation from the roadmap's sketched `POST /v1/decisions/{decision_id}/actions`: decision_ids
+        # are only unique within a scenario (see final_agents.py's `<scenario_id>_decision_NNN` scheme), so
+        # this is scoped under /v1/scenarios/{scenario_id}/ to avoid needing a global decision_id index.
+        try:
+            return decision_log_store.append_action(
+                scenario_id,
+                decision_id,
+                action=body.action,
+                actor=body.actor,
+                reason=body.reason,
+                new_owner=body.new_owner,
+            )
+        except (ScenarioNotFoundError, DecisionNotFoundError) as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except DecisionValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except InvalidTransitionError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @app.get("/v1/scenarios/{scenario_id}/decision-log", response_model=DecisionLogResponse)
+    def get_decision_log(scenario_id: str) -> DecisionLogResponse:
+        try:
+            states = decision_log_store.all_current_states(scenario_id)
+        except ScenarioNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        actions = decision_log_store.list_actions(scenario_id)
+        summary = decision_log_store.state_summary(scenario_id)
+        return DecisionLogResponse(scenario_id=scenario_id, actions=actions, states=states, summary=summary)
 
     return app

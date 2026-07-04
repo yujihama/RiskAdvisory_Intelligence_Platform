@@ -466,6 +466,23 @@ class DecisionChange(StrictModel):
     changed_fields: list[str] = Field(default_factory=list)
 
 
+DecisionActionType = Literal["approve", "reject", "hold", "request_recheck", "reassign"]
+DecisionState = Literal["pending", "approved", "rejected", "held", "recheck_requested"]
+
+
+class DecisionAction(StrictModel):
+    action_id: str
+    scenario_id: str
+    decision_id: str
+    action: DecisionActionType
+    actor: str
+    reason: str = ""
+    new_owner: str | None = None
+    prev_state: DecisionState
+    new_state: DecisionState
+    created_at: datetime = Field(default_factory=now_utc)
+
+
 class ScenarioDelta(StrictModel):
     scenario_id: str
     run_id: str

@@ -10,6 +10,7 @@ SCENARIO_ARTIFACT_NAMES: tuple[str, ...] = (
     "red_team_review.md",
     "assumptions_and_unknowns.json",
     "trace_metadata.json",
+    "decision_log.jsonl",
 )
 
 DISCOVERY_SUFFIXES: tuple[str, ...] = (
@@ -74,6 +75,8 @@ def resolve_artifact_path(outputs_root: Path, scenario_id: str, name: str) -> Pa
 def artifact_media_type(name: str) -> str:
     if name.endswith(".md"):
         return "text/markdown"
+    if name.endswith(".jsonl"):
+        return "application/x-ndjson"
     if name.endswith(".json"):
         return "application/json"
     return "application/octet-stream"
