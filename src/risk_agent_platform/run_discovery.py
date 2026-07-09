@@ -411,6 +411,7 @@ def _portfolio_overview(records: list[dict[str, Any]], decision_rules: list[dict
                         "owner": decision.get("owner"),
                         "priority": priority,
                         "review_required": bool(decision.get("review_required")),
+                        "priority_evidence": decision.get("priority_evidence") or [],
                     }
                 )
 
@@ -428,7 +429,7 @@ def _portfolio_overview(records: list[dict[str, Any]], decision_rules: list[dict
         "total_evidence": total_evidence,
         "evidence_domains": sorted(evidence_domains),
         "review_required_scenarios": [scenario_id for scenario_id in review_required_scenarios if scenario_id],
-        "priority_decisions": priority_decisions[:20],
+        "priority_decisions": priority_decisions,
         "consolidated_decisions": consolidated_decisions,
         "decisions_by_owner": _group_decisions(decision_rows, "owner"),
         "decisions_by_deadline": _group_decisions(decision_rows, "deadline"),
@@ -487,7 +488,12 @@ def _consolidated_decisions(rows: list[dict[str, Any]], decision_rules: list[dic
     decision_rules = decision_rules or []
     groups: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
-        groups.setdefault(_decision_group_key(str(row.get("decision") or ""), decision_rules), []).append(row)
+        group_key = _decision_group_key(
+            str(row.get("decision") or ""),
+            decision_rules,
+            risk_type=str(row.get("risk_type") or ""),
+        )
+        groups.setdefault(group_key, []).append(row)
     consolidated = []
     for group_key, items in groups.items():
         rule = _decision_rule_by_group(group_key, decision_rules)
@@ -526,26 +532,62 @@ def _owner_tokens(owner: Any) -> list[str]:
     return tokens or ["Unassigned"]
 
 
-def _decision_group_key(text: str, decision_rules: list[dict[str, Any]] | None = None) -> str:
+def _decision_group_key(
+    text: str,
+    decision_rules: list[dict[str, Any]] | None = None,
+    *,
+    risk_type: str = "",
+) -> str:
     lowered = text.lower()
-    for rule in decision_rules or []:
+    normalized = re.sub(r"[-_/]+", " ", lowered)
+    preferred_groups = _preferred_decision_groups(risk_type)
+    sorted_rules = sorted(
+        decision_rules or [],
+        key=lambda rule: _decision_rule_priority(str(rule.get("group_id") or ""), preferred_groups),
+    )
+    for rule in sorted_rules:
         terms = [str(term).lower() for term in rule.get("match_terms") or []]
-        if terms and any(term in lowered for term in terms):
+        if terms and any(_decision_term_matches(term, lowered, normalized) for term in terms):
             return str(rule.get("group_id") or rule.get("rule_id") or "decision_review")
-    if "sanction" in lowered or "restricted" in lowered:
+    if risk_type == "legal_compliance" and ("contract" in lowered or "notice" in lowered or "force majeure" in lowered):
+        return "contract_review"
+    if "sanction" in lowered or "restricted" in lowered or "export control" in normalized:
         return "sanctions_review"
     if "payment" in lowered or "cash" in lowered or "bank" in lowered:
         return "payment_execution"
-    if "supplier" in lowered or "procurement" in lowered:
-        return "supplier_continuity"
     if "contract" in lowered or "notice" in lowered or "force majeure" in lowered:
         return "contract_review"
+    if "supplier" in lowered or "procurement" in lowered:
+        return "supplier_continuity"
     tokens = [
         token
         for token in re.sub(r"[^a-z0-9]+", " ", lowered).split()
         if len(token) >= 4 and token not in {"confirm", "review", "check", "required", "owner"}
     ]
     return "_".join(tokens[:5]) if tokens else "decision_review"
+
+
+def _preferred_decision_groups(risk_type: str) -> set[str]:
+    if risk_type == "legal_compliance":
+        return {"sanctions_review", "contract_review"}
+    if risk_type == "payment_disruption":
+        return {"payment_execution", "sanctions_review"}
+    if risk_type == "supplier_resilience":
+        return {"supplier_continuity", "contract_review"}
+    return set()
+
+
+def _decision_rule_priority(group_id: str, preferred_groups: set[str]) -> int:
+    if group_id == "sanctions_review":
+        return 0
+    if group_id in preferred_groups:
+        return 1
+    return 2
+
+
+def _decision_term_matches(term: str, lowered: str, normalized: str) -> bool:
+    normalized_term = re.sub(r"[-_/]+", " ", term)
+    return term in lowered or normalized_term in normalized
 
 
 def _decision_rule_by_group(group_id: str, decision_rules: list[dict[str, Any]]) -> dict[str, Any] | None:
@@ -628,6 +670,8 @@ def _portfolio_markdown(data: dict[str, Any]) -> str:
                 f"- `{decision.get('scenario_id')}` {decision.get('decision')} "
                 f"(owner={decision.get('owner')}, priority={decision.get('priority')}, review_required={decision.get('review_required')})"
             )
+            for evidence_line in _portfolio_priority_evidence_lines(decision.get("priority_evidence") or []):
+                lines.append(f"  - {evidence_line}")
     else:
         lines.append("- None")
     lines.extend(["", "## Consolidated Decisions"])
@@ -688,6 +732,23 @@ def _portfolio_markdown(data: dict[str, Any]) -> str:
         for decision in record.get("decisions", []):
             lines.append(f"- Decision: {decision.get('decision')}")
     return "\n".join(lines) + "\n"
+
+
+def _portfolio_priority_evidence_lines(priority_evidence: list[Any]) -> list[str]:
+    lines: list[str] = []
+    for item in priority_evidence:
+        if not isinstance(item, dict):
+            continue
+        evidence_text = str(item.get("evidence_text") or "").strip()
+        source = str(item.get("source_agent") or "").strip()
+        limitations = str(item.get("limitations") or "").strip()
+        if evidence_text:
+            prefix = f"Priority evidence from {source}: " if source else "Priority evidence: "
+            line = f"{prefix}{evidence_text}"
+            if limitations:
+                line += f" Limitations: {limitations}"
+            lines.append(line)
+    return lines
 
 
 def _read_json_file(path: Path) -> dict[str, Any]:

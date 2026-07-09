@@ -1,0 +1,750 @@
+{
+  "request": {
+    "event_title": "US government restrictions on public release of frontier LLM models",
+    "event_description": "The US government may restrict or condition public release, open-weight distribution, API availability, export, or deployment of the latest frontier LLM models for national security, cyber, biosecurity, export-control, and strategic competition reasons. The event may affect enterprise AI roadmaps, vendor access, model procurement, software development, document automation, regulated data processing, customer-facing AI features, compliance, and international operations.",
+    "scope": {
+      "client_id": "fujifilm_dummy",
+      "scope_text": "Fujifilm enterprise AI and LLM use across software development, document automation, customer support, R&D, regulated data processing, cloud AI procurement, legal compliance, information security, business continuity, and international operations.",
+      "scope_type": "company",
+      "scope_name": null,
+      "department": null,
+      "region": null,
+      "site_id": null,
+      "metadata": {}
+    },
+    "countries": [
+      "United States"
+    ],
+    "event_date": null,
+    "max_risks": 5
+  },
+  "selected_candidates": [
+    {
+      "candidate_id": "DISC-001",
+      "title": "Cloud AI Platform Frontier Model API Withdrawal",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "AI model supply chain",
+        "cloud platform dependency",
+        "API service continuity"
+      ],
+      "affected_categories": [
+        "cloud AI procurement",
+        "document automation",
+        "customer support",
+        "software development"
+      ],
+      "description": "A primary cloud AI provider (e.g., Azure, AWS, GCP) is compelled to withdraw, restrict, or degrade frontier LLM API endpoints due to BIS AI Diffusion IFR model weight export controls. Enterprise workloads dependent on those APIs—document automation pipelines, customer support chatbots, code-generation tools—face immediate service degradation or termination with no drop-in replacement available at equivalent capability.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "cloud AI procurement",
+        "document automation",
+        "customer support",
+        "software development",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:procurement",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "port",
+        "procurement",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "The BIS rule adds frontier model weights to the export control list with a May 2025 general compliance deadline. Cloud providers may preemptively restrict API access to certain model tiers or geographies to avoid enforcement risk. The company's document automation and customer support systems that depend on specific frontier model APIs have no immediate substitute at comparable performance, creating a single-point-of-failure in the AI supply chain.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-002",
+      "title": "Export Control Violation from International AI Deployments",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "export controls",
+        "cross-border data and model transfer",
+        "international operations compliance"
+      ],
+      "affected_categories": [
+        "international operations",
+        "legal compliance",
+        "regulated data processing",
+        "R&D"
+      ],
+      "description": "Enterprise AI deployments at non-US subsidiaries, joint ventures, or for international customers inadvertently transfer controlled frontier model weights or provide access to restricted models in violation of BIS AI Diffusion IFR tiered-country framework. This could occur through model fine-tuning on local infrastructure, API routing to overseas endpoints, or sharing model outputs that constitute deemed exports.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "international operations",
+        "legal compliance",
+        "regulated data processing",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "port",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "The AI Diffusion IFR establishes a tiered country access framework and controls model weight exports. A multinational enterprise with R&D and operations across multiple jurisdictions faces complex compliance obligations: model weights hosted on shared infrastructure, API access from non-US employees, and fine-tuning activities may all constitute controlled exports. Enforcement penalties include denial orders and criminal liability, and the May 2025 compliance deadline is imminent.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-003",
+      "title": "Open-Weight Frontier Model Supply Disruption for On-Premise AI",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "open-source AI ecosystem",
+        "on-premise model dependency",
+        "R&D pipeline continuity"
+      ],
+      "affected_categories": [
+        "R&D",
+        "regulated data processing",
+        "software development",
+        "information security"
+      ],
+      "description": "Developers of open-weight frontier models are barred or choose to restrict public release of their latest models due to US government export control or national security directives. The company's on-premise AI workloads—regulated data processing, proprietary R&D model fine-tuning, and internal software development tools that depend on specific open-weight architectures—lose their model supply and must undertake costly re-architecture to alternative, potentially less capable models.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "R&D",
+        "regulated data processing",
+        "software development",
+        "information security",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "company",
+        "port",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "The event description explicitly references restrictions on open-weight distribution. On-premise deployments chosen for data sovereignty and security reasons are particularly vulnerable because they cannot simply switch to a cloud API—they require specific model weight files. Re-training or fine-tuning replacement models on proprietary data represents months of engineering effort and potential capability regression in regulated workflows.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-004",
+      "title": "VEU Certification Compliance Program Burden",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "Validated End User framework",
+        "security audit obligations",
+        "compliance program investment"
+      ],
+      "affected_categories": [
+        "legal compliance",
+        "information security",
+        "cloud AI procurement",
+        "business continuity"
+      ],
+      "description": "To maintain access to restricted frontier models, the company must achieve and sustain Validated End User (VEU) status under the BIS framework, requiring implementation of security commitments, end-use monitoring, audit infrastructure, and reporting obligations by January 2026. Failure to obtain or maintain VEU status results in loss of access to frontier models across all business units, while the compliance program itself demands sustained investment in personnel, tooling, and governance.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "legal compliance",
+        "information security",
+        "cloud AI procurement",
+        "business continuity",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:procurement",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "company",
+        "port",
+        "procurement",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "The VEU framework is the primary mechanism for continued enterprise access to controlled frontier models. The January 2026 deadline for security commitments creates a medium-term planning horizon. The compliance burden spans information security (access controls, monitoring), legal (end-use documentation, audit readiness), and procurement (vendor VEU status verification). This is a distinct legal compliance obligation, not merely a supplier issue.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-005",
+      "title": "Cloud AI Vendor Consolidation and Procurement Cost Escalation",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "market concentration",
+        "vendor lock-in",
+        "procurement leverage erosion",
+        "cost inflation"
+      ],
+      "affected_categories": [
+        "cloud AI procurement",
+        "business continuity",
+        "software development",
+        "document automation"
+      ],
+      "description": "Export controls and VEU requirements consolidate the frontier model market to a smaller set of certified providers, reducing competitive alternatives and increasing procurement costs. The company faces vendor lock-in as switching costs rise (re-architecture, re-training, compliance re-certification), while remaining providers gain pricing power and can impose restrictive contractual terms on model access, usage limits, and data handling.",
+      "urgency": "medium",
+      "relevance_score": 100,
+      "scope_matches": [
+        "cloud AI procurement",
+        "business continuity",
+        "software development",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:procurement",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "company",
+        "port",
+        "procurement",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:primary",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "The AI Diffusion IFR's VEU framework and model weight controls create barriers to entry for smaller AI providers and open-weight alternatives, concentrating supply among a few large cloud platforms with VEU certification. This market dynamic directly impacts cloud AI procurement strategy: fewer vendors means reduced negotiating leverage, higher licensing costs, and contractual lock-in. Business continuity planning must account for the reduced supplier diversity in the AI model market.",
+      "selected_for_analysis": true
+    },
+    {
+      "candidate_id": "DISC-AUG-scope_text_primary-supplier_resilience",
+      "title": "Supplier continuity coverage: US government restrictions on public release of frontier LLM models",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "supplier_resilience",
+        "logistics",
+        "alternative_sourcing"
+      ],
+      "affected_categories": [
+        "critical_suppliers",
+        "inventory_runway",
+        "inbound_logistics"
+      ],
+      "description": "Added to cover scope-primary risk type `supplier_resilience` under Expert-as-Code rule SCOPE-TEXT-PRIMARY. Matched event, feature, or candidate signals: port, procurement, compliance, legal. Event: The US government may restrict or condition public release, open-weight distribution, API availability, export, or deployment of the latest frontier LLM models for national security, cyber, biosecurity, export-control, and strategic competition reasons. The event may affect enterprise AI roadmaps, vendor access, model procurement, software development, document automation, regulated data processing, customer-facing AI features, compliance, and international operations.",
+      "urgency": "high",
+      "relevance_score": 100,
+      "scope_matches": [
+        "SCOPE-TEXT-PRIMARY:coverage_primary",
+        "coverage_term:port",
+        "coverage_term:procurement",
+        "coverage_term:compliance",
+        "coverage_term:legal",
+        "scope_text:primary",
+        "scope_text:port",
+        "scope_text:procurement",
+        "scope_text:compliance",
+        "scope_text:legal",
+        "port",
+        "procurement",
+        "compliance",
+        "legal",
+        "SCOPE-DEPT-LEGAL-001:term",
+        "SCOPE-DEPT-PROCUREMENT-001:primary",
+        "SCOPE-DEPT-PROCUREMENT-001:term"
+      ],
+      "rationale": "Deterministic coverage augmentation added this candidate because applicable scope rule SCOPE-TEXT-PRIMARY lists `supplier_resilience` or its aliases as primary, matched terms were present, and no candidate of this risk type was recorded by the LLM.",
+      "selected_for_analysis": true
+    }
+  ],
+  "rejected_candidates": [],
+  "selected_event": {
+    "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_51839ceb_disc_001",
+    "client_id": "fujifilm_dummy",
+    "title": "Cloud AI Platform Frontier Model API Withdrawal",
+    "risk_type": "legal_compliance",
+    "countries": [
+      "United States"
+    ],
+    "risk_themes": [
+      "AI model supply chain",
+      "cloud platform dependency",
+      "API service continuity"
+    ],
+    "affected_categories": [
+      "cloud AI procurement",
+      "document automation",
+      "customer support",
+      "software development"
+    ],
+    "description": "A primary cloud AI provider (e.g., Azure, AWS, GCP) is compelled to withdraw, restrict, or degrade frontier LLM API endpoints due to BIS AI Diffusion IFR model weight export controls. Enterprise workloads dependent on those APIs—document automation pipelines, customer support chatbots, code-generation tools—face immediate service degradation or termination with no drop-in replacement available at equivalent capability.",
+    "event_date": "2026-06-29",
+    "urgency": "high"
+  },
+  "selected_events": [
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_51839ceb_disc_001",
+      "client_id": "fujifilm_dummy",
+      "title": "Cloud AI Platform Frontier Model API Withdrawal",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "AI model supply chain",
+        "cloud platform dependency",
+        "API service continuity"
+      ],
+      "affected_categories": [
+        "cloud AI procurement",
+        "document automation",
+        "customer support",
+        "software development"
+      ],
+      "description": "A primary cloud AI provider (e.g., Azure, AWS, GCP) is compelled to withdraw, restrict, or degrade frontier LLM API endpoints due to BIS AI Diffusion IFR model weight export controls. Enterprise workloads dependent on those APIs—document automation pipelines, customer support chatbots, code-generation tools—face immediate service degradation or termination with no drop-in replacement available at equivalent capability.",
+      "event_date": "2026-06-29",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_51839ceb_disc_002",
+      "client_id": "fujifilm_dummy",
+      "title": "Export Control Violation from International AI Deployments",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "export controls",
+        "cross-border data and model transfer",
+        "international operations compliance"
+      ],
+      "affected_categories": [
+        "international operations",
+        "legal compliance",
+        "regulated data processing",
+        "R&D"
+      ],
+      "description": "Enterprise AI deployments at non-US subsidiaries, joint ventures, or for international customers inadvertently transfer controlled frontier model weights or provide access to restricted models in violation of BIS AI Diffusion IFR tiered-country framework. This could occur through model fine-tuning on local infrastructure, API routing to overseas endpoints, or sharing model outputs that constitute deemed exports.",
+      "event_date": "2026-06-29",
+      "urgency": "high"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_51839ceb_disc_003",
+      "client_id": "fujifilm_dummy",
+      "title": "Open-Weight Frontier Model Supply Disruption for On-Premise AI",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "open-source AI ecosystem",
+        "on-premise model dependency",
+        "R&D pipeline continuity"
+      ],
+      "affected_categories": [
+        "R&D",
+        "regulated data processing",
+        "software development",
+        "information security"
+      ],
+      "description": "Developers of open-weight frontier models are barred or choose to restrict public release of their latest models due to US government export control or national security directives. The company's on-premise AI workloads—regulated data processing, proprietary R&D model fine-tuning, and internal software development tools that depend on specific open-weight architectures—lose their model supply and must undertake costly re-architecture to alternative, potentially less capable models.",
+      "event_date": "2026-06-29",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_51839ceb_disc_004",
+      "client_id": "fujifilm_dummy",
+      "title": "VEU Certification Compliance Program Burden",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "Validated End User framework",
+        "security audit obligations",
+        "compliance program investment"
+      ],
+      "affected_categories": [
+        "legal compliance",
+        "information security",
+        "cloud AI procurement",
+        "business continuity"
+      ],
+      "description": "To maintain access to restricted frontier models, the company must achieve and sustain Validated End User (VEU) status under the BIS framework, requiring implementation of security commitments, end-use monitoring, audit infrastructure, and reporting obligations by January 2026. Failure to obtain or maintain VEU status results in loss of access to frontier models across all business units, while the compliance program itself demands sustained investment in personnel, tooling, and governance.",
+      "event_date": "2026-06-29",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_51839ceb_disc_005",
+      "client_id": "fujifilm_dummy",
+      "title": "Cloud AI Vendor Consolidation and Procurement Cost Escalation",
+      "risk_type": "legal_compliance",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "market concentration",
+        "vendor lock-in",
+        "procurement leverage erosion",
+        "cost inflation"
+      ],
+      "affected_categories": [
+        "cloud AI procurement",
+        "business continuity",
+        "software development",
+        "document automation"
+      ],
+      "description": "Export controls and VEU requirements consolidate the frontier model market to a smaller set of certified providers, reducing competitive alternatives and increasing procurement costs. The company faces vendor lock-in as switching costs rise (re-architecture, re-training, compliance re-certification), while remaining providers gain pricing power and can impose restrictive contractual terms on model access, usage limits, and data handling.",
+      "event_date": "2026-06-29",
+      "urgency": "medium"
+    },
+    {
+      "scenario_id": "scenario_discovered_fujifilm_dummy_us_government_restrictions_on_public_rel_51839ceb_disc_aug_scope_text_prim",
+      "client_id": "fujifilm_dummy",
+      "title": "Supplier continuity coverage: US government restrictions on public release of frontier LLM models",
+      "risk_type": "supplier_resilience",
+      "countries": [
+        "United States"
+      ],
+      "risk_themes": [
+        "supplier_resilience",
+        "logistics",
+        "alternative_sourcing"
+      ],
+      "affected_categories": [
+        "critical_suppliers",
+        "inventory_runway",
+        "inbound_logistics"
+      ],
+      "description": "Added to cover scope-primary risk type `supplier_resilience` under Expert-as-Code rule SCOPE-TEXT-PRIMARY. Matched event, feature, or candidate signals: port, procurement, compliance, legal. Event: The US government may restrict or condition public release, open-weight distribution, API availability, export, or deployment of the latest frontier LLM models for national security, cyber, biosecurity, export-control, and strategic competition reasons. The event may affect enterprise AI roadmaps, vendor access, model procurement, software development, document automation, regulated data processing, customer-facing AI features, compliance, and international operations.",
+      "event_date": "2026-06-29",
+      "urgency": "high"
+    }
+  ],
+  "generated_at": "2026-06-28T15:01:47.403354Z",
+  "metadata": {
+    "agent_name": "risk-discovery-agent",
+    "datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "source_references",
+      "suppliers"
+    ],
+    "sampled_datasets": [
+      "contracts",
+      "payments",
+      "regions",
+      "segments",
+      "sites",
+      "suppliers"
+    ],
+    "structured_sample_view": "risk_feature_sample",
+    "feature_summaries": {
+      "segments": {
+        "dataset": "segments",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "regions": {
+        "dataset": "regions",
+        "row_count": 4,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": []
+      },
+      "sites": {
+        "dataset": "sites",
+        "row_count": 5,
+        "countries": [
+          "Japan",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality"
+        ]
+      },
+      "suppliers": {
+        "dataset": "suppliers",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [],
+        "critical_count": 3,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "high_criticality",
+          "no_alternative"
+        ]
+      },
+      "payments": {
+        "dataset": "payments",
+        "row_count": 5,
+        "countries": [
+          "Germany",
+          "Iran",
+          "Japan",
+          "UAE",
+          "United States"
+        ],
+        "currencies": [
+          "EUR",
+          "JPY",
+          "USD"
+        ],
+        "critical_count": 0,
+        "near_term_due_count": 5,
+        "amount_buckets": {
+          "1m_5m": 2,
+          "gte_50m": 1,
+          "250k_1m": 2
+        },
+        "risk_signals": [
+          "material_payment",
+          "near_term_due"
+        ]
+      },
+      "contracts": {
+        "dataset": "contracts",
+        "row_count": 5,
+        "countries": [],
+        "currencies": [],
+        "critical_count": 0,
+        "near_term_due_count": 0,
+        "amount_buckets": {},
+        "risk_signals": [
+          "force_majeure_clause",
+          "sanctions_clause",
+          "termination_right"
+        ]
+      }
+    },
+    "scope_interpretation": {
+      "scope_text": "Fujifilm enterprise AI and LLM use across software development, document automation, customer support, R&D, regulated data processing, cloud AI procurement, legal compliance, information security, business continuity, and international operations.",
+      "matched_domains": [
+        "logistics",
+        "procurement",
+        "legal"
+      ],
+      "matched_terms": [
+        "port",
+        "procurement",
+        "compliance",
+        "legal"
+      ],
+      "primary_risk_types": [
+        "supplier_resilience",
+        "legal_compliance"
+      ],
+      "source": "scope_text"
+    },
+    "expert_counts": {
+      "rules": 41,
+      "primitives": 20,
+      "cases": 14,
+      "questions": 24,
+      "cta_notes": 11,
+      "scope_relevance_rules": 10
+    },
+    "raw_candidate_count": 5,
+    "coverage_augmented_candidate_count": 1,
+    "web_search_count": 2,
+    "web_extraction_count": 3,
+    "web_searches": [
+      {
+        "query": "US government restrictions frontier LLM model export controls 2024 2025",
+        "query_hash": "a7e5235641750b72",
+        "result_count": 3,
+        "results": [
+          {
+            "title": "2025 AI Diffusion Export Controls - Microsoft Regulatory Capture, Oracle Tears, Impacts Quantified, Model Restrictions",
+            "url": "https://newsletter.semianalysis.com/p/2025-ai-diffusion-export-controls-microsoft-regulatory-capture-oracle-tears",
+            "content": "The prevailing rationale within the US government is that AI progress has become so rapid, that access to compute to build and improve these models over the next few years will decide the fate of the next global order for decades to come. It establishes a Validated End User (VEU) framework that identifies the entiti..."
+          },
+          {
+            "title": "New U.S. Export Controls on Advanced Computing Items and Artificial Intelligence Model Weights: Seven Key Takeaways | Insights | Sidley Austin LLP",
+            "url": "https://www.sidley.com/en/insights/newsupdates/2025/01/new-us-export-controls-on-advanced-computing-items-and-artificial-intelligence-model-weights",
+            "content": "# New U.S. Export Controls on Advanced Computing Items and Artificial Intelligence Model Weights: Seven Key Takeaways. On January 15, 2025, the U.S. Department of Commerce Bureau of Industry and Security (BIS) published in the *Federal Register* updated export controls on advanced computing items (including advanced..."
+          },
+          {
+            "title": "What to Know About the New U.S. AI Diffusion Policy and Export Controls | Council on Foreign Relations",
+            "url": "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls",
+            "content": "# What to Know About the New U.S. AI Diffusion Policy and Export Controls. The Biden administration released new export controls on Monday, January 13, placing restrictions on advanced AI chips, cloud access, and model weights. The policy lays out a global framework to govern the export of frontier artificial intell..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "query": "enterprise AI client-specific entity risk LLM model weights export controls compliance impact 2025",
+        "query_hash": "6260adb524647d46",
+        "result_count": 3,
+        "results": [
+          {
+            "title": "New U.S. Export Controls on Advanced Computing Items ... - Sidley",
+            "url": "https://www.sidley.com/en/insights/newsupdates/2025/01/new-us-export-controls-on-advanced-computing-items-and-artificial-intelligence-model-weights",
+            "content": "# New U.S. Export Controls on Advanced Computing Items and Artificial Intelligence Model Weights: Seven Key Takeaways. On January 15, 2025, the U.S. Department of Commerce Bureau of Industry and Security (BIS) published in the *Federal Register* updated export controls on advanced computing items (including advanced..."
+          },
+          {
+            "title": "U.S. Department of Commerce Establishes Export Control ...",
+            "url": "https://www.cov.com/en/news-and-insights/insights/2025/01/us-department-of-commerce-establishes-export-control-framework-limiting-the-diffusion-of-advanced-artificial-intelligence-and-expands-and-clarifies-advanced-computing-controls",
+            "content": "The AI Diffusion IFR was effective as of January 13, 2025, but exporters, reexporters, and transferors are not required to comply with the changes made via that rule until May 15, 2025, or until January 25, 2026, for certain security-related commitments applicable to validated end users (“VEUs”) and to exports of mo..."
+          },
+          {
+            "title": "Fable 5 Suspension: Enterprise AI Under Export Controls - Lab Space",
+            "url": "https://labs.cloudsecurityalliance.org/research/csa-research-note-ai-model-export-controls-enterprise-govern",
+            "content": "# Fable 5 Suspension: Enterprise AI Under Export Controls. On June 9, 2026, Anthropic released Claude Fable 5 and its companion model Claude Mythos 5, the most capable models in the company’s history, noted for their advanced reasoning and code analysis capabilities [1][2]. The directive was issued under the Export ..."
+          }
+        ],
+        "status": "ok"
+      }
+    ],
+    "web_extractions": [
+      {
+        "url": "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "What to Know About the New U.S. AI Diffusion Policy and Export ...",
+            "url": "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls",
+            "content": "# What to Know About the New U.S. AI Diffusion Policy and Export Controls The Biden administration released new export controls on Monday, January 13, placing restrictions on advanced AI chips, cloud access, and model weights. The measures’ implementation will rely on the Trump administration’s support. ![<p>Flags o..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "url": "https://www.sidley.com/en/insights/newsupdates/2025/01/new-us-export-controls-on-advanced-computing-items-and-artificial-intelligence-model-weights",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "New U.S. Export Controls on Advanced Computing Items ... - Sidley",
+            "url": "https://www.sidley.com/en/insights/newsupdates/2025/01/new-us-export-controls-on-advanced-computing-items-and-artificial-intelligence-model-weights",
+            "content": "##### Global Arbitration, Trade and Advocacy Update # New U.S. Export Controls on Advanced Computing Items and Artificial Intelligence Model Weights: Seven Key Takeaways January 16, 2025 * + [PDF letter](https://1npdf11.onenorth.com/pdfrenderer.svc/v1/abcpdf11/GetRenderedPdfByUrl/new-us-export-controls-on-advanced-c..."
+          }
+        ],
+        "status": "ok"
+      },
+      {
+        "url": "https://www.cov.com/en/news-and-insights/insights/2025/01/us-department-of-commerce-establishes-export-control-framework-limiting-the-diffusion-of-advanced-artificial-intelligence-and-expands-and-clarifies-advanced-computing-controls",
+        "result_count": 1,
+        "results": [
+          {
+            "title": "U.S. Department of Commerce Establishes Export Control ...",
+            "url": "https://www.cov.com/en/news-and-insights/insights/2025/01/us-department-of-commerce-establishes-export-control-framework-limiting-the-diffusion-of-advanced-artificial-intelligence-and-expands-and-clarifies-advanced-computing-controls",
+            "content": "![](/include_common/NetInsight/ntpagetag.gif?js=0) Covington & Burling LLP operates as a limited liability partnership worldwide, with the practice in England and Wales conducted by an affiliated limited liability multinational partnership, Covington & Burling LLP, which is formed under the laws of the State of Dela..."
+          }
+        ],
+        "status": "ok"
+      }
+    ],
+    "event_facts": {
+      "affected_geographies": [
+        "United States",
+        "global (tiered country framework for AI model exports)"
+      ],
+      "affected_industries": [
+        "enterprise software",
+        "cloud computing",
+        "AI/ML services",
+        "regulated data processing",
+        "document management",
+        "pharmaceutical R&D",
+        "imaging and healthcare technology"
+      ],
+      "infrastructure_chokepoints": [
+        "frontier LLM model weights distribution",
+        "cloud AI API endpoints",
+        "Validated End User (VEU) certification pipeline",
+        "GPU compute access for model training and inference"
+      ],
+      "critical_goods_or_services": [
+        "frontier LLM model weights",
+        "cloud-hosted AI inference APIs",
+        "open-weight model distributions",
+        "AI chip access for on-premise inference"
+      ],
+      "regulatory_or_sanctions_signals": [
+        "BIS AI Diffusion IFR effective Jan 13 2025",
+        "compliance deadline May 15 2025 for general exporters",
+        "VEU security commitments deadline Jan 25 2026",
+        "tiered country access framework",
+        "model weights added to export control list",
+        "policy continuity uncertain under new administration"
+      ],
+      "financial_or_payment_signals": [
+        "increased cloud AI procurement costs from vendor consolidation",
+        "potential licensing fees for VEU-status access",
+        "compliance program investment required"
+      ],
+      "supply_chain_tier_risks": [
+        "Tier-1: cloud AI platform providers (AWS, Azure, GCP) may lose or restrict frontier model offerings",
+        "Tier-2: open-weight model developers may be barred from public release",
+        "Tier-3: downstream enterprise integrators face model substitution or re-architecture costs"
+      ],
+      "time_horizons": [
+        "near-term: May 2025 general compliance deadline",
+        "medium-term: Jan 2026 VEU security commitments",
+        "ongoing: policy evolution under current administration"
+      ],
+      "source_refs": [
+        "https://www.sidley.com/en/insights/newsupdates/2025/01/new-us-export-controls-on-advanced-computing-items-and-artificial-intelligence-model-weights",
+        "https://www.cfr.org/articles/what-know-about-new-us-ai-diffusion-policy-and-export-controls",
+        "https://www.cov.com/en/news-and-insights/insights/2025/01/us-department-of-commerce-establishes-export-control-framework-limiting-the-diffusion-of-advanced-artificial-intelligence-and-expands-and-clarifies-advanced-computing-controls"
+      ],
+      "uncertainties": [
+        "Trump administration may modify or rescind Biden-era AI diffusion rule",
+        "scope of model weight restrictions may expand or contract",
+        "VEU framework implementation details still evolving",
+        "enforcement posture and penalty guidance unclear"
+      ]
+    },
+    "event_facts_source": "agent_recorded",
+    "fallback_used": false,
+    "discovery_confidence": "agent_recorded_candidates",
+    "additional_questions": [
+      "Which critical suppliers have low inventory runway or no qualified alternative source?",
+      "Which logistics lanes or sites need immediate continuity validation?",
+      "Which contracts include sanctions, force majeure, notice, or termination clauses?",
+      "Which counterparties require beneficial ownership or restricted party review?",
+      "Which selected risks require executive cross-functional decision ownership?",
+      "Which evidence gaps block immediate mitigation decisions?"
+    ],
+    "unknowns": [
+      "Validated external evidence is still required before final risk scoring.",
+      "Counterparty restricted-party status and contract notice obligations require legal validation."
+    ],
+    "scope_relevance_rule_count": 10
+  }
+}

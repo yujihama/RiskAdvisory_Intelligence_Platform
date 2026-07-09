@@ -12,6 +12,7 @@ from langchain_core.tools import tool
 from risk_agent_platform.a2a_http import A2AHttpClient, A2AService, create_a2a_app
 from risk_agent_platform.config import Settings
 from risk_agent_platform.deepagent_runtime import DeepAgentRunner
+from risk_agent_platform.evidence_repository import EvidenceRepository
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.schemas import (
     AgentCard,
@@ -21,10 +22,17 @@ from risk_agent_platform.schemas import (
     AgentTaskRequest,
     AgentTaskResult,
     AnalysisPlan,
+    CounterfactualRecordInput,
     DecisionItem,
+    DecisionSynthesisOutput,
     EvidenceItem,
+    IssueExplorationRecordInput,
     KnowledgeApplicationFinding,
+    PriorityEvidenceItem,
+    RedTeamMissingDataInput,
+    RedTeamOverclaimsInput,
     RiskEvent,
+    SourceQueryPlan,
 )
 from risk_agent_platform.source_reliability import score_source
 from risk_agent_platform.tool_policy import ensure_llm_tool_allowed
@@ -149,7 +157,7 @@ class DomainDeepAgentService(A2AService):
             "Use the provided issue exploration tool once to record bounded hypotheses. "
             "If you need client structured data, use only the safe summary tools exposed to you; "
             "do not request raw rows, raw identifiers, raw amounts, or raw account data. "
-            "Do not make final scores or decisions. Keep the result JSON concise with keys: "
+            "Do not make final scores or decisions. Use structured tool arguments with fields: "
             "issues, missing_data, recheck_conditions, exploration_questions.\n"
             f"domain={domain}\n"
             f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
@@ -184,13 +192,27 @@ class DomainDeepAgentService(A2AService):
         )
         return json.dumps({"tool": tool_name, "result": result}, ensure_ascii=False)
 
-    def _record_issue_exploration(self, issues_json: str) -> str:
-        data = _json_object_from_text(issues_json) or {}
+    def _record_issue_exploration(
+        self,
+        *,
+        issues: list[str] | None = None,
+        missing_data: list[str] | None = None,
+        recheck_conditions: list[str] | None = None,
+        exploration_questions: list[str] | None = None,
+        issues_json: str | None = None,
+    ) -> str:
+        record = _issue_exploration_from_tool_input(
+            issues=issues,
+            missing_data=missing_data,
+            recheck_conditions=recheck_conditions,
+            exploration_questions=exploration_questions,
+            issues_json=issues_json,
+        )
         result = {
-            "issues": _string_list(data.get("issues"), limit=8),
-            "missing_data": _string_list(data.get("missing_data"), limit=8),
-            "recheck_conditions": _string_list(data.get("recheck_conditions"), limit=8),
-            "exploration_questions": _string_list(data.get("exploration_questions"), limit=8),
+            "issues": _string_list(record.issues),
+            "missing_data": _string_list(record.missing_data),
+            "recheck_conditions": _string_list(record.recheck_conditions),
+            "exploration_questions": _string_list(record.exploration_questions),
         }
         self._deepagent_tool_state["issue_exploration"] = result
         return json.dumps(result, ensure_ascii=False)
@@ -275,16 +297,18 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
 
     def _plan_queries(self, event: RiskEvent, confidential_terms: list[str]) -> list[str]:
         prompt = (
-            "Return only JSON for bounded external source query planning. "
+            "Return bounded external source query planning. "
             f"Use at most {SOURCE_MAX_QUERIES} query strings. Avoid client-specific names. "
-            "Schema: {\"queries\": [\"...\"], \"rationale\": \"...\"}.\n"
             f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
             f"confidential_terms_count={len(confidential_terms)}"
         )
-        data = _json_object_from_text(self.synthesize(prompt))
-        queries = _string_list(data.get("queries") if data else None, limit=SOURCE_MAX_QUERIES)
-        if queries:
-            return queries
+        try:
+            plan = self.runner.synthesize_structured(prompt, SourceQueryPlan, max_chars=2000)
+            queries = _string_list(plan.queries, limit=SOURCE_MAX_QUERIES)
+            if queries:
+                return queries
+        except Exception:
+            pass
         country = " ".join(event.countries) if event.countries else "affected country"
         themes = " ".join(event.risk_themes or [event.risk_type])
         return [
@@ -343,7 +367,7 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
             domain = urlparse(url).netloc
             source_score = score_source(result, event)
             extracted_text = extracted_text_by_url.get(url)
-            summary = str(extracted_text or result.get("content") or result.get("raw_content") or "")[:1200]
+            summary = _clean_evidence_text(extracted_text or result.get("content") or result.get("raw_content") or "")
             evidence = EvidenceItem(
                 evidence_id=f"{event.scenario_id}_tavily_{idx:03d}",
                 scenario_id=event.scenario_id,
@@ -351,11 +375,11 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
                 source_type="web",
                 source_ref=url or f"tavily:{idx}",
                 source_url=url or None,
-                source_title=str(result.get("title") or ""),
+                source_title=_clean_evidence_text(result.get("title") or ""),
                 source_domain=str(source_score.get("source_domain") or domain or "") or None,
                 search_query_hash=str(candidate.get("query_hash") or ""),
                 summary=summary,
-                raw_snippet=str(result.get("content") or "")[:2000],
+                raw_snippet=_clean_evidence_text(result.get("content") or ""),
                 supports=[event.risk_type, *event.risk_themes],
                 reliability=source_score["reliability"],
                 client_relevance=source_score["client_relevance"],
@@ -363,9 +387,38 @@ class SourceIntelligenceDeepAgent(DomainDeepAgentService):
                 confidence=source_score["confidence"],
                 extraction_method="tavily_extract" if extracted_text else "tavily_search",
             )
-            registered_item = self.mcp.call("mcp-evidence-ledger", "register_evidence", {"evidence": evidence.model_dump(mode="json")})
+            registered_item = self._register_evidence(evidence)
             registered.append(registered_item)
         return registered
+
+    def _register_evidence(self, evidence: EvidenceItem) -> dict[str, Any]:
+        try:
+            return EvidenceRepository(self.settings).register(
+                evidence,
+                index_qdrant=False,
+                index_neo4j=False,
+            ).model_dump(mode="json")
+        except Exception:
+            pass
+        try:
+            return self.mcp.call(
+                "mcp-evidence-ledger",
+                "register_evidence_json",
+                {"evidence_json": evidence.model_dump_json()},
+            )
+        except Exception:
+            sanitized = evidence.model_copy(
+                update={
+                    "source_title": _clean_evidence_text(evidence.source_title or ""),
+                    "summary": _clean_evidence_text(evidence.summary),
+                    "raw_snippet": _clean_evidence_text(evidence.raw_snippet),
+                }
+            )
+            return self.mcp.call(
+                "mcp-evidence-ledger",
+                "register_evidence_json",
+                {"evidence_json": sanitized.model_dump_json()},
+            )
 
 
 class ClientContextDeepAgent(DomainDeepAgentService):
@@ -423,10 +476,22 @@ class TreasuryRiskDeepAgent(DomainDeepAgentService):
                 payload["country"] = country
             return self._call_llm_safe_structured_tool("summarize_payment_exposure_safe", payload)
 
-        @tool("record_treasury_issue_exploration")
-        def record_treasury_issue_exploration(issues_json: str) -> str:
+        @tool("record_treasury_issue_exploration", args_schema=IssueExplorationRecordInput)
+        def record_treasury_issue_exploration(
+            issues: list[str] | None = None,
+            missing_data: list[str] | None = None,
+            recheck_conditions: list[str] | None = None,
+            exploration_questions: list[str] | None = None,
+            issues_json: str | None = None,
+        ) -> str:
             """Record bounded Treasury hypotheses and missing data; do not score or decide."""
-            return self._record_issue_exploration(issues_json)
+            return self._record_issue_exploration(
+                issues=issues,
+                missing_data=missing_data,
+                recheck_conditions=recheck_conditions,
+                exploration_questions=exploration_questions,
+                issues_json=issues_json,
+            )
 
         return [treasury_summarize_payment_exposure_safe, record_treasury_issue_exploration]
 
@@ -465,10 +530,22 @@ class LegalRiskDeepAgent(DomainDeepAgentService):
             """Summarize contract exposure for Legal issue exploration without raw contract rows."""
             return self._call_llm_safe_structured_tool("summarize_contract_exposure_safe", {"client_id": client_id})
 
-        @tool("record_legal_issue_exploration")
-        def record_legal_issue_exploration(issues_json: str) -> str:
+        @tool("record_legal_issue_exploration", args_schema=IssueExplorationRecordInput)
+        def record_legal_issue_exploration(
+            issues: list[str] | None = None,
+            missing_data: list[str] | None = None,
+            recheck_conditions: list[str] | None = None,
+            exploration_questions: list[str] | None = None,
+            issues_json: str | None = None,
+        ) -> str:
             """Record bounded Legal hypotheses and missing data; do not score or decide."""
-            return self._record_issue_exploration(issues_json)
+            return self._record_issue_exploration(
+                issues=issues,
+                missing_data=missing_data,
+                recheck_conditions=recheck_conditions,
+                exploration_questions=exploration_questions,
+                issues_json=issues_json,
+            )
 
         return [legal_summarize_contract_exposure_safe, record_legal_issue_exploration]
 
@@ -509,10 +586,22 @@ class AccountingRiskDeepAgent(DomainDeepAgentService):
             """Summarize invoice exposure for Accounting issue exploration without raw rows or raw amounts."""
             return self._call_llm_safe_structured_tool("summarize_invoice_exposure_safe", {"client_id": client_id})
 
-        @tool("record_accounting_issue_exploration")
-        def record_accounting_issue_exploration(issues_json: str) -> str:
+        @tool("record_accounting_issue_exploration", args_schema=IssueExplorationRecordInput)
+        def record_accounting_issue_exploration(
+            issues: list[str] | None = None,
+            missing_data: list[str] | None = None,
+            recheck_conditions: list[str] | None = None,
+            exploration_questions: list[str] | None = None,
+            issues_json: str | None = None,
+        ) -> str:
             """Record bounded Accounting hypotheses and missing data; do not score or decide."""
-            return self._record_issue_exploration(issues_json)
+            return self._record_issue_exploration(
+                issues=issues,
+                missing_data=missing_data,
+                recheck_conditions=recheck_conditions,
+                exploration_questions=exploration_questions,
+                issues_json=issues_json,
+            )
 
         return [
             accounting_summarize_payment_exposure_safe,
@@ -623,14 +712,20 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
             self._deepagent_tool_state.setdefault("expert", {}).setdefault("cta_notes", []).extend(selected)
             return json.dumps({"cta_note_count": len(selected), "note_ids": [item.get("note_id") for item in selected]}, ensure_ascii=False)
 
-        @tool("expert_record_counterfactuals")
-        def expert_record_counterfactuals(counterfactuals_json: str) -> str:
+        @tool("expert_record_counterfactuals", args_schema=CounterfactualRecordInput)
+        def expert_record_counterfactuals(
+            counterfactuals: list[str] | None = None,
+            counterfactuals_json: str | None = None,
+        ) -> str:
             """Record bounded counterfactuals selected by the Expert-as-Code Agent."""
             self._deepagent_tool_state.setdefault("expert", {})["deepagent_tool_invoked"] = True
-            data = _json_object_from_text(counterfactuals_json) or {}
-            counterfactuals = _string_list(data.get("counterfactuals"), limit=6)
-            self._deepagent_tool_state.setdefault("expert", {})["counterfactuals"] = counterfactuals
-            return json.dumps({"counterfactual_count": len(counterfactuals)}, ensure_ascii=False)
+            record = _counterfactuals_from_tool_input(
+                counterfactuals=counterfactuals,
+                counterfactuals_json=counterfactuals_json,
+            )
+            recorded = _string_list(record.counterfactuals)
+            self._deepagent_tool_state.setdefault("expert", {})["counterfactuals"] = recorded
+            return json.dumps({"counterfactual_count": len(recorded)}, ensure_ascii=False)
 
         return [
             expert_search_similar_cases,
@@ -664,13 +759,13 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
             for item in objects
             if item.get("object_type") in {"red_flag", "review_trigger", "evidence_standard"}
             and _knowledge_object_relevant(item, event_text)
-        ][:10]
+        ]
         if not state["red_flags"]:
             state["red_flags"] = [
                 item
                 for item in objects
                 if item.get("object_type") in {"red_flag", "review_trigger", "evidence_standard"}
-            ][:10]
+            ]
         state["cta_notes"] = self.mcp.call("mcp-expert-knowledge", "load_cta_notes", {})
         state["counterfactuals"] = _default_counterfactuals(event)
         hits = state["rubrics"]
@@ -682,12 +777,12 @@ class ExpertAsCodeDeepAgent(DomainDeepAgentService):
         knowledge_application = KnowledgeApplicationFinding(
             similar_case_ids=case_ids,
             rubric_ids=object_ids,
-            red_flags=[str(item.get("title") or item.get("description") or item) for item in state["red_flags"][:6]],
+            red_flags=[str(item.get("title") or item.get("description") or item) for item in state["red_flags"]],
             cta_note_ids=cta_note_ids,
-            cta_notes=[str(item.get("interpretation") or item.get("cue") or item) for item in cta_notes[:6]],
-            counterfactuals=_string_list(state.get("counterfactuals"), limit=6),
+            cta_notes=[str(item.get("interpretation") or item.get("cue") or item) for item in cta_notes],
+            counterfactuals=_string_list(state.get("counterfactuals")),
             recommended_guardrails=_recommended_guardrails_from_knowledge(hits),
-            additional_questions=[item.get("question") for item in questions if item.get("question")][:6],
+            additional_questions=[item.get("question") for item in questions if item.get("question")],
             review_required=True,
             rationale="Expert-as-Code selected bounded comparable cases, rubrics, red flags, CTA notes, and counterfactual checks.",
         )
@@ -782,23 +877,35 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
             """Read LLM-safe contract exposure for missing-data and overclaim checks."""
             return self._call_llm_safe_structured_tool("summarize_contract_exposure_safe", {"client_id": client_id})
 
-        @tool("redteam_record_missing_data")
-        def redteam_record_missing_data(missing_data_json: str) -> str:
+        @tool("redteam_record_missing_data", args_schema=RedTeamMissingDataInput)
+        def redteam_record_missing_data(
+            missing_data: list[str] | None = None,
+            missing_data_json: str | None = None,
+        ) -> str:
             """Record missing data detected by Red Team without writing decisions."""
             self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
-            data = _json_object_from_text(missing_data_json) or {}
-            missing_data = _string_list(data.get("missing_data"), limit=8)
-            self._deepagent_tool_state.setdefault("redteam", {})["missing_data"] = missing_data
-            return json.dumps({"missing_data_count": len(missing_data)}, ensure_ascii=False)
+            record = _redteam_missing_data_from_tool_input(
+                missing_data=missing_data,
+                missing_data_json=missing_data_json,
+            )
+            recorded = _string_list(record.missing_data)
+            self._deepagent_tool_state.setdefault("redteam", {})["missing_data"] = recorded
+            return json.dumps({"missing_data_count": len(recorded)}, ensure_ascii=False)
 
-        @tool("redteam_record_overclaims")
-        def redteam_record_overclaims(overclaims_json: str) -> str:
+        @tool("redteam_record_overclaims", args_schema=RedTeamOverclaimsInput)
+        def redteam_record_overclaims(
+            overclaims: list[str] | None = None,
+            overclaims_json: str | None = None,
+        ) -> str:
             """Record overclaim warnings detected by Red Team without writing decisions."""
             self._deepagent_tool_state.setdefault("redteam", {})["deepagent_tool_invoked"] = True
-            data = _json_object_from_text(overclaims_json) or {}
-            overclaims = _string_list(data.get("overclaims"), limit=8)
-            self._deepagent_tool_state.setdefault("redteam", {})["overclaims"] = overclaims
-            return json.dumps({"overclaim_count": len(overclaims)}, ensure_ascii=False)
+            record = _redteam_overclaims_from_tool_input(
+                overclaims=overclaims,
+                overclaims_json=overclaims_json,
+            )
+            recorded = _string_list(record.overclaims)
+            self._deepagent_tool_state.setdefault("redteam", {})["overclaims"] = recorded
+            return json.dumps({"overclaim_count": len(recorded)}, ensure_ascii=False)
 
         return [
             redteam_list_scenario_evidence,
@@ -821,7 +928,7 @@ class EvidenceRedTeamDeepAgent(DomainDeepAgentService):
             "and record overclaim warnings. Do not write or modify the Decision Queue.\n"
             f"scenario_id={event.scenario_id}\n"
             f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
-            f"prior_findings={json.dumps(prior, ensure_ascii=False, default=str)[:3000]}"
+            f"prior_findings={json.dumps(prior, ensure_ascii=False, default=str)}"
         )
         state = self._deepagent_tool_state["redteam"]
         evidence = state.get("evidence")
@@ -875,14 +982,14 @@ class DecisionSynthesisDeepAgent(DomainDeepAgentService):
         evidence = self.mcp.call("mcp-evidence-ledger", "list_evidence_by_scenario", {"scenario_id": event.scenario_id})
         knowledge_ids = _knowledge_ids_from_findings(prior)
         decision_id = f"{event.scenario_id}_decision_001"
-        decision = _decision_for_event(event, decision_id, evidence, knowledge_ids)
+        decision = _decision_for_event(event, decision_id, evidence, knowledge_ids, self.runner, prior)
         self.mcp.call(
             "mcp-neo4j",
             "upsert_asset",
             {
                 "label": "Decision",
                 "asset_id": decision_id,
-                "properties": decision.model_dump(mode="json") | {"confidence_level": "derived", "source_type": "derived"},
+                "properties": _neo4j_decision_properties(decision) | {"confidence_level": "derived", "source_type": "derived"},
             },
         )
         self.mcp.call("mcp-neo4j", "attach_decision_to_scenario", {"scenario_id": event.scenario_id, "decision_id": decision_id})
@@ -906,6 +1013,19 @@ class DecisionSynthesisDeepAgent(DomainDeepAgentService):
             rationale="Decision Synthesis Agent writes final artifacts via MCP filesystem and uses Evidence Ledger through MCP.",
             metadata={"decision": decision.model_dump(mode="json"), "output_dir": str(self.settings.project_root / "outputs" / event.scenario_id)},
         )
+
+
+def _neo4j_decision_properties(decision: DecisionItem) -> dict[str, Any]:
+    properties = decision.model_dump(mode="json")
+    priority_evidence = properties.pop("priority_evidence", [])
+    if priority_evidence:
+        properties["priority_evidence_json"] = json.dumps(priority_evidence, ensure_ascii=False)
+        properties["priority_evidence_summaries"] = [
+            str(item.get("evidence_text") or "")
+            for item in priority_evidence
+            if isinstance(item, dict) and item.get("evidence_text")
+        ]
+    return properties
 
 
 class OrchestratorDeepAgentService(A2AService):
@@ -1014,20 +1134,21 @@ class OrchestratorDeepAgentService(A2AService):
         if deterministic_plan:
             return _with_previous_recheck_conditions(deterministic_plan, previous_recheck_conditions)
         prompt = (
-            "Return only JSON for a bounded risk-analysis plan. Preserve the fixed agent order by selecting names "
+            "Return a bounded risk-analysis plan. Preserve the fixed agent order by selecting names "
             "from fixed_agent_order; do not invent agent names. If previous_recheck_conditions is non-empty, "
-            "consider whether they should still apply and may be reflected in recheck_conditions. Schema: "
-            "{\"selected_agents\": [], \"skipped_agents\": [], \"recheck_conditions\": [], "
-            "\"exploration_questions\": [], \"rationale\": \"...\"}.\n"
+            "consider whether they should still apply and may be reflected in recheck_conditions.\n"
             f"fixed_agent_order={json.dumps(FIXED_AGENT_ORDER)}\n"
             f"previous_recheck_conditions={json.dumps(previous_recheck_conditions, ensure_ascii=False)}\n"
             f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}"
         )
-        text = self.runner.synthesize(prompt, max_chars=4000)
-        plan = _analysis_plan_from_text(text)
-        if plan is None:
-            return _fallback_analysis_plan()
-        return _with_previous_recheck_conditions(plan, previous_recheck_conditions)
+        try:
+            plan = self.runner.synthesize_structured(prompt, AnalysisPlan, max_chars=4000)
+            normalized = _normalize_analysis_plan(plan)
+            if normalized:
+                return _with_previous_recheck_conditions(normalized, previous_recheck_conditions)
+        except Exception:
+            pass
+        return _with_previous_recheck_conditions(_fallback_analysis_plan(), previous_recheck_conditions)
 
 
 def create_domain_services(settings: Settings, *, embedded_mcp: bool = False) -> dict[str, A2AService]:
@@ -1074,12 +1195,18 @@ def _deterministic_analysis_plan(event: RiskEvent) -> AnalysisPlan | None:
         fallback_used=False,
     )
 
-
 def _analysis_plan_from_text(text: str) -> AnalysisPlan | None:
     data = _json_object_from_text(text)
     if not data:
         return None
-    requested = set(_string_list(data.get("selected_agents"), limit=len(FIXED_AGENT_ORDER)))
+    try:
+        return _normalize_analysis_plan(AnalysisPlan.model_validate(data))
+    except ValueError:
+        return None
+
+
+def _normalize_analysis_plan(plan: AnalysisPlan) -> AnalysisPlan | None:
+    requested = set(_string_list(plan.selected_agents, limit=len(FIXED_AGENT_ORDER)))
     selected = [agent for agent in FIXED_AGENT_ORDER if agent in requested]
     if not selected:
         return None
@@ -1087,10 +1214,10 @@ def _analysis_plan_from_text(text: str) -> AnalysisPlan | None:
     return AnalysisPlan(
         selected_agents=selected,
         skipped_agents=skipped,
-        recheck_conditions=_string_list(data.get("recheck_conditions"), limit=12),
-        exploration_questions=_string_list(data.get("exploration_questions"), limit=12),
-        rationale=str(data.get("rationale") or ""),
-        fallback_used=False,
+        recheck_conditions=_string_list(plan.recheck_conditions, limit=12),
+        exploration_questions=_string_list(plan.exploration_questions, limit=12),
+        rationale=plan.rationale,
+        fallback_used=plan.fallback_used,
     )
 
 
@@ -1115,6 +1242,58 @@ def _fallback_analysis_plan() -> AnalysisPlan:
     )
 
 
+def _issue_exploration_from_tool_input(
+    *,
+    issues: list[str] | None = None,
+    missing_data: list[str] | None = None,
+    recheck_conditions: list[str] | None = None,
+    exploration_questions: list[str] | None = None,
+    issues_json: str | None = None,
+) -> IssueExplorationRecordInput:
+    if issues_json:
+        data = _json_object_from_text(issues_json) or {}
+        return IssueExplorationRecordInput.model_validate(data)
+    return IssueExplorationRecordInput(
+        issues=issues or [],
+        missing_data=missing_data or [],
+        recheck_conditions=recheck_conditions or [],
+        exploration_questions=exploration_questions or [],
+    )
+
+
+def _counterfactuals_from_tool_input(
+    *,
+    counterfactuals: list[str] | None = None,
+    counterfactuals_json: str | None = None,
+) -> CounterfactualRecordInput:
+    if counterfactuals_json:
+        data = _json_object_from_text(counterfactuals_json) or {}
+        return CounterfactualRecordInput.model_validate(data)
+    return CounterfactualRecordInput(counterfactuals=counterfactuals or [])
+
+
+def _redteam_missing_data_from_tool_input(
+    *,
+    missing_data: list[str] | None = None,
+    missing_data_json: str | None = None,
+) -> RedTeamMissingDataInput:
+    if missing_data_json:
+        data = _json_object_from_text(missing_data_json) or {}
+        return RedTeamMissingDataInput.model_validate(data)
+    return RedTeamMissingDataInput(missing_data=missing_data or [])
+
+
+def _redteam_overclaims_from_tool_input(
+    *,
+    overclaims: list[str] | None = None,
+    overclaims_json: str | None = None,
+) -> RedTeamOverclaimsInput:
+    if overclaims_json:
+        data = _json_object_from_text(overclaims_json) or {}
+        return RedTeamOverclaimsInput.model_validate(data)
+    return RedTeamOverclaimsInput(overclaims=overclaims or [])
+
+
 def _json_object_from_text(text: str) -> dict[str, Any] | None:
     stripped = text.strip()
     if not stripped:
@@ -1134,7 +1313,7 @@ def _json_object_from_text(text: str) -> dict[str, Any] | None:
         return value if isinstance(value, dict) else None
 
 
-def _string_list(value: Any, *, limit: int) -> list[str]:
+def _string_list(value: Any, *, limit: int | None = None) -> list[str]:
     if value is None:
         return []
     raw_items = value if isinstance(value, list) else [value]
@@ -1143,7 +1322,7 @@ def _string_list(value: Any, *, limit: int) -> list[str]:
         text = str(item or "").strip()
         if text and text not in items:
             items.append(text)
-        if len(items) >= limit:
+        if limit is not None and len(items) >= limit:
             break
     return items
 
@@ -1219,6 +1398,13 @@ def _extract_text_from_tavily_payload(payload: Any) -> str | None:
     return None
 
 
+def _clean_evidence_text(value: Any, limit: int | None = None) -> str:
+    text = str(value or "")
+    cleaned = "".join(char if char in "\n\t" or ord(char) >= 32 else " " for char in text)
+    normalized = re.sub(r"\s+", " ", cleaned).strip()
+    return normalized if limit is None else normalized[:limit]
+
+
 def _document_ids(items: list[dict[str, Any]]) -> list[str]:
     ids: list[str] = []
     for item in items:
@@ -1259,7 +1445,7 @@ def _recommended_guardrails_from_knowledge(items: list[dict[str, Any]]) -> list[
         for effect in payload.get("output_effects") or []:
             if str(effect) not in guardrails:
                 guardrails.append(str(effect))
-    return guardrails[:8]
+    return guardrails
 
 
 def _default_counterfactuals(event: RiskEvent) -> list[str]:
@@ -1276,67 +1462,297 @@ def _decision_for_event(
     decision_id: str,
     evidence: list[dict[str, Any]],
     knowledge_ids: list[str],
+    runner: DeepAgentRunner,
+    prior_findings: list[dict[str, Any]] | None = None,
 ) -> DecisionItem:
-    evidence_ids = [item["evidence_id"] for item in evidence]
-    if event.risk_type == "supplier_resilience":
-        return DecisionItem(
-            decision_id=decision_id,
-            priority=1,
-            decision="Decide whether to activate logistics continuity actions for critical materials and customer shipments.",
-            owner="Procurement / Operations / Logistics",
-            deadline="24 hours",
-            rationale="Procurement, client context, source intelligence, and Expert-as-Code findings converge on supplier and logistics continuity risk.",
-            options=[
-                "Maintain current lanes with daily monitoring",
-                "Reroute through approved alternate ports, carriers, or 3PL capacity",
-                "Allocate inventory and qualify alternate sourcing for critical materials",
-            ],
-            evidence_ids=evidence_ids,
-            expert_knowledge_ids=knowledge_ids,
-            risk_if_delayed="Transport disruption, inventory depletion, and customer shipment delays may become harder to recover.",
-            review_required=True,
-        )
-    if event.risk_type == "legal_compliance":
-        return DecisionItem(
-            decision_id=decision_id,
-            priority=1,
-            decision="Decide whether shipment, counterparty, contract notice, or export-control review is required before execution.",
-            owner="Legal / Compliance",
-            deadline="24 hours",
-            rationale="Legal and Expert-as-Code findings indicate potential sanctions, export-control, or contract-notice exposure.",
-            options=["Proceed after legal clearance", "Pause execution pending counterparty review", "Issue required contract notices"],
-            evidence_ids=evidence_ids,
-            expert_knowledge_ids=knowledge_ids,
-            risk_if_delayed="Unreviewed execution can create sanctions, export-control, or contract-performance exposure.",
-            review_required=True,
-        )
-    if event.risk_type == "accounting_disclosure":
-        return DecisionItem(
-            decision_id=decision_id,
-            priority=1,
-            decision="Decide whether a materiality, impairment, provision, or disclosure assessment is required.",
-            owner="Accounting / Finance",
-            deadline="48 hours",
-            rationale="Accounting and Expert-as-Code findings indicate possible reporting or auditor evidence requirements.",
-            options=["Monitor as non-material", "Prepare auditor evidence pack", "Escalate to disclosure committee"],
-            evidence_ids=evidence_ids,
-            expert_knowledge_ids=knowledge_ids,
-            risk_if_delayed="Late reporting assessment can weaken auditor support and disclosure readiness.",
-            review_required=True,
-        )
+    prompt = _decision_synthesis_prompt(event, evidence, knowledge_ids, prior_findings or [])
+    structured = runner.synthesize_structured(
+        prompt,
+        DecisionSynthesisOutput,
+        max_chars=6000,
+        provider_first=True,
+        allow_text_fallback=False,
+    )
+    evidence_ids = _validated_decision_ids(
+        structured.cited_evidence_ids,
+        [str(item["evidence_id"]) for item in evidence if item.get("evidence_id")],
+        "evidence_id",
+    )
+    if evidence and not evidence_ids:
+        raise ValueError("Decision synthesis must cite at least one available evidence_id.")
+    expert_ids = _validated_decision_ids(
+        structured.cited_expert_knowledge_ids,
+        knowledge_ids,
+        "expert_knowledge_id",
+    )
+    priority_evidence = _priority_evidence_from_findings(prior_findings or [])
     return DecisionItem(
         decision_id=decision_id,
-        priority=1,
-        decision="Decide whether to continue, hold, or reroute high-risk supplier payments under controlled approval.",
-        owner="CFO / Legal / Procurement",
-        deadline="24 hours",
-        rationale="Treasury, legal, accounting, and procurement findings converge on payment and supplier continuity risk.",
-        options=["Proceed after screening", "Hold pending legal review", "Prepare approved alternative route"],
+        priority=structured.priority,
+        decision=structured.decision,
+        owner=structured.owner,
+        deadline=structured.deadline,
+        deadline_rationale=structured.deadline_rationale,
+        deadline_signals=structured.deadline_signals,
+        rationale=structured.rationale,
+        options=structured.options,
         evidence_ids=evidence_ids,
-        expert_knowledge_ids=knowledge_ids,
-        risk_if_delayed="Uncontrolled payment or delayed supplier action can worsen sanctions, liquidity, and supply risk.",
-        review_required=True,
+        expert_knowledge_ids=expert_ids,
+        priority_evidence=priority_evidence,
+        risk_if_delayed=structured.risk_if_delayed,
+        review_required=structured.review_required,
     )
+
+
+def _decision_synthesis_prompt(
+    event: RiskEvent,
+    evidence: list[dict[str, Any]],
+    knowledge_ids: list[str],
+    prior_findings: list[dict[str, Any]],
+) -> str:
+    evidence_digest = [
+        {
+            "evidence_id": item.get("evidence_id"),
+            "source_title": _clean_evidence_text(item.get("source_title") or ""),
+            "source_domain": item.get("source_domain"),
+            "summary": _clean_evidence_text(item.get("summary") or item.get("raw_snippet") or ""),
+            "supports": item.get("supports") or [],
+            "reliability": item.get("reliability"),
+            "confidence": item.get("confidence"),
+        }
+        for item in evidence
+    ]
+    findings_digest = [
+        {
+            "agent_name": finding.get("agent_name"),
+            "mode": finding.get("mode"),
+            "summary": _clean_evidence_text(finding.get("summary") or ""),
+            "risk_score": finding.get("risk_score"),
+            "confidence": finding.get("confidence"),
+            "unknowns": _string_list(finding.get("unknowns")),
+            "recommended_actions": _string_list(finding.get("recommended_actions")),
+            "review_required": finding.get("review_required"),
+            "rationale": _clean_evidence_text(finding.get("rationale") or ""),
+        }
+        for finding in prior_findings
+        if isinstance(finding, dict)
+    ]
+    priority_evidence_digest = [
+        item.model_dump(mode="json")
+        for item in _priority_evidence_from_findings(prior_findings)
+    ]
+    return (
+        "Generate exactly one decision-synthesis output for the risk scenario. Return JSON for the provided structured output schema. "
+        "Infer the decision, owner, deadline, options, and review requirement from the event, prior agent findings, "
+        "expert knowledge IDs, and evidence. Do not use hard-coded keyword taxonomy, static risk_type templates, "
+        "or fallback/default decision text. If the evidence does not justify urgency, choose a non-immediate deadline "
+        "and explain why in deadline_rationale. Do not collapse legal, payment, supplier, accounting, data-validation, "
+        "technology-access, or operational-continuity issues into another domain merely because they co-occur. "
+        "Use priority_evidence_digest as natural-language, source-backed context from prior agents when deciding priority, rationale, deadline, and review requirement. "
+        "Use cited_evidence_ids only from available_evidence_ids and cited_expert_knowledge_ids only from available_expert_knowledge_ids. "
+        "priority must be an integer where 1 is most urgent and 5 is least urgent.\n"
+        f"risk_event={json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n"
+        f"available_evidence_ids={json.dumps([item.get('evidence_id') for item in evidence if item.get('evidence_id')], ensure_ascii=False)}\n"
+        f"evidence_digest={json.dumps(evidence_digest, ensure_ascii=False)}\n"
+        f"available_expert_knowledge_ids={json.dumps(knowledge_ids, ensure_ascii=False)}\n"
+        f"prior_agent_findings={json.dumps(findings_digest, ensure_ascii=False)}\n"
+        f"priority_evidence_digest={json.dumps(priority_evidence_digest, ensure_ascii=False)}"
+    )
+
+
+def _priority_evidence_from_findings(findings: list[dict[str, Any]]) -> list[PriorityEvidenceItem]:
+    items: list[PriorityEvidenceItem] = []
+    seen: set[tuple[str, str]] = set()
+    for finding in findings:
+        if not isinstance(finding, dict):
+            continue
+        source_agent = str(finding.get("agent_name") or finding.get("mode") or "unknown-agent")
+        evidence_text = _natural_priority_evidence_text(finding)
+        if not evidence_text:
+            continue
+        key = (source_agent, evidence_text[:240])
+        if key in seen:
+            continue
+        items.append(
+            PriorityEvidenceItem(
+                source_agent=source_agent,
+                evidence_text=evidence_text,
+                source_refs=_priority_source_refs(finding),
+                limitations=_priority_limitations(finding),
+            )
+        )
+        seen.add(key)
+    return items
+
+
+def _natural_priority_evidence_text(finding: dict[str, Any]) -> str:
+    source_agent = str(finding.get("agent_name") or finding.get("mode") or "unknown-agent")
+    summary = _clean_evidence_text(finding.get("summary") or "")
+    rationale = _clean_evidence_text(finding.get("rationale") or "")
+    metadata = finding.get("metadata") if isinstance(finding.get("metadata"), dict) else {}
+    metadata_digest = _priority_metadata_digest(metadata)
+    actions = _string_list(finding.get("recommended_actions"))
+    risk_score = finding.get("risk_score")
+    confidence = finding.get("confidence")
+    review_required = finding.get("review_required")
+    context_parts: list[str] = []
+    if summary:
+        context_parts.append(f"{source_agent} reported: {summary}")
+    if metadata_digest:
+        context_parts.append(f"Priority-relevant data it used includes {metadata_digest}.")
+    if rationale:
+        context_parts.append(f"Rationale: {rationale}")
+    if actions:
+        context_parts.append(f"Recommended actions include {', '.join(actions)}.")
+    signal_parts: list[str] = []
+    if risk_score is not None:
+        signal_parts.append(f"risk_score={risk_score}")
+    if confidence:
+        signal_parts.append(f"confidence={confidence}")
+    if review_required is not None:
+        signal_parts.append(f"review_required={review_required}")
+    if signal_parts:
+        context_parts.append(f"Agent-level priority signals: {', '.join(signal_parts)}.")
+    return _clean_evidence_text(" ".join(context_parts))
+
+
+def _priority_source_refs(finding: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    source_agent = str(finding.get("agent_name") or finding.get("mode") or "unknown-agent")
+    for evidence_id in _string_list(finding.get("evidence_ids")):
+        refs.append(f"evidence_id:{evidence_id}")
+    metadata = finding.get("metadata") if isinstance(finding.get("metadata"), dict) else {}
+    for key, value in metadata.items():
+        if _metadata_key_is_priority_relevant(key, value):
+            refs.append(f"{source_agent}.metadata.{key}")
+    return refs
+
+
+def _priority_limitations(finding: dict[str, Any]) -> str:
+    limitations: list[str] = []
+    limitations.extend(_string_list(finding.get("unknowns")))
+    metadata = finding.get("metadata") if isinstance(finding.get("metadata"), dict) else {}
+    issue_exploration = metadata.get("issue_exploration")
+    if isinstance(issue_exploration, dict):
+        limitations.extend(_string_list(issue_exploration.get("missing_data")))
+    limitations.extend(_string_list(metadata.get("missing_data")))
+    limitations.extend(_string_list(metadata.get("overclaims")))
+    if _has_redaction_policy(metadata):
+        limitations.append("Raw identifiers, names, account data, or row-level sensitive fields may be omitted or bucketed by redaction policy.")
+    return _clean_evidence_text("; ".join(_unique_strings(limitations)))
+
+
+def _priority_metadata_digest(metadata: dict[str, Any]) -> str:
+    compact = _compact_priority_metadata(metadata)
+    if not compact:
+        return ""
+    return _clean_evidence_text(_render_priority_value(compact))
+
+
+def _compact_priority_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    compact: dict[str, Any] = {}
+    for key, value in metadata.items():
+        if not _metadata_key_is_priority_relevant(key, value):
+            continue
+        if key in {"qdrant_hits", "hits", "case_hits"} and isinstance(value, list):
+            compact[f"{key}_count"] = len(value)
+            continue
+        if key.endswith("_ids") and isinstance(value, list):
+            compact[f"{key}_count"] = len(value)
+            continue
+        sanitized = _sanitize_priority_value(value, depth=0)
+        if sanitized not in (None, "", [], {}):
+            compact[key] = sanitized
+    return compact
+
+
+def _metadata_key_is_priority_relevant(key: str, value: Any) -> bool:
+    if value in (None, "", [], {}):
+        return False
+    lowered = key.lower()
+    if lowered in {"confidential_terms"}:
+        return False
+    if lowered.startswith("_"):
+        return False
+    return True
+
+
+def _sanitize_priority_value(value: Any, *, depth: int) -> Any:
+    if depth >= 4:
+        if isinstance(value, list):
+            return f"{len(value)} items"
+        if isinstance(value, dict):
+            return f"{len(value)} fields"
+        return _clean_evidence_text(str(value))
+    if isinstance(value, dict):
+        sanitized: dict[str, Any] = {}
+        for key, item in value.items():
+            if _is_sensitive_priority_key(key):
+                continue
+            rendered = _sanitize_priority_value(item, depth=depth + 1)
+            if rendered not in (None, "", [], {}):
+                sanitized[key] = rendered
+        return sanitized
+    if isinstance(value, list):
+        if not value:
+            return []
+        sanitized_list: list[Any] = []
+        for item in value:
+            rendered = _sanitize_priority_value(item, depth=depth + 1)
+            if rendered not in (None, "", [], {}):
+                sanitized_list.append(rendered)
+        return sanitized_list
+    if isinstance(value, bool | int | float):
+        return value
+    return _clean_evidence_text(str(value))
+
+
+def _is_sensitive_priority_key(key: str) -> bool:
+    lowered = key.lower()
+    if lowered in {"amount", "due_date", "raw_snippet", "text"}:
+        return True
+    sensitive_parts = ("id", "name", "account", "email", "phone", "address", "confidential")
+    if any(part in lowered for part in sensitive_parts):
+        return True
+    return False
+
+
+def _render_priority_value(value: Any) -> str:
+    if isinstance(value, dict):
+        return "; ".join(f"{key}={_render_priority_value(item)}" for key, item in value.items())
+    if isinstance(value, list):
+        rendered_items = [_render_priority_value(item) for item in value]
+        return "[" + ", ".join(item for item in rendered_items if item) + "]"
+    return str(value)
+
+
+def _has_redaction_policy(value: Any) -> bool:
+    if isinstance(value, dict):
+        if "redaction_policy" in value:
+            return True
+        return any(_has_redaction_policy(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_redaction_policy(item) for item in value)
+    return False
+
+
+def _unique_strings(values: list[Any], *, limit: int | None = None) -> list[str]:
+    items: list[str] = []
+    for value in values:
+        text = str(value or "").strip()
+        if text and text not in items:
+            items.append(text)
+        if limit is not None and len(items) >= limit:
+            break
+    return items
+
+
+def _validated_decision_ids(requested: list[str], allowed: list[str], field_name: str) -> list[str]:
+    allowed_set = set(allowed)
+    unknown = [item for item in requested if item not in allowed_set]
+    if unknown:
+        raise ValueError(f"Decision synthesis returned unknown {field_name}: {unknown}")
+    return requested
 
 
 def _default_domain_issues(domain: str, event: RiskEvent) -> list[str]:
@@ -1376,7 +1792,7 @@ def _redteam_overclaims(findings: list[dict[str, Any]], evidence: list[dict[str,
             warnings.append(f"{finding.get('agent_name') or finding.get('mode')} uses high confidence without registered supporting evidence.")
         if (finding.get("risk_score") or 0) >= 80 and not finding.get("review_required"):
             warnings.append(f"{finding.get('agent_name') or finding.get('mode')} has a high score without review_required=true.")
-    return warnings[:8]
+    return warnings
 
 
 def _brief_markdown(event: RiskEvent, findings: list[dict[str, Any]], decision: DecisionItem, evidence: list[dict[str, Any]]) -> str:
@@ -1397,13 +1813,29 @@ def _brief_markdown(event: RiskEvent, findings: list[dict[str, Any]], decision: 
             f"1. {decision.decision}",
             f"   - Owner: {decision.owner}",
             f"   - Deadline: {decision.deadline}",
+            f"   - Priority: {decision.priority}",
             f"   - Review required: {decision.review_required}",
+            "",
+            "## Priority Evidence",
+        ]
+    )
+    if decision.priority_evidence:
+        for item in decision.priority_evidence:
+            lines.append(f"- **{item.source_agent}**: {item.evidence_text}")
+            if item.source_refs:
+                lines.append(f"  - Source refs: {', '.join(item.source_refs)}")
+            if item.limitations:
+                lines.append(f"  - Limitations: {item.limitations}")
+    else:
+        lines.append("- None")
+    lines.extend(
+        [
             "",
             "## Evidence Summary",
         ]
     )
     for item in evidence:
-        lines.append(f"- `{item.get('evidence_id')}` {item.get('source_title') or item.get('summary', '')[:120]}")
+        lines.append(f"- `{item.get('evidence_id')}` {item.get('source_title') or item.get('summary', '')}")
     return "\n".join(lines) + "\n"
 
 

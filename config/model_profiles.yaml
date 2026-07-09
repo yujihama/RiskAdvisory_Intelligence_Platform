@@ -41,9 +41,31 @@ profiles:
     default_model: qwen/qwen3.7-max
     temperature: 0.1
     max_tokens: 8192
+  risk_discovery_experiment:
+    provider: openrouter
+    model_env: FAST_MODEL
+    default_model: qwen/qwen3.6-flash
+    temperature: 0.1
+    max_tokens: 8192
+  risk_scenario_aggregation:
+    provider: openrouter
+    model_env: RISK_SCENARIO_AGGREGATION_MODEL
+    default_model: openai/gpt-4.1-mini
+    temperature: 0.1
+    max_tokens: 8192
+  decision_synthesis:
+    provider: openrouter
+    model_env: DECISION_SYNTHESIS_MODEL
+    default_model: openai/gpt-4.1-mini
+    temperature: 0.1
+    max_tokens: 4096
 
 agent_profile_map:
   risk-discovery-agent: risk_discovery
+  event-fact-discovery-agent: risk_discovery_experiment
+  analog-discovery-agent: risk_discovery_experiment
+  causal-story-discovery-agent: risk_discovery_experiment
+  risk-scenario-aggregation-agent: risk_scenario_aggregation
   orchestrator-agent: reasoning
   source-intelligence-agent: fast
   client-context-agent: reasoning
@@ -53,4 +75,4 @@ agent_profile_map:
   procurement-risk-agent: reasoning
   expert-as-code-agent: expert_synthesis
   evidence-redteam-agent: red_team
-  decision-synthesis-agent: reasoning
+  decision-synthesis-agent: decision_synthesis

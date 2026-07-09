@@ -7,6 +7,7 @@ import uvicorn
 
 from risk_agent_platform.api.app import create_app
 from risk_agent_platform.config import Settings
+from risk_agent_platform.run_experimental_discovery import main as run_experimental_discovery_main
 from risk_agent_platform.run_discovery import main as run_discovery_main
 from risk_agent_platform.run_discovery_evaluation import main as run_discovery_evaluation_main
 from risk_agent_platform.run_scenario import main as run_scenario_main
@@ -70,6 +71,29 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--min-missing-data-match", type=float, default=0.5)
     evaluate.add_argument("--min-reason-quality", type=float, default=0.75)
     evaluate.add_argument("--min-rubric-coverage", type=float, default=0.5)
+
+    experiment = sub.add_parser(
+        "discover-risks-experiment",
+        help="Run the experimental multi-lens Discovery agents without local search/result/candidate caps.",
+    )
+    experiment.add_argument("--event-title")
+    experiment.add_argument("--event-description", default="")
+    experiment.add_argument("--client-id")
+    experiment.add_argument("--scope-text")
+    experiment.add_argument("--scope-type", default="company")
+    experiment.add_argument("--scope-name")
+    experiment.add_argument("--department")
+    experiment.add_argument("--industry")
+    experiment.add_argument("--region")
+    experiment.add_argument("--site-id")
+    experiment.add_argument("--country", action="append", default=[])
+    experiment.add_argument("--event-date")
+    experiment.add_argument("--output")
+    experiment.add_argument("--analyze-existing-output")
+    experiment.add_argument("--run-analysis", action="store_true")
+    experiment.add_argument("--analysis-concurrency", type=int, default=3)
+    experiment.add_argument("--reuse-completed-analysis", action="store_true")
+    experiment.add_argument("--embedded-services", action="store_true")
 
     sub.add_parser("preflight", help="Check required final architecture configuration.")
 
@@ -144,6 +168,39 @@ def main(argv: list[str] | None = None) -> int:
         if args.embedded_services:
             argv.append("--embedded-services")
         return run_discovery_evaluation_main(argv)
+
+    if args.command == "discover-risks-experiment":
+        argv = ["--scope-type", args.scope_type]
+        if args.event_title:
+            argv.extend(["--event-title", args.event_title])
+        if args.client_id:
+            argv.extend(["--client-id", args.client_id])
+        if args.event_description:
+            argv.extend(["--event-description", args.event_description])
+        for name in (
+            "scope_text",
+            "scope_name",
+            "department",
+            "industry",
+            "region",
+            "site_id",
+            "event_date",
+            "output",
+            "analyze_existing_output",
+        ):
+            value = getattr(args, name)
+            if value:
+                argv.extend([f"--{name.replace('_', '-')}", str(value)])
+        for country in args.country:
+            argv.extend(["--country", country])
+        if args.run_analysis:
+            argv.append("--run-analysis")
+        if args.reuse_completed_analysis:
+            argv.append("--reuse-completed-analysis")
+        argv.extend(["--analysis-concurrency", str(args.analysis_concurrency)])
+        if args.embedded_services:
+            argv.append("--embedded-services")
+        return run_experimental_discovery_main(argv)
 
     if args.command == "preflight":
         checks = {
