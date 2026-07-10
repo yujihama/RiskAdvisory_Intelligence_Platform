@@ -402,12 +402,12 @@ function renderHistory() {
     const row = node("li", "history-row");
     if (item.decision_id) row.dataset.decisionId = item.decision_id;
     const label = item.decision_title ? `${item.label || "更新"} · ${item.decision_title}` : item.label || "更新";
-    const attribution = [
+    const attribution = [...new Set([
       item.actor,
       item.reason,
       item.new_owner ? `新担当: ${item.new_owner}` : null,
       !item.reason && !item.new_owner ? item.detail : null,
-    ].filter(Boolean).join(" / ") || "—";
+    ].filter(Boolean))].join(" / ") || "—";
     row.append(node("time", "", formatDate(item.created_at, { time: true })));
     row.append(node("strong", "", label));
     row.append(node("span", "", attribution));
