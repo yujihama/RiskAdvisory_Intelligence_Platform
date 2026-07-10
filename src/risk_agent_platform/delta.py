@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -279,11 +280,29 @@ def _diff_scores(previous: list[SnapshotFinding], current: list[SnapshotFinding]
     return changes
 
 
-_DECISION_CHANGED_FIELDS = ("owner", "deadline", "priority", "review_required", "rationale")
+_DECISION_CHANGED_FIELDS = (
+    "decision",
+    "owner",
+    "deadline",
+    "deadline_rationale",
+    "deadline_signals",
+    "priority",
+    "review_required",
+    "rationale",
+    "options",
+    "evidence_ids",
+    "expert_knowledge_ids",
+    "priority_evidence",
+    "risk_if_delayed",
+)
+_DECISION_REVISION_RE = re.compile(r"^(?P<logical>.+_decision_\d{3})_[0-9a-f]{12}$")
 
 
 def _decision_identity(decision: DecisionItem) -> str:
-    return decision.decision_id or f"text:{decision.decision}"
+    if not decision.decision_id:
+        return f"text:{decision.decision}"
+    match = _DECISION_REVISION_RE.fullmatch(decision.decision_id)
+    return match.group("logical") if match else decision.decision_id
 
 
 def _diff_decisions(previous: list[DecisionItem], current: list[DecisionItem]) -> list[DecisionChange]:
@@ -292,10 +311,14 @@ def _diff_decisions(previous: list[DecisionItem], current: list[DecisionItem]) -
     changes: list[DecisionChange] = []
     for identity, decision in curr_by_id.items():
         if identity not in prev_by_id:
-            changes.append(DecisionChange(change_type="added", decision_id=identity, decision=decision.decision))
+            changes.append(
+                DecisionChange(change_type="added", decision_id=decision.decision_id or identity, decision=decision.decision)
+            )
     for identity, decision in prev_by_id.items():
         if identity not in curr_by_id:
-            changes.append(DecisionChange(change_type="removed", decision_id=identity, decision=decision.decision))
+            changes.append(
+                DecisionChange(change_type="removed", decision_id=decision.decision_id or identity, decision=decision.decision)
+            )
     for identity in sorted(set(prev_by_id) & set(curr_by_id)):
         prev_decision = prev_by_id[identity]
         curr_decision = curr_by_id[identity]
@@ -304,7 +327,12 @@ def _diff_decisions(previous: list[DecisionItem], current: list[DecisionItem]) -
         ]
         if changed_fields:
             changes.append(
-                DecisionChange(change_type="modified", decision_id=identity, decision=curr_decision.decision, changed_fields=changed_fields)
+                DecisionChange(
+                    change_type="modified",
+                    decision_id=curr_decision.decision_id or identity,
+                    decision=curr_decision.decision,
+                    changed_fields=changed_fields,
+                )
             )
     return changes
 

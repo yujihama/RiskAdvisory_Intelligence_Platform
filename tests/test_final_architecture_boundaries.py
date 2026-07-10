@@ -12,7 +12,12 @@ from risk_agent_platform.config import Settings
 from risk_agent_platform.a2a_sdk_adapter import sdk_agent_card_dict
 from risk_agent_platform.embeddings import create_embedding_provider
 from risk_agent_platform.evidence_repository import EvidenceRepository
-from risk_agent_platform.final_agents import _analysis_plan_from_text, _decision_for_event, _deterministic_analysis_plan
+from risk_agent_platform.final_agents import (
+    _analysis_plan_from_text,
+    _decision_for_event,
+    _decision_id_for_content,
+    _deterministic_analysis_plan,
+)
 from risk_agent_platform.mcp_gateway import MCPGateway
 from risk_agent_platform.model_profiles import ModelProfileRouter
 from risk_agent_platform.query_sanitizer import sanitize_query
@@ -347,6 +352,13 @@ def test_decision_synthesis_uses_structured_llm_output_without_rule_template():
     assert decision.deadline_signals == ["llm:scenario_evidence"]
     assert decision.evidence_ids == ["ev-001"]
     assert decision.expert_knowledge_ids == ["LEG-GUARD-001"]
+    content_id = _decision_id_for_content(event, decision)
+    assert content_id.startswith(f"{event.scenario_id}_decision_001_")
+    assert content_id == _decision_id_for_content(event, decision.model_copy(update={"decision_id": "ignored"}))
+    assert content_id != _decision_id_for_content(
+        event,
+        decision.model_copy(update={"decision": f"{decision.decision} Updated."}),
+    )
     assert runner.calls[0]["output_model"] is DecisionSynthesisOutput
     assert runner.calls[0]["kwargs"]["provider_first"] is True
     assert runner.calls[0]["kwargs"]["allow_text_fallback"] is False

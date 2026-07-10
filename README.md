@@ -141,7 +141,7 @@ docker compose up -d
 ```
 
 Langfuse self-host services are included in `docker-compose.yml`.
-The local UI is exposed at `http://localhost:3300` to avoid collisions with common frontend dev servers on port 3000.
+The local Langfuse UI is exposed at `http://localhost:3300` to avoid collisions with common frontend dev servers on port 3000.
 
 ## Platform API
 
@@ -161,6 +161,21 @@ Endpoints:
 - `GET /healthz` — liveness.
 
 Job state persists in SQLite at `outputs/api_jobs.sqlite3` (override with `PLATFORM_API_JOB_DB`). Jobs left `submitted`/`working` by a previous process are marked `failed` with `orphaned_by_restart` on startup. Each job records a `trace_id` and emits `api_job.*` events through the existing trace recorder. OpenAPI docs are served at `/docs`.
+
+## Decision Cockpit UI
+
+Run the product UI and the real Platform API in one same-origin process:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m risk_agent_platform.ui_server --host 127.0.0.1 --port 8300
+```
+
+Open `http://127.0.0.1:8300/ui/`. The Decision Cockpit reads generated scenario artifacts through `GET /api/ui/state`, submits real scenario jobs through `POST /v1/scenarios`, polls the SQLite-backed job state through `GET /v1/jobs/{job_id}`, and records `approve` / `hold` / `request_recheck` / `reassign` actions through the append-only Decision Log API. Values that do not exist in the artifacts are shown as unset instead of demo defaults.
+
+Re-analysis keeps the same `scenario_id` so Scenario Delta and human `request_recheck` conditions remain in the lineage. Synthesized Decisions use a content-fingerprinted revision ID (`<scenario_id>_decision_001_<12-hex>`): an unchanged recommendation keeps its folded state, while a changed recommendation receives a new pending identity. Delta comparison normalizes that revision suffix so the same logical decision slot is still reported as `modified` rather than `removed` plus `added`.
+
+Do not run `serve-api` and `ui_server` against the same `PLATFORM_API_JOB_DB` at the same time: both processes own orphan recovery for that SQLite job store.
 
 ## Run Preflight
 
@@ -296,7 +311,7 @@ Every human action on a Decision Queue item — `approve`, `reject`, `hold`, `re
 
 Endpoints:
 
-- `POST /v1/scenarios/{scenario_id}/decisions/{decision_id}/actions` — body `{action, actor, reason?, new_owner?}`. Returns `201` with the recorded `DecisionAction`; `404` for an unknown scenario or `decision_id`; `422` when `reason` is missing for `hold`/`reject` or `new_owner` is missing for `reassign`; `409` when the action is not a valid transition from the decision's current state. (The roadmap sketches a global `POST /v1/decisions/{decision_id}/actions`; this implementation scopes the path under `/v1/scenarios/{scenario_id}/` instead, since `decision_id` values such as `<scenario_id>_decision_001` are only unique within a scenario and this avoids needing a separate global decision index.)
+- `POST /v1/scenarios/{scenario_id}/decisions/{decision_id}/actions` — body `{action, actor, reason?, new_owner?}`. Returns `201` with the recorded `DecisionAction`; `404` for an unknown scenario or `decision_id`; `422` when `reason` is missing for `hold`/`reject` or `new_owner` is missing for `reassign`; `409` when the action is not a valid transition from the decision's current state. (The roadmap sketches a global `POST /v1/decisions/{decision_id}/actions`; this implementation scopes the path under `/v1/scenarios/{scenario_id}/` instead, since revisioned IDs such as `<scenario_id>_decision_001_<12-hex>` belong to one scenario and this avoids needing a separate global decision index.)
 - `GET /v1/scenarios/{scenario_id}/decision-log` — chronological actions for the scenario, each decision's current state, and a `state_summary` (counts by state plus held reasons).
 
 State machine (deterministic, no LLM involved):

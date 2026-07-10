@@ -71,7 +71,8 @@ def test_final_embedded_e2e_with_mocked_tavily_and_dummy_client_data(tmp_path, m
     assert (output_dir / "trace_metadata.json").exists()
 
     queue = json.loads((output_dir / "decision_queue.json").read_text(encoding="utf-8"))
-    assert queue["decisions"][0]["decision_id"] == "scenario_test_final_e2e_decision_001"
+    assert queue["decisions"][0]["decision_id"].startswith("scenario_test_final_e2e_decision_001_")
+    assert len(queue["decisions"][0]["decision_id"].rsplit("_", 1)[-1]) == 12
     assert queue["decisions"][0]["expert_knowledge_ids"]
 
     evidence = json.loads((output_dir / "evidence_summary.json").read_text(encoding="utf-8"))

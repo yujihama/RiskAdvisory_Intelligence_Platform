@@ -113,6 +113,47 @@ def test_compute_delta_detects_evidence_score_decision_and_unknown_changes():
     assert delta.unknown_resolutions == ["Bank confirmation pending"]
 
 
+def test_compute_delta_treats_content_fingerprint_as_decision_revision() -> None:
+    scenario_id = "scenario_delta_revision"
+    previous = RunSnapshot(
+        scenario_id=scenario_id,
+        run_id="run_001",
+        trace_id="trace-1",
+        decisions=[
+            _decision(
+                f"{scenario_id}_decision_001_aaaaaaaaaaaa",
+                "Confirm the original payment route.",
+                "Treasury",
+                "24 hours",
+                1,
+                True,
+            )
+        ],
+    )
+    current = RunSnapshot(
+        scenario_id=scenario_id,
+        run_id="run_002",
+        trace_id="trace-2",
+        decisions=[
+            _decision(
+                f"{scenario_id}_decision_001_bbbbbbbbbbbb",
+                "Hold and reroute the payment.",
+                "CFO",
+                "24 hours",
+                1,
+                True,
+            )
+        ],
+    )
+
+    delta = compute_delta(previous, current)
+
+    assert [change.change_type for change in delta.decision_changes] == ["modified"]
+    change = delta.decision_changes[0]
+    assert change.decision_id == f"{scenario_id}_decision_001_bbbbbbbbbbbb"
+    assert {"decision", "owner"} <= set(change.changed_fields)
+
+
 def test_compute_delta_is_baseline_with_no_previous_snapshot():
     current = RunSnapshot(scenario_id="scenario_delta_unit_002", run_id="run_001", trace_id="trace-1")
 

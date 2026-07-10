@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from datetime import datetime, timezone
@@ -981,8 +982,10 @@ class DecisionSynthesisDeepAgent(DomainDeepAgentService):
         prior = task.inputs.get("findings", [])
         evidence = self.mcp.call("mcp-evidence-ledger", "list_evidence_by_scenario", {"scenario_id": event.scenario_id})
         knowledge_ids = _knowledge_ids_from_findings(prior)
-        decision_id = f"{event.scenario_id}_decision_001"
-        decision = _decision_for_event(event, decision_id, evidence, knowledge_ids, self.runner, prior)
+        draft_decision_id = f"{event.scenario_id}_decision_001"
+        decision = _decision_for_event(event, draft_decision_id, evidence, knowledge_ids, self.runner, prior)
+        decision_id = _decision_id_for_content(event, decision)
+        decision = decision.model_copy(update={"decision_id": decision_id})
         self.mcp.call(
             "mcp-neo4j",
             "upsert_asset",
@@ -1455,6 +1458,14 @@ def _default_counterfactuals(event: RiskEvent) -> list[str]:
         "What if public evidence describes sector risk but not this client's product category?",
         "What if contract continuity risk is lower because alternate supply is already qualified?",
     ]
+
+
+def _decision_id_for_content(event: RiskEvent, decision: DecisionItem, *, slot: int = 1) -> str:
+    payload = decision.model_dump(mode="json")
+    payload.pop("decision_id", None)
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+    return f"{event.scenario_id}_decision_{slot:03d}_{digest}"
 
 
 def _decision_for_event(

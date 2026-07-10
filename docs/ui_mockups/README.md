@@ -1,55 +1,52 @@
-# Risk Advisory Intelligence Platform UI Mockups
+# Risk Intelligence Decision Cockpit
 
-This folder contains static UI mockups for the planned service UI.
+This folder contains the responsive Decision Cockpit served by the unified UI and Platform API process.
 
-Open `index.html` directly in a browser. The mock has six screens:
-
-- Executive start / manual analysis
-- Real-time signal canvas placeholder
-- Autonomous analysis live view
-- Recommendation rationale view
-- Executive result view
-- Proof stack / evidence provenance view
-
-To connect the mock to local backend outputs, serve it through the UI backend:
+Run it from the repository root:
 
 ```powershell
 $env:PYTHONPATH = "src"
 python -m risk_agent_platform.ui_server --host 127.0.0.1 --port 8300
 ```
 
-Then open:
+Open:
 
 ```text
-http://127.0.0.1:8300/ui/#live
+http://127.0.0.1:8300/ui/
 ```
 
-When opened through `file://`, the mock remains static and does not call the backend.
+Use a specific analyzed scenario:
 
-The current version is an executive-oriented mockup. It intentionally reduces operational detail and presents the analysis as:
+```text
+http://127.0.0.1:8300/ui/?scenario_id=<scenario_id>
+```
 
-- Decision focus
-- Recommendation
-- Three key reasons
-- Human review gate
-- Minimal proof stack
+## Runtime boundary
 
-The live analysis screen now focuses on one primary UI direction:
+`risk_agent_platform.ui_server` extends the real Platform API FastAPI application instead of running a mock lifecycle. The same process exposes:
 
-- Risk Scenario Tree: one event branching into multiple risk scenarios, each with a neural-style agent analysis network
+- `GET /api/ui/state` for the read-only cockpit projection.
+- `POST /v1/scenarios` and `GET /v1/jobs/{job_id}` for real analysis jobs.
+- `POST /v1/scenarios/{scenario_id}/decisions/{decision_id}/actions` for append-only Decision Log actions.
+- `GET /v1/scenarios/{scenario_id}/decision-log` for folded decision state and history.
+- `GET /ui/` for the static frontend.
 
-The mock is intentionally static. It uses the current CLI outputs and trace shape as the product model:
+The UI displays only values present in generated artifacts or the Platform API. Missing values are shown as unset rather than replaced with demo numbers.
 
-- `risk-agent-platform discover-risks`
-- `risk-agent-platform run-scenario`
-- `outputs/<scenario_id>/final_brief.md`
-- `outputs/<scenario_id>/decision_queue.json`
-- `outputs/<scenario_id>/evidence_summary.json`
-- `outputs/<scenario_id>/trace_metadata.json`
-- `outputs/_traces/<trace_id>.jsonl`
+Re-analysis keeps the same scenario lineage so existing delta snapshots and `request_recheck` conditions are evaluated on the next run. A changed synthesized recommendation receives a content-fingerprinted Decision revision ID and starts pending; an unchanged recommendation retains its existing folded state.
 
-Current embedded scenario data comes from:
+## Files
 
-- `outputs/scenario_discovered_fujifilm_dummy_iran_war_escalation_affecting_fujifilm_executive_management_disc_`
+- `index.html`: semantic application shell and interaction surfaces.
+- `app.css`: desktop, tablet, and mobile layout.
+- `app.js`: API client, state projection, rendering, decisions, drawers, dialogs, and job polling.
+- `decision-cockpit-reference.png`: selected ImageGen visual target used for design QA.
+- `vendor/tabler-icons/`: pinned Tabler Icons webfont assets and license.
 
-`concept-executive-green.png` is the generated visual concept used for the executive green redesign. `concept-board.png` is the earlier operational dashboard concept.
+The selected visual target is implemented as one primary Decision Cockpit rather than the previous six disconnected mock screens. The core flow is:
+
+1. Choose a scenario from the prioritized queue.
+2. Review the selected decision, actual risk score, uncertainty, and linked evidence.
+3. Approve, hold, request re-evaluation, or reassign ownership.
+4. Verify the append-only decision history.
+5. Optionally submit a real scenario re-analysis job and monitor its terminal state.
